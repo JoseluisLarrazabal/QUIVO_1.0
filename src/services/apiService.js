@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api'; // Cambiar por tu URL del backend
+const API_BASE_URL = 'http://192.168.0.5:3000/api'; // IP de la máquina para acceso móvil
 
 class ApiService {
   async makeRequest(endpoint, options = {}) {
