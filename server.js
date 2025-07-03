@@ -19,7 +19,13 @@ const PORT = process.env.PORT || 3000
 app.use(helmet())
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000", "http://localhost:19006"],
+    origin: process.env.ALLOWED_ORIGINS?.split(",") || [
+      "http://localhost:3000", 
+      "http://localhost:19006",
+      "http://192.168.0.5:3000",
+      "http://192.168.0.5:19006",
+      "exp://192.168.0.5:19000"
+    ],
     credentials: true,
   }),
 )

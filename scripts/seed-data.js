@@ -11,11 +11,11 @@ const seedData = async () => {
     await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/nfc_transport")
     console.log("✅ Conectado a MongoDB")
 
-    // Limpiar datos existentes
-    await User.deleteMany({})
-    await Card.deleteMany({})
-    await Validator.deleteMany({})
-    console.log("🗑️ Datos existentes eliminados")
+    // Limpiar datos existentes y eliminar colecciones para evitar conflictos de índices
+    await mongoose.connection.dropCollection('users').catch(() => console.log("Colección users no existía"))
+    await mongoose.connection.dropCollection('cards').catch(() => console.log("Colección cards no existía"))
+    await mongoose.connection.dropCollection('validators').catch(() => console.log("Colección validators no existía"))
+    console.log("🗑️ Colecciones eliminadas")
 
     // Crear usuarios de ejemplo
     const users = await User.create([

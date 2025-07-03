@@ -34,10 +34,11 @@ cardSchema.statics.findByUid = async function(uid) {
   return await this.findOne({ uid, activa: true }).populate("usuario_id", "nombre tipo_tarjeta")
 }
 
-cardSchema.statics.create = async function(cardData) {
-  const card = new this(cardData)
-  return await card.save()
-}
+// Removemos este método estático que puede estar causando conflictos
+// cardSchema.statics.create = async function(cardData) {
+//   const card = new this(cardData)
+//   return await card.save()
+// }
 
 cardSchema.statics.updateBalance = async function(uid, newBalance) {
   return await this.findOneAndUpdate(
