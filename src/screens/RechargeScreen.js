@@ -29,11 +29,6 @@ const RechargeScreen = () => {
 
   const predefinedAmounts = [10, 20, 50, 100];
 
-  // Asegurar que todos los hooks se ejecuten antes de cualquier retorno
-  if (loading || !user) {
-    return <CenteredLoader />;
-  }
-
   const handleRecharge = async () => {
     if (!selectedCard) {
       Alert.alert('Error', 'Por favor selecciona una tarjeta');
@@ -103,6 +98,11 @@ const RechargeScreen = () => {
   const selectPredefinedAmount = (value) => {
     setAmount(value.toString());
   };
+
+  // Retorno temprano DESPUÉS de todos los hooks
+  if (loading || !user) {
+    return <CenteredLoader />;
+  }
 
   return (
     <ScrollView style={styles.container}>

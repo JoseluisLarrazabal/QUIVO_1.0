@@ -30,10 +30,6 @@ const DashboardScreen = () => {
     }
   }, [user]);
 
-  if (loading || !user) {
-    return <CenteredLoader />;
-  }
-
   const loadRecentTransactions = async () => {
     try {
       if (user.cards && user.cards.length > 0) {
@@ -83,6 +79,10 @@ const DashboardScreen = () => {
       default: return '0.00';
     }
   };
+
+  if (loading || !user) {
+    return <CenteredLoader />;
+  }
 
   return (
     <ScrollView

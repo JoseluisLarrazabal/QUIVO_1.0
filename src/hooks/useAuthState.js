@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useAuthState = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isInitialized = useRef(false);
 
   const checkAuthState = useCallback(async () => {
+    if (isInitialized.current) return;
+    
     try {
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
@@ -29,6 +32,7 @@ export const useAuthState = () => {
       setUser(null);
     } finally {
       setLoading(false);
+      isInitialized.current = true;
     }
   }, []);
 

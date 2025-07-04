@@ -33,10 +33,6 @@ const HistoryScreen = () => {
     }
   }, [user]);
 
-  if (loading || !user) {
-    return <CenteredLoader />;
-  }
-
   useEffect(() => {
     if (selectedCard) {
       loadTransactions();
@@ -128,6 +124,10 @@ const HistoryScreen = () => {
       </Card.Content>
     </Card>
   );
+
+  if (loading || !user) {
+    return <CenteredLoader />;
+  }
 
   if (loadingLocal) {
     return (
