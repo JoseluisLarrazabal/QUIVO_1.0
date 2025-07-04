@@ -20,18 +20,24 @@ const seedData = async () => {
     // Crear usuarios de ejemplo
     const users = await User.create([
       {
+        username: "juan.perez",
+        password: "123456",
         nombre: "Juan Pérez",
         tipo_tarjeta: "adulto",
         telefono: "59171234567",
         email: "juan.perez@email.com"
       },
       {
+        username: "maria.garcia",
+        password: "123456",
         nombre: "María García",
         tipo_tarjeta: "estudiante",
         telefono: "59172345678",
         email: "maria.garcia@email.com"
       },
       {
+        username: "carlos.mamani",
+        password: "123456",
         nombre: "Carlos Mamani",
         tipo_tarjeta: "adulto_mayor",
         telefono: "59173456789",

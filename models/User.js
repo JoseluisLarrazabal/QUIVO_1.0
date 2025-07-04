@@ -1,7 +1,20 @@
 const mongoose = require("mongoose")
+const bcrypt = require("bcryptjs")
 
 // Esquema de Usuario
 const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: [true, "El nombre de usuario es requerido"],
+    unique: true,
+    trim: true,
+    maxlength: [50, "El nombre de usuario no puede tener más de 50 caracteres"]
+  },
+  password: {
+    type: String,
+    required: [true, "La contraseña es requerida"],
+    minlength: [6, "La contraseña debe tener al menos 6 caracteres"]
+  },
   nombre: {
     type: String,
     required: [true, "El nombre es requerido"],
@@ -33,6 +46,7 @@ const userSchema = new mongoose.Schema({
 })
 
 // Índices para optimizar consultas
+userSchema.index({ username: 1 })
 userSchema.index({ tipo_tarjeta: 1 })
 userSchema.index({ activo: 1 })
 
@@ -43,11 +57,38 @@ userSchema.virtual("tarjetas", {
   foreignField: "usuario_id"
 })
 
+// Método para encriptar contraseña antes de guardar
+userSchema.pre("save", async function(next) {
+  if (!this.isModified("password")) return next()
+  
+  try {
+    const salt = await bcrypt.genSalt(10)
+    this.password = await bcrypt.hash(this.password, salt)
+    next()
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Método para comparar contraseñas
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password)
+}
+
 // Métodos estáticos
-// Removemos este método estático que puede estar causando conflictos
-// userSchema.statics.findById = async function(id) {
-//   return await this.findById(id)
-// }
+userSchema.statics.findByUsername = async function(username) {
+  return await this.findOne({ username, activo: true })
+}
+
+userSchema.statics.authenticate = async function(username, password) {
+  const user = await this.findOne({ username, activo: true })
+  if (!user) {
+    return null
+  }
+  
+  const isMatch = await user.comparePassword(password)
+  return isMatch ? user : null
+}
 
 userSchema.statics.findByCardUid = async function(uid) {
   return await this.aggregate([

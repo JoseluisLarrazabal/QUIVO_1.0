@@ -81,6 +81,34 @@ router.post("/tarjetas", async (req, res) => {
   }
 })
 
+// Obtener tarjetas de un usuario específico
+router.get("/usuario/:userId/tarjetas", async (req, res) => {
+  try {
+    const { userId } = req.params
+    const cards = await Card.find({ usuario_id: userId, activa: true })
+      .populate("usuario_id", "nombre tipo_tarjeta")
+
+    res.json({
+      success: true,
+      data: cards.map(card => ({
+        uid: card.uid,
+        saldo_actual: Number.parseFloat(card.saldo_actual),
+        fecha_creacion: card.createdAt,
+        usuario: {
+          nombre: card.usuario_id.nombre,
+          tipo_tarjeta: card.usuario_id.tipo_tarjeta
+        }
+      }))
+    })
+  } catch (error) {
+    console.error("Error al obtener tarjetas del usuario:", error)
+    res.status(500).json({
+      success: false,
+      error: "Error al obtener las tarjetas del usuario",
+    })
+  }
+})
+
 // Listar todas las tarjetas (admin)
 router.get("/tarjetas", async (req, res) => {
   try {
