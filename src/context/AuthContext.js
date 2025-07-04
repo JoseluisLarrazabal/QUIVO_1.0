@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { apiService } from '../services/apiService';
+import { useAuthState } from '../hooks/useAuthState';
 
 const AuthContext = createContext();
 
@@ -13,38 +13,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  const checkAuthState = async () => {
-    try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        // Validar que los datos del usuario sean válidos
-        if (parsedUser && parsedUser.id && parsedUser.nombre) {
-          setUser(parsedUser);
-        } else {
-          // Si los datos no son válidos, limpiar el storage
-          await AsyncStorage.removeItem('user');
-        }
-      }
-    } catch (error) {
-      console.error('Error checking auth state:', error);
-      // En caso de error, limpiar el storage
-      try {
-        await AsyncStorage.removeItem('user');
-      } catch (clearError) {
-        console.error('Error clearing storage:', clearError);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user, loading, setUser, checkAuthState } = useAuthState();
 
   const login = async (username, password) => {
     try {
@@ -63,8 +32,7 @@ export const AuthProvider = ({ children }) => {
         cards: response.data.cards
       };
 
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
+      await setUser(userData);
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
@@ -95,22 +63,16 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('user');
-      setUser(null);
+      await setUser(null);
     } catch (error) {
       console.error('Error logging out:', error);
-      // Forzar limpieza del estado incluso si hay error
-      setUser(null);
     }
   };
 
-  const updateUserCards = (updatedCards) => {
+  const updateUserCards = async (updatedCards) => {
     if (user && Array.isArray(updatedCards)) {
       const updatedUser = { ...user, cards: updatedCards };
-      setUser(updatedUser);
-      AsyncStorage.setItem('user', JSON.stringify(updatedUser)).catch(error => {
-        console.error('Error updating user cards in storage:', error);
-      });
+      await setUser(updatedUser);
     }
   };
 

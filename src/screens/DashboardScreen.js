@@ -24,13 +24,15 @@ const DashboardScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
 
+  useEffect(() => {
+    if (user && user.cards && user.cards.length > 0) {
+      loadRecentTransactions();
+    }
+  }, [user]);
+
   if (loading || !user) {
     return <CenteredLoader />;
   }
-
-  useEffect(() => {
-    loadRecentTransactions();
-  }, []);
 
   const loadRecentTransactions = async () => {
     try {

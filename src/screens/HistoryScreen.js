@@ -27,15 +27,15 @@ const HistoryScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+    if (user && user.cards && user.cards.length > 0) {
+      setSelectedCard(user.cards[0]);
+    }
+  }, [user]);
+
   if (loading || !user) {
     return <CenteredLoader />;
   }
-
-  useEffect(() => {
-    if (user.cards && user.cards.length > 0) {
-      setSelectedCard(user.cards[0]);
-    }
-  }, [user.cards]);
 
   useEffect(() => {
     if (selectedCard) {

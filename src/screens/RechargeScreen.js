@@ -29,6 +29,7 @@ const RechargeScreen = () => {
 
   const predefinedAmounts = [10, 20, 50, 100];
 
+  // Asegurar que todos los hooks se ejecuten antes de cualquier retorno
   if (loading || !user) {
     return <CenteredLoader />;
   }
