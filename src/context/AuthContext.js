@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       if (userData) {
         const parsedUser = JSON.parse(userData);
         // Validar que los datos del usuario sean válidos
-        if (parsedUser && parsedUser.uid) {
+        if (parsedUser && parsedUser.id && parsedUser.nombre) {
           setUser(parsedUser);
         } else {
           // Si los datos no son válidos, limpiar el storage
@@ -46,21 +46,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (uid) => {
+  const login = async (username, password) => {
     try {
-      if (!uid || uid.trim().length === 0) {
-        return { success: false, error: 'UID no puede estar vacío' };
+      if (!username || !password) {
+        return { success: false, error: 'Usuario y contraseña son requeridos' };
       }
 
-      const response = await apiService.getCardInfo(uid.trim());
+      const response = await apiService.login(username, password);
       
       if (!response || !response.data) {
-        return { success: false, error: 'No se pudo obtener información de la tarjeta' };
+        return { success: false, error: 'No se pudo autenticar al usuario' };
       }
 
       const userData = {
-        uid: uid.trim(),
-        ...response.data
+        ...response.data.user,
+        cards: response.data.cards
       };
 
       await AsyncStorage.setItem('user', JSON.stringify(userData));
@@ -70,7 +70,25 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error:', error);
       return { 
         success: false, 
-        error: error.message || 'Error al iniciar sesión. Verifica el UID de tu tarjeta.' 
+        error: error.message || 'Error al iniciar sesión. Verifica tus credenciales.' 
+      };
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      const response = await apiService.register(userData);
+      
+      if (!response || !response.data) {
+        return { success: false, error: 'No se pudo registrar al usuario' };
+      }
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Register error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Error al registrar usuario.' 
       };
     }
   };
@@ -81,24 +99,41 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
     } catch (error) {
       console.error('Error logging out:', error);
+      // Forzar limpieza del estado incluso si hay error
+      setUser(null);
     }
   };
 
-  const updateUserBalance = (newBalance) => {
-    if (user && typeof newBalance === 'number' && newBalance >= 0) {
-      const updatedUser = { ...user, saldo_actual: newBalance };
+  const updateUserCards = (updatedCards) => {
+    if (user && Array.isArray(updatedCards)) {
+      const updatedUser = { ...user, cards: updatedCards };
       setUser(updatedUser);
       AsyncStorage.setItem('user', JSON.stringify(updatedUser)).catch(error => {
-        console.error('Error updating user balance in storage:', error);
+        console.error('Error updating user cards in storage:', error);
       });
+    }
+  };
+
+  const refreshUserCards = async () => {
+    if (user && user.id) {
+      try {
+        const response = await apiService.getUserCards(user.id);
+        if (response && response.data) {
+          updateUserCards(response.data);
+        }
+      } catch (error) {
+        console.error('Error refreshing user cards:', error);
+      }
     }
   };
 
   const value = {
     user,
     login,
+    register,
     logout,
-    updateUserBalance,
+    updateUserCards,
+    refreshUserCards,
     loading
   };
 

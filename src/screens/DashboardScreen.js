@@ -17,11 +17,16 @@ import {
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
+import CenteredLoader from '../components/CenteredLoader';
 
 const DashboardScreen = () => {
-  const { user, logout, updateUserBalance } = useAuth();
+  const { user, logout, refreshUserCards, loading } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
+
+  if (loading || !user) {
+    return <CenteredLoader />;
+  }
 
   useEffect(() => {
     loadRecentTransactions();
@@ -29,8 +34,10 @@ const DashboardScreen = () => {
 
   const loadRecentTransactions = async () => {
     try {
-      const response = await apiService.getTransactionHistory(user.uid);
-      setRecentTransactions(response.data.slice(0, 3)); // Últimas 3 transacciones
+      if (user.cards && user.cards.length > 0) {
+        const response = await apiService.getTransactionHistory(user.cards[0].uid);
+        setRecentTransactions(response.data.slice(0, 3)); // Últimas 3 transacciones
+      }
     } catch (error) {
       console.error('Error loading transactions:', error);
     }
@@ -39,8 +46,7 @@ const DashboardScreen = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const response = await apiService.getCardInfo(user.uid);
-      updateUserBalance(response.data.saldo_actual);
+      await refreshUserCards();
       await loadRecentTransactions();
     } catch (error) {
       Alert.alert('Error', 'No se pudo actualizar la información');
@@ -93,16 +99,11 @@ const DashboardScreen = () => {
         />
       </View>
 
-      {/* Tarjeta Principal */}
-      <Card style={[styles.mainCard, { borderLeftColor: getCardColor(user.tipo_tarjeta) }]}>
+      {/* Información del Usuario */}
+      <Card style={styles.userCard}>
         <Card.Content>
-          <View style={styles.cardHeader}>
-            <View>
-              <Title style={styles.balanceTitle}>Saldo Actual</Title>
-              <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
-                {user.saldo_actual.toFixed(2)} Bs
-              </Title>
-            </View>
+          <View style={styles.userInfo}>
+            <Title style={styles.userName}>{user.nombre}</Title>
             <Chip 
               mode="outlined" 
               style={[styles.typeChip, { borderColor: getCardColor(user.tipo_tarjeta) }]}
@@ -110,20 +111,48 @@ const DashboardScreen = () => {
               {getCardTypeLabel(user.tipo_tarjeta)}
             </Chip>
           </View>
-          
-          <Divider style={styles.divider} />
-          
-          <View style={styles.cardInfo}>
-            <Paragraph style={styles.infoText}>
-              UID: {user.uid}
+          <Paragraph style={styles.userEmail}>{user.email}</Paragraph>
+        </Card.Content>
+      </Card>
+
+      {/* Tarjetas del Usuario */}
+      <Card style={styles.cardsCard}>
+        <Card.Content>
+          <Title style={styles.sectionTitle}>Mis Tarjetas</Title>
+          {user.cards && user.cards.length > 0 ? (
+            user.cards.map((card, index) => (
+              <Card key={index} style={[styles.cardItem, { borderLeftColor: getCardColor(user.tipo_tarjeta) }]}>
+                <Card.Content>
+                  <View style={styles.cardHeader}>
+                    <View>
+                      <Title style={styles.balanceTitle}>Saldo</Title>
+                      <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
+                        {card.saldo_actual.toFixed(2)} Bs
+                      </Title>
+                    </View>
+                    <Chip mode="outlined" style={styles.uidChip}>
+                      {card.uid}
+                    </Chip>
+                  </View>
+                  
+                  <Divider style={styles.divider} />
+                  
+                  <View style={styles.cardInfo}>
+                    <Paragraph style={styles.infoText}>
+                      Tarifa por viaje: {getTarifa(user.tipo_tarjeta)} Bs
+                    </Paragraph>
+                    <Paragraph style={styles.infoText}>
+                      Viajes disponibles: {Math.floor(card.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
+                    </Paragraph>
+                  </View>
+                </Card.Content>
+              </Card>
+            ))
+          ) : (
+            <Paragraph style={styles.noCards}>
+              No tienes tarjetas registradas
             </Paragraph>
-            <Paragraph style={styles.infoText}>
-              Tarifa por viaje: {getTarifa(user.tipo_tarjeta)} Bs
-            </Paragraph>
-            <Paragraph style={styles.infoText}>
-              Viajes disponibles: {Math.floor(user.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
-            </Paragraph>
-          </View>
+          )}
         </Card.Content>
       </Card>
 
@@ -204,11 +233,42 @@ const styles = StyleSheet.create({
   logoutButton: {
     margin: 0,
   },
-  mainCard: {
+  userCard: {
     margin: 20,
     marginTop: 10,
-    borderLeftWidth: 6,
     elevation: 4,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  userName: {
+    fontSize: 20,
+    color: '#333',
+  },
+  userEmail: {
+    color: '#666',
+    fontSize: 14,
+  },
+  cardsCard: {
+    margin: 20,
+    marginTop: 0,
+    elevation: 4,
+  },
+  cardItem: {
+    marginBottom: 15,
+    borderLeftWidth: 6,
+    elevation: 2,
+  },
+  uidChip: {
+    marginTop: 5,
+  },
+  noCards: {
+    textAlign: 'center',
+    color: '#666',
+    fontStyle: 'italic',
   },
   cardHeader: {
     flexDirection: 'row',

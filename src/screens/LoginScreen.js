@@ -17,22 +17,23 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 const LoginScreen = () => {
-  const [uid, setUid] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
   const handleLogin = async () => {
-    if (!uid.trim()) {
-      Alert.alert('Error', 'Por favor ingresa el UID de tu tarjeta');
+    if (!username.trim() || !password.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu usuario y contraseña');
       return;
     }
 
     setLoading(true);
-    const result = await login(uid.trim());
+    const result = await login(username.trim(), password);
     setLoading(false);
 
     if (!result.success) {
-      Alert.alert('Error', result.error || 'No se pudo encontrar la tarjeta');
+      Alert.alert('Error', result.error || 'No se pudo autenticar al usuario');
     }
   };
 
@@ -50,18 +51,28 @@ const LoginScreen = () => {
         
         <Title style={styles.title}>Transporte Público Bolivia</Title>
         <Paragraph style={styles.subtitle}>
-          Ingresa el UID de tu tarjeta NFC para acceder
+          Ingresa tus credenciales para acceder
         </Paragraph>
 
         <Card style={styles.card}>
           <Card.Content>
             <TextInput
-              label="UID de la Tarjeta"
-              value={uid}
-              onChangeText={setUid}
+              label="Usuario"
+              value={username}
+              onChangeText={setUsername}
               mode="outlined"
-              placeholder="Ej: A1B2C3D4"
-              autoCapitalize="characters"
+              placeholder="Ej: juan.perez"
+              autoCapitalize="none"
+              style={styles.input}
+            />
+
+            <TextInput
+              label="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              placeholder="Ingresa tu contraseña"
+              secureTextEntry
               style={styles.input}
             />
 
@@ -78,7 +89,7 @@ const LoginScreen = () => {
         </Card>
 
         <Paragraph style={styles.helpText}>
-          ¿No tienes una tarjeta? Acércate a cualquier punto de recarga autorizado.
+          ¿No tienes cuenta? Contacta al administrador del sistema.
         </Paragraph>
       </View>
     </KeyboardAvoidingView>

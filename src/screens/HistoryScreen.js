@@ -12,34 +12,52 @@ import {
   Chip,
   Searchbar,
   ActivityIndicator,
+  Button,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
+import CenteredLoader from '../components/CenteredLoader';
 
 const HistoryScreen = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const [selectedCard, setSelectedCard] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingLocal, setLoadingLocal] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  if (loading || !user) {
+    return <CenteredLoader />;
+  }
+
   useEffect(() => {
-    loadTransactions();
-  }, []);
+    if (user.cards && user.cards.length > 0) {
+      setSelectedCard(user.cards[0]);
+    }
+  }, [user.cards]);
+
+  useEffect(() => {
+    if (selectedCard) {
+      loadTransactions();
+    }
+  }, [selectedCard]);
 
   useEffect(() => {
     filterTransactions();
   }, [searchQuery, transactions]);
 
   const loadTransactions = async () => {
+    if (!selectedCard) return;
+    
     try {
-      const response = await apiService.getTransactionHistory(user.uid);
+      setLoadingLocal(true);
+      const response = await apiService.getTransactionHistory(selectedCard.uid);
       setTransactions(response.data);
     } catch (error) {
       console.error('Error loading transactions:', error);
     } finally {
-      setLoading(false);
+      setLoadingLocal(false);
     }
   };
 
@@ -111,7 +129,7 @@ const HistoryScreen = () => {
     </Card>
   );
 
-  if (loading) {
+  if (loadingLocal) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
@@ -124,6 +142,33 @@ const HistoryScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Title style={styles.title}>Historial de Transacciones</Title>
+        
+        {/* Selección de Tarjeta */}
+        {user.cards && user.cards.length > 1 && (
+          <View style={styles.cardSelector}>
+            <Paragraph style={styles.cardSelectorLabel}>Seleccionar tarjeta:</Paragraph>
+            <View style={styles.cardButtons}>
+              {user.cards.map((card, index) => (
+                <Button
+                  key={index}
+                  mode={selectedCard?.uid === card.uid ? 'contained' : 'outlined'}
+                  onPress={() => setSelectedCard(card)}
+                  style={styles.cardButton}
+                  compact
+                >
+                  {card.uid}
+                </Button>
+              ))}
+            </View>
+          </View>
+        )}
+        
+        {selectedCard && (
+          <Paragraph style={styles.selectedCardInfo}>
+            Tarjeta: {selectedCard.uid} - Saldo: {selectedCard.saldo_actual.toFixed(2)} Bs
+          </Paragraph>
+        )}
+        
         <Searchbar
           placeholder="Buscar por ubicación o fecha..."
           onChangeText={setSearchQuery}
@@ -165,6 +210,27 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: 15,
     color: '#333',
+  },
+  cardSelector: {
+    marginBottom: 15,
+  },
+  cardSelectorLabel: {
+    marginBottom: 10,
+    color: '#666',
+    fontSize: 14,
+  },
+  cardButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  cardButton: {
+    marginBottom: 5,
+  },
+  selectedCardInfo: {
+    marginBottom: 15,
+    color: '#2196F3',
+    fontWeight: 'bold',
   },
   searchbar: {
     elevation: 0,

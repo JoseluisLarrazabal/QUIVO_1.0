@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://192.168.0.5:3000/api'; // IP de la máquina para acceso móvil
+const API_BASE_URL = 'http://192.168.0.4:3000/api'; // IP de la máquina para acceso móvil
 
 class ApiService {
   async makeRequest(endpoint, options = {}) {
@@ -33,6 +33,32 @@ class ApiService {
       
       throw error;
     }
+  }
+
+  // Autenticación
+  async login(username, password) {
+    if (!username || !password) {
+      throw new Error('Usuario y contraseña son requeridos');
+    }
+    return this.makeRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+  }
+
+  async register(userData) {
+    return this.makeRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  // Tarjetas
+  async getUserCards(userId) {
+    if (!userId) {
+      throw new Error('ID de usuario es requerido');
+    }
+    return this.makeRequest(`/usuario/${userId}/tarjetas`);
   }
 
   async getCardInfo(uid) {
