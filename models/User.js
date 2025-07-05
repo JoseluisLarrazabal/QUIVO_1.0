@@ -44,9 +44,10 @@ userSchema.virtual("tarjetas", {
 })
 
 // Métodos estáticos
-userSchema.statics.findById = async function(id) {
-  return await this.findById(id)
-}
+// Removemos este método estático que puede estar causando conflictos
+// userSchema.statics.findById = async function(id) {
+//   return await this.findById(id)
+// }
 
 userSchema.statics.findByCardUid = async function(uid) {
   return await this.aggregate([
@@ -70,10 +71,11 @@ userSchema.statics.findByCardUid = async function(uid) {
   ]).then(results => results[0])
 }
 
-userSchema.statics.create = async function(userData) {
-  const user = new this(userData)
-  return await user.save()
-}
+// Removemos este método estático que puede estar causando conflictos
+// userSchema.statics.create = async function(userData) {
+//   const user = new this(userData)
+//   return await user.save()
+// }
 
 userSchema.statics.update = async function(id, userData) {
   return await this.findByIdAndUpdate(

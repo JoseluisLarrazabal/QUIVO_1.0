@@ -36,14 +36,15 @@ validatorSchema.index({ id_validador: 1 })
 validatorSchema.index({ estado: 1 })
 validatorSchema.index({ ubicacion: 1 })
 
-validatorSchema.statics.findById = async function(id) {
-  return await this.findOne({ id_validador: id })
-}
+// Removemos estos métodos estáticos que pueden estar causando conflictos
+// validatorSchema.statics.findById = async function(id) {
+//   return await this.findOne({ id_validador: id })
+// }
 
-validatorSchema.statics.create = async function(validatorData) {
-  const validator = new this(validatorData)
-  return await validator.save()
-}
+// validatorSchema.statics.create = async function(validatorData) {
+//   const validator = new this(validatorData)
+//   return await validator.save()
+// }
 
 validatorSchema.statics.updateStatus = async function(id, estado) {
   return await this.findOneAndUpdate(
