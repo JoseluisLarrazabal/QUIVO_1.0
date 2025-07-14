@@ -21,9 +21,21 @@ router.get("/historial/:uid", validateUid, async (req, res) => {
 
     const transactions = await Transaction.getByCardUid(uid, Number.parseInt(limit), Number.parseInt(offset))
 
+    // Formatear las transacciones para el frontend/tests
+    const formattedTransactions = transactions.map(t => ({
+      id: t._id,
+      tarjeta_uid: t.tarjeta_uid,
+      monto: t.monto,
+      tipo: t.tipo,
+      ubicacion: t.ubicacion,
+      validador_id: t.validador_id,
+      resultado: t.resultado,
+      fecha_hora: t.createdAt,
+    }))
+
     res.json({
       success: true,
-      data: transactions,
+      data: formattedTransactions,
     })
   } catch (error) {
     console.error("Error al obtener historial:", error)
@@ -76,12 +88,24 @@ router.post("/recargar", async (req, res) => {
       resultado: "exitoso",
     })
 
+    // Formatear la transacción para la respuesta
+    const formattedTransaction = {
+      id: transaction._id,
+      tarjeta_uid: transaction.tarjeta_uid,
+      monto: transaction.monto,
+      tipo: transaction.tipo,
+      ubicacion: transaction.ubicacion,
+      validador_id: transaction.validador_id,
+      resultado: transaction.resultado,
+      fecha_hora: transaction.createdAt,
+    }
+
     res.json({
       success: true,
       message: "Recarga exitosa",
       data: {
         nuevo_saldo: newBalance,
-        transaccion: transaction,
+        transaccion: formattedTransaction,
       },
     })
   } catch (error) {

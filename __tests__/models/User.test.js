@@ -1,16 +1,28 @@
 const mongoose = require('mongoose');
 const User = require('../../models/User');
 const bcrypt = require('bcryptjs');
+const Card = require('../../models/Card');
+
+// Función para generar username único
+function uniqueUsername(base = 'testuser') {
+  return `${base}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
+// Función para generar UID único
+function uniqueUid(base = 'CARD') {
+  return `${base}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
 
 describe('User Model', () => {
   describe('Validaciones', () => {
     test('debería crear un usuario válido', async () => {
+      const username = uniqueUsername();
       const userData = {
-        username: 'testuser',
+        username,
         password: '123456',
         nombre: 'Test User',
         tipo_tarjeta: 'adulto',
-        email: 'test@example.com',
+        email: `${username}@example.com`,
         telefono: '59171234567'
       };
 
@@ -39,7 +51,7 @@ describe('User Model', () => {
 
     test('debería requerir password', async () => {
       const userData = {
-        username: 'testuser',
+        username: uniqueUsername(),
         nombre: 'Test User',
         tipo_tarjeta: 'adulto'
       };
@@ -50,7 +62,7 @@ describe('User Model', () => {
 
     test('debería requerir nombre', async () => {
       const userData = {
-        username: 'testuser',
+        username: uniqueUsername(),
         password: '123456',
         tipo_tarjeta: 'adulto'
       };
@@ -61,7 +73,7 @@ describe('User Model', () => {
 
     test('debería requerir tipo_tarjeta', async () => {
       const userData = {
-        username: 'testuser',
+        username: uniqueUsername(),
         password: '123456',
         nombre: 'Test User'
       };
@@ -72,7 +84,7 @@ describe('User Model', () => {
 
     test('debería validar tipo_tarjeta válido', async () => {
       const userData = {
-        username: 'testuser',
+        username: uniqueUsername(),
         password: '123456',
         nombre: 'Test User',
         tipo_tarjeta: 'invalido'
@@ -83,8 +95,9 @@ describe('User Model', () => {
     });
 
     test('debería validar username único', async () => {
+      const username = uniqueUsername();
       const userData = {
-        username: 'testuser',
+        username,
         password: '123456',
         nombre: 'Test User',
         tipo_tarjeta: 'adulto'
@@ -92,14 +105,17 @@ describe('User Model', () => {
 
       await User.create(userData);
       const duplicateUser = new User(userData);
+      
+      // Esperar que falle con error de duplicado
       await expect(duplicateUser.save()).rejects.toThrow();
     });
   });
 
   describe('Encriptación de contraseña', () => {
     test('debería encriptar la contraseña antes de guardar', async () => {
+      const username = uniqueUsername();
       const userData = {
-        username: 'testuser',
+        username,
         password: '123456',
         nombre: 'Test User',
         tipo_tarjeta: 'adulto'
@@ -109,12 +125,13 @@ describe('User Model', () => {
       await user.save();
 
       expect(user.password).not.toBe(userData.password);
-      expect(user.password).toMatch(/^\$2[aby]\$\d{1,2}\$[./A-Za-z0-9]{53}$/); // Formato bcrypt
+      expect(user.password).toMatch(/^[\$]2[aby]\$\d{1,2}\$[./A-Za-z0-9]{53}$/); // Formato bcrypt
     });
 
     test('debería comparar contraseñas correctamente', async () => {
+      const username = uniqueUsername();
       const userData = {
-        username: 'testuser',
+        username,
         password: '123456',
         nombre: 'Test User',
         tipo_tarjeta: 'adulto'
@@ -132,20 +149,22 @@ describe('User Model', () => {
   });
 
   describe('Métodos estáticos', () => {
+    let username;
     beforeEach(async () => {
+      username = uniqueUsername();
       await User.create({
-        username: 'testuser',
+        username,
         password: '123456',
         nombre: 'Test User',
         tipo_tarjeta: 'adulto',
-        email: 'test@example.com'
+        email: `${username}@example.com`
       });
     });
 
     test('findByUsername debería encontrar usuario por username', async () => {
-      const user = await User.findByUsername('testuser');
+      const user = await User.findByUsername(username);
       expect(user).toBeTruthy();
-      expect(user.username).toBe('testuser');
+      expect(user.username).toBe(username);
       expect(user.nombre).toBe('Test User');
     });
 
@@ -155,13 +174,13 @@ describe('User Model', () => {
     });
 
     test('authenticate debería autenticar usuario válido', async () => {
-      const user = await User.authenticate('testuser', '123456');
+      const user = await User.authenticate(username, '123456');
       expect(user).toBeTruthy();
-      expect(user.username).toBe('testuser');
+      expect(user.username).toBe(username);
     });
 
     test('authenticate debería fallar con contraseña incorrecta', async () => {
-      const user = await User.authenticate('testuser', 'wrongpassword');
+      const user = await User.authenticate(username, 'wrongpassword');
       expect(user).toBeNull();
     });
 
@@ -172,15 +191,26 @@ describe('User Model', () => {
   });
 
   describe('Virtuals', () => {
-    test('debería tener virtual tarjetas', () => {
+    test('debería tener virtual tarjetas', async () => {
       const user = new User({
-        username: 'testuser',
+        username: uniqueUsername(),
         password: '123456',
         nombre: 'Test User',
-        tipo_tarjeta: 'adulto'
+        tipo_tarjeta: 'adulto',
+        email: 'test@example.com'
       });
-
-      expect(user.tarjetas).toBeDefined();
+      await user.save();
+      const card = new Card({
+        uid: uniqueUid(),
+        usuario_id: user._id,
+        saldo_actual: 25.00
+      });
+      await card.save();
+      const populatedUser = await User.findById(user._id).populate('tarjetas');
+      expect(populatedUser.tarjetas).toBeDefined();
+      expect(Array.isArray(populatedUser.tarjetas)).toBe(true);
+      expect(populatedUser.tarjetas.length).toBeGreaterThan(0);
+      expect(populatedUser.tarjetas[0].uid).toBe(card.uid);
     });
   });
 }); 

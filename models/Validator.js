@@ -4,7 +4,6 @@ const validatorSchema = new mongoose.Schema({
   id_validador: {
     type: String,
     required: [true, "El ID del validador es requerido"],
-    unique: true,
     trim: true,
     maxlength: [50, "El ID del validador no puede tener más de 50 caracteres"]
   },
@@ -32,9 +31,10 @@ const validatorSchema = new mongoose.Schema({
   timestamps: true
 })
 
-validatorSchema.index({ id_validador: 1 })
+// Índices para optimizar consultas
 validatorSchema.index({ estado: 1 })
 validatorSchema.index({ ubicacion: 1 })
+validatorSchema.index({ id_validador: 1 }, { unique: true })
 
 // Removemos estos métodos estáticos que pueden estar causando conflictos
 // validatorSchema.statics.findById = async function(id) {
@@ -51,15 +51,15 @@ validatorSchema.statics.updateStatus = async function(id, estado) {
     { id_validador: id },
     { estado, updatedAt: new Date() },
     { new: true }
-  )
+  ).exec()
 }
 
 validatorSchema.statics.getAll = async function() {
-  return await this.find().sort({ createdAt: -1 })
+  return await this.find().sort({ createdAt: -1 }).exec()
 }
 
 validatorSchema.statics.getActiveValidators = async function() {
-  return await this.find({ estado: "activo" }).sort({ ubicacion: 1 })
+  return await this.find({ estado: "activo" }).sort({ ubicacion: 1 }).exec()
 }
 
 module.exports = mongoose.model("Validator", validatorSchema)

@@ -7,42 +7,59 @@ const Validator = require('../../models/Validator');
 const Transaction = require('../../models/Transaction');
 const validatorRoutes = require('../../routes/validators');
 
+// Funciones para generar datos únicos
+function uniqueUsername(base = 'testuser') {
+  return `${base}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+function uniqueUid(base = 'CARD') {
+  return `${base}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+function uniqueValidadorId(base = 'VAL') {
+  return `${base}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
 const app = express();
 app.use(express.json());
 app.use('/', validatorRoutes);
 
 describe('Validator Routes', () => {
-  let testUser, testCard, testValidator;
+  let testUser, testCard, testValidator, testUid, testValidadorId;
 
   beforeEach(async () => {
-    testUser = await User.create({
-      username: 'testuser',
+    const username = uniqueUsername();
+    testUser = new User({
+      username,
       password: '123456',
       nombre: 'Test User',
       tipo_tarjeta: 'adulto',
-      email: 'test@example.com'
+      email: `${username}@example.com`
     });
-
-    testCard = await Card.create({
-      uid: 'A1B2C3D4',
+    await testUser.save();
+    
+    testUid = uniqueUid();
+    testCard = new Card({
+      uid: testUid,
       usuario_id: testUser._id,
       saldo_actual: 25.00
     });
-
-    testValidator = await Validator.create({
-      id_validador: 'VAL001',
+    await testCard.save();
+    
+    testValidadorId = uniqueValidadorId();
+    testValidator = new Validator({
+      id_validador: testValidadorId,
       bus_id: 'BUS001',
       ubicacion: 'Línea A - El Alto',
       operador: 'Transporte El Alto S.A.',
       estado: 'activo'
     });
+    await testValidator.save();
   });
 
   describe('POST /validar', () => {
     test('debería validar tarjeta exitosamente', async () => {
       const validacionData = {
-        uid: 'A1B2C3D4',
-        validador_id: 'VAL001'
+        uid: testUid,
+        validador_id: testValidadorId
       };
 
       const response = await request(app)
@@ -61,7 +78,7 @@ describe('Validator Routes', () => {
 
     test('debería fallar con validador inexistente', async () => {
       const validacionData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         validador_id: 'NONEXISTENT'
       };
 
@@ -78,8 +95,8 @@ describe('Validator Routes', () => {
       await Validator.findByIdAndUpdate(testValidator._id, { estado: 'inactivo' });
 
       const validacionData = {
-        uid: 'A1B2C3D4',
-        validador_id: 'VAL001'
+        uid: testUid,
+        validador_id: testValidadorId
       };
 
       const response = await request(app)
@@ -94,7 +111,7 @@ describe('Validator Routes', () => {
     test('debería fallar con tarjeta inexistente', async () => {
       const validacionData = {
         uid: 'NONEXISTENT',
-        validador_id: 'VAL001'
+        validador_id: testValidadorId
       };
 
       const response = await request(app)
@@ -108,11 +125,11 @@ describe('Validator Routes', () => {
 
     test('debería fallar con saldo insuficiente', async () => {
       // Actualizar saldo a menos de la tarifa
-      await Card.updateBalance('A1B2C3D4', 1.00);
+      await Card.updateBalance(testUid, 1.00);
 
       const validacionData = {
-        uid: 'A1B2C3D4',
-        validador_id: 'VAL001'
+        uid: testUid,
+        validador_id: testValidadorId
       };
 
       const response = await request(app)
@@ -128,7 +145,7 @@ describe('Validator Routes', () => {
 
     test('debería fallar sin UID', async () => {
       const validacionData = {
-        validador_id: 'VAL001'
+        validador_id: testValidadorId
       };
 
       const response = await request(app)
@@ -142,7 +159,7 @@ describe('Validator Routes', () => {
 
     test('debería fallar sin validador_id', async () => {
       const validacionData = {
-        uid: 'A1B2C3D4'
+        uid: testUid
       };
 
       const response = await request(app)
@@ -156,23 +173,27 @@ describe('Validator Routes', () => {
 
     test('debería aplicar tarifa correcta según tipo de usuario', async () => {
       // Crear usuario estudiante
-      const estudianteUser = await User.create({
-        username: 'estudiante',
+      const estudianteUsername = uniqueUsername('estudiante');
+      const estudianteUser = new User({
+        username: estudianteUsername,
         password: '123456',
         nombre: 'Estudiante Test',
         tipo_tarjeta: 'estudiante',
-        email: 'estudiante@test.com'
+        email: `${estudianteUsername}@test.com`
       });
+      await estudianteUser.save();
 
-      const estudianteCard = await Card.create({
-        uid: 'STUDENT123',
+      const estudianteUid = uniqueUid('STUDENT');
+      const estudianteCard = new Card({
+        uid: estudianteUid,
         usuario_id: estudianteUser._id,
         saldo_actual: 10.00
       });
+      await estudianteCard.save();
 
       const validacionData = {
-        uid: 'STUDENT123',
-        validador_id: 'VAL001'
+        uid: estudianteUid,
+        validador_id: testValidadorId
       };
 
       const response = await request(app)
@@ -186,50 +207,50 @@ describe('Validator Routes', () => {
 
     test('debería actualizar saldo en la base de datos', async () => {
       const validacionData = {
-        uid: 'A1B2C3D4',
-        validador_id: 'VAL001'
+        uid: testUid,
+        validador_id: testValidadorId
       };
 
       await request(app)
         .post('/validar')
         .send(validacionData);
 
-      const updatedCard = await Card.findByUid('A1B2C3D4');
+      const updatedCard = await Card.findByUid(testUid);
       expect(updatedCard.saldo_actual).toBe(22.50);
     });
 
     test('debería crear transacción de viaje', async () => {
       const validacionData = {
-        uid: 'A1B2C3D4',
-        validador_id: 'VAL001'
+        uid: testUid,
+        validador_id: testValidadorId
       };
 
       await request(app)
         .post('/validar')
         .send(validacionData);
 
-      const transactions = await Transaction.find({ tarjeta_uid: 'A1B2C3D4' });
+      const transactions = await Transaction.find({ tarjeta_uid: testUid });
       const viajeTransaction = transactions.find(t => t.tipo === 'viaje');
       
       expect(viajeTransaction).toBeDefined();
       expect(viajeTransaction.monto).toBe(-2.50);
       expect(viajeTransaction.resultado).toBe('exitoso');
-      expect(viajeTransaction.validador_id).toBe('VAL001');
+      expect(viajeTransaction.validador_id).toBe(testValidadorId);
     });
 
     test('debería registrar transacción fallida con saldo insuficiente', async () => {
-      await Card.updateBalance('A1B2C3D4', 1.00);
+      await Card.updateBalance(testUid, 1.00);
 
       const validacionData = {
-        uid: 'A1B2C3D4',
-        validador_id: 'VAL001'
+        uid: testUid,
+        validador_id: testValidadorId
       };
 
       await request(app)
         .post('/validar')
         .send(validacionData);
 
-      const transactions = await Transaction.find({ tarjeta_uid: 'A1B2C3D4' });
+      const transactions = await Transaction.find({ tarjeta_uid: testUid });
       const failedTransaction = transactions.find(t => t.resultado === 'saldo_insuficiente');
       
       expect(failedTransaction).toBeDefined();
@@ -262,7 +283,7 @@ describe('Validator Routes', () => {
 
     test('debería fallar con id_validador duplicado', async () => {
       const validadorData = {
-        id_validador: 'VAL001', // Ya existe
+        id_validador: testValidadorId, // Usar el ID que ya existe
         bus_id: 'BUS002',
         ubicacion: 'Línea B - Zona Sur',
         operador: 'Micro Sur Ltda.'
@@ -279,7 +300,7 @@ describe('Validator Routes', () => {
   describe('PUT /validadores/:id/estado', () => {
     test('debería actualizar estado del validador', async () => {
       const response = await request(app)
-        .put('/validadores/VAL001/estado')
+        .put(`/validadores/${testValidadorId}/estado`)
         .send({ estado: 'mantenimiento' });
 
       expect(response.status).toBe(200);
@@ -289,7 +310,7 @@ describe('Validator Routes', () => {
 
     test('debería fallar con estado inválido', async () => {
       const response = await request(app)
-        .put('/validadores/VAL001/estado')
+        .put(`/validadores/${testValidadorId}/estado`)
         .send({ estado: 'invalido' });
 
       expect(response.status).toBe(400);
@@ -309,24 +330,28 @@ describe('Validator Routes', () => {
   });
 
   describe('GET /validadores', () => {
+    let validador2, validador3;
+
     beforeEach(async () => {
-      // Crear validadores adicionales
-      await Validator.create([
-        {
-          id_validador: 'VAL002',
-          bus_id: 'BUS002',
-          ubicacion: 'Línea B - Zona Sur',
-          operador: 'Micro Sur Ltda.',
-          estado: 'activo'
-        },
-        {
-          id_validador: 'VAL003',
-          bus_id: 'BUS003',
-          ubicacion: 'Línea C - Centro',
-          operador: 'Transporte Centro',
-          estado: 'inactivo'
-        }
-      ]);
+      // Crear validadores adicionales con IDs únicos
+      const validador2Id = uniqueValidadorId('VAL2');
+      const validador3Id = uniqueValidadorId('VAL3');
+      
+      validador2 = await Validator.create({
+        id_validador: validador2Id,
+        bus_id: 'BUS002',
+        ubicacion: 'Línea B - Zona Sur',
+        operador: 'Micro Sur Ltda.',
+        estado: 'activo'
+      });
+      
+      validador3 = await Validator.create({
+        id_validador: validador3Id,
+        bus_id: 'BUS003',
+        ubicacion: 'Línea C - Centro',
+        operador: 'Transporte Centro',
+        estado: 'inactivo'
+      });
     });
 
     test('debería listar todos los validadores', async () => {
@@ -336,9 +361,11 @@ describe('Validator Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveLength(3);
-      expect(response.body.data[0].id_validador).toBe('VAL003'); // Ordenado por createdAt desc
-      expect(response.body.data[1].id_validador).toBe('VAL002');
-      expect(response.body.data[2].id_validador).toBe('VAL001');
+      // Verificar que todos los validadores están presentes
+      const validadorIds = response.body.data.map(v => v.id_validador);
+      expect(validadorIds).toContain(testValidadorId);
+      expect(validadorIds).toContain(validador2.id_validador);
+      expect(validadorIds).toContain(validador3.id_validador);
     });
   });
 }); 

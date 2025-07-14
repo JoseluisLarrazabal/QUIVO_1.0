@@ -13,7 +13,7 @@ describe('Auth Routes', () => {
   let testUser;
 
   beforeEach(async () => {
-    testUser = await User.create({
+    testUser = new User({
       username: 'testuser',
       password: '123456',
       nombre: 'Test User',
@@ -21,13 +21,15 @@ describe('Auth Routes', () => {
       email: 'test@example.com',
       telefono: '59171234567'
     });
+    await testUser.save();
 
     // Crear tarjeta para el usuario
-    await Card.create({
+    const testCard = new Card({
       uid: 'A1B2C3D4',
       usuario_id: testUser._id,
       saldo_actual: 25.00
     });
+    await testCard.save();
   });
 
   describe('POST /auth/login', () => {
@@ -112,11 +114,12 @@ describe('Auth Routes', () => {
 
     test('debería incluir todas las tarjetas del usuario', async () => {
       // Crear otra tarjeta para el mismo usuario
-      await Card.create({
+      const secondCard = new Card({
         uid: 'E5F6G7H8',
         usuario_id: testUser._id,
         saldo_actual: 15.50
       });
+      await secondCard.save();
 
       const response = await request(app)
         .post('/auth/login')
@@ -133,12 +136,13 @@ describe('Auth Routes', () => {
 
     test('debería excluir tarjetas inactivas', async () => {
       // Crear tarjeta inactiva
-      await Card.create({
+      const inactiveCard = new Card({
         uid: 'INACTIVE',
         usuario_id: testUser._id,
         saldo_actual: 10.00,
         activa: false
       });
+      await inactiveCard.save();
 
       const response = await request(app)
         .post('/auth/login')

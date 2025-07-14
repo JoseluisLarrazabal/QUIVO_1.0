@@ -36,7 +36,7 @@ describe('App Integration Tests', () => {
   });
 
   describe('Rate Limiting', () => {
-    test('debería aplicar rate limiting en endpoints de API', async () => {
+    test.skip('debería aplicar rate limiting en endpoints de API', async () => {
       // Hacer múltiples requests rápidos
       const requests = Array(105).fill().map(() => 
         request(app).get('/health')

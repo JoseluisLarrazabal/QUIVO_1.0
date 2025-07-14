@@ -17,15 +17,20 @@ router.get("/saldo/:uid", validateUid, async (req, res) => {
       })
     }
 
+    // Formatear la tarjeta para la respuesta
+    const formattedCard = {
+      id: card._id,
+      uid: card.uid,
+      saldo_actual: card.saldo_actual,
+      fecha_creacion: card.createdAt,
+      usuario: card.usuario_id ? {
+        nombre: card.usuario_id.nombre,
+        tipo_tarjeta: card.usuario_id.tipo_tarjeta
+      } : undefined
+    }
     res.json({
       success: true,
-      data: {
-        uid: card.uid,
-        nombre: card.usuario_id.nombre,
-        tipo_tarjeta: card.usuario_id.tipo_tarjeta,
-        saldo_actual: Number.parseFloat(card.saldo_actual),
-        fecha_creacion: card.createdAt,
-      },
+      data: formattedCard
     })
   } catch (error) {
     console.error("Error al obtener saldo:", error)
@@ -88,17 +93,19 @@ router.get("/usuario/:userId/tarjetas", async (req, res) => {
     const cards = await Card.find({ usuario_id: userId, activa: true })
       .populate("usuario_id", "nombre tipo_tarjeta")
 
+    const formattedCards = cards.map(card => ({
+      id: card._id,
+      uid: card.uid,
+      saldo_actual: card.saldo_actual,
+      fecha_creacion: card.createdAt,
+      usuario: card.usuario_id ? {
+        nombre: card.usuario_id.nombre,
+        tipo_tarjeta: card.usuario_id.tipo_tarjeta
+      } : undefined
+    }))
     res.json({
       success: true,
-      data: cards.map(card => ({
-        uid: card.uid,
-        saldo_actual: Number.parseFloat(card.saldo_actual),
-        fecha_creacion: card.createdAt,
-        usuario: {
-          nombre: card.usuario_id.nombre,
-          tipo_tarjeta: card.usuario_id.tipo_tarjeta
-        }
-      }))
+      data: formattedCards
     })
   } catch (error) {
     console.error("Error al obtener tarjetas del usuario:", error)
@@ -115,9 +122,19 @@ router.get("/tarjetas", async (req, res) => {
     const { limit = 50, offset = 0 } = req.query
     const cards = await Card.getAllCards(Number.parseInt(limit), Number.parseInt(offset))
 
+    const formattedCards = cards.map(card => ({
+      id: card._id,
+      uid: card.uid,
+      saldo_actual: card.saldo_actual,
+      fecha_creacion: card.createdAt,
+      usuario: card.usuario_id ? {
+        nombre: card.usuario_id.nombre,
+        tipo_tarjeta: card.usuario_id.tipo_tarjeta
+      } : undefined
+    }))
     res.json({
       success: true,
-      data: cards,
+      data: formattedCards,
       pagination: {
         limit: Number.parseInt(limit),
         offset: Number.parseInt(offset),

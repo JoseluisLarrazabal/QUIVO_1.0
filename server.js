@@ -97,7 +97,10 @@ const startServer = async () => {
   }
 }
 
-startServer()
+// Solo iniciar el servidor si no estamos en modo test
+if (process.env.NODE_ENV !== 'test') {
+  startServer()
+}
 
 // Manejo de cierre graceful
 process.on("SIGTERM", () => {
@@ -109,3 +112,6 @@ process.on("SIGINT", () => {
   console.log("🛑 Cerrando servidor...")
   process.exit(0)
 })
+
+// Exportar la aplicación para tests
+module.exports = app

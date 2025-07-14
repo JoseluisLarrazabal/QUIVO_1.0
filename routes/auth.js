@@ -28,22 +28,26 @@ router.post("/login", async (req, res) => {
     const cards = await Card.find({ usuario_id: user._id, activa: true })
       .populate("usuario_id", "nombre tipo_tarjeta")
 
+    // Formatear usuario y tarjetas para la respuesta
+    const formattedUser = {
+      id: user._id,
+      username: user.username,
+      nombre: user.nombre,
+      tipo_tarjeta: user.tipo_tarjeta,
+      email: user.email,
+      telefono: user.telefono
+    }
+    const formattedCards = cards.map(card => ({
+      uid: card.uid,
+      saldo_actual: Number.parseFloat(card.saldo_actual),
+      fecha_creacion: card.createdAt
+    }))
+
     res.json({
       success: true,
       data: {
-        user: {
-          id: user._id,
-          username: user.username,
-          nombre: user.nombre,
-          tipo_tarjeta: user.tipo_tarjeta,
-          email: user.email,
-          telefono: user.telefono
-        },
-        cards: cards.map(card => ({
-          uid: card.uid,
-          saldo_actual: Number.parseFloat(card.saldo_actual),
-          fecha_creacion: card.createdAt
-        }))
+        user: formattedUser,
+        cards: formattedCards
       },
     })
   } catch (error) {
@@ -87,17 +91,20 @@ router.post("/register", async (req, res) => {
 
     await user.save()
 
+    // Formatear usuario para la respuesta
+    const formattedUser = {
+      id: user._id,
+      username: user.username,
+      nombre: user.nombre,
+      tipo_tarjeta: user.tipo_tarjeta,
+      email: user.email,
+      telefono: user.telefono
+    }
+
     res.status(201).json({
       success: true,
       data: {
-        user: {
-          id: user._id,
-          username: user.username,
-          nombre: user.nombre,
-          tipo_tarjeta: user.tipo_tarjeta,
-          email: user.email,
-          telefono: user.telefono
-        }
+        user: formattedUser
       },
     })
   } catch (error) {

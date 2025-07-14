@@ -26,7 +26,7 @@ const transactionSchema = new mongoose.Schema({
   },
   resultado: {
     type: String,
-    enum: ["exitoso", "fallido", "pendiente"],
+    enum: ["exitoso", "fallido", "pendiente", "saldo_insuficiente"],
     default: "exitoso"
   },
   metadata: {
@@ -37,75 +37,46 @@ const transactionSchema = new mongoose.Schema({
   timestamps: true
 })
 
+// Índices para optimizar consultas
 transactionSchema.index({ tarjeta_uid: 1 })
 transactionSchema.index({ createdAt: -1 })
 transactionSchema.index({ validador_id: 1 })
 transactionSchema.index({ tipo: 1 })
 
-transactionSchema.statics.create = async function(transactionData) {
-  const transaction = new this(transactionData)
-  return await transaction.save()
-}
 
 transactionSchema.statics.getByCardUid = async function(uid, limit = 50, offset = 0) {
   return await this.find({ tarjeta_uid: uid })
     .sort({ createdAt: -1 })
     .limit(limit)
     .skip(offset)
+    .exec()
 }
 
 transactionSchema.statics.getById = async function(id) {
-  return await this.findById(id)
+  return await this.findById(id).exec()
 }
 
 transactionSchema.statics.getRecentTransactions = async function(hours = 24) {
   const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000)
-  
   return await this.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: hoursAgo }
-      }
-    },
-    {
-      $lookup: {
-        from: "cards",
-        localField: "tarjeta_uid",
-        foreignField: "uid",
-        as: "tarjeta"
-      }
-    },
-    {
-      $unwind: "$tarjeta"
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "tarjeta.usuario_id",
-        foreignField: "_id",
-        as: "usuario"
-      }
-    },
-    {
-      $unwind: "$usuario"
-    },
-    {
-      $project: {
-        _id: 1,
-        tarjeta_uid: 1,
-        monto: 1,
-        tipo: 1,
-        ubicacion: 1,
-        validador_id: 1,
-        resultado: 1,
-        createdAt: 1,
-        "usuario.nombre": 1,
-        "usuario.tipo_tarjeta": 1
-      }
-    },
-    {
-      $sort: { createdAt: -1 }
-    }
+    { $match: { createdAt: { $gte: hoursAgo } } },
+    { $lookup: { from: "cards", localField: "tarjeta_uid", foreignField: "uid", as: "tarjeta" } },
+    { $unwind: { path: "$tarjeta", preserveNullAndEmptyArrays: true } },
+    { $lookup: { from: "users", localField: "tarjeta.usuario_id", foreignField: "_id", as: "usuario" } },
+    { $unwind: { path: "$usuario", preserveNullAndEmptyArrays: true } },
+    { $project: {
+      _id: 1,
+      tarjeta_uid: 1,
+      monto: 1,
+      tipo: 1,
+      ubicacion: 1,
+      validador_id: 1,
+      resultado: 1,
+      createdAt: 1,
+      "usuario.nombre": 1,
+      "usuario.tipo_tarjeta": 1
+    } },
+    { $sort: { createdAt: -1 } }
   ])
 }
 
@@ -116,7 +87,7 @@ transactionSchema.statics.getDailyStats = async function(date = new Date()) {
   const endOfDay = new Date(date)
   endOfDay.setHours(23, 59, 59, 999)
   
-  return await this.aggregate([
+  const result = await this.aggregate([
     {
       $match: {
         createdAt: { $gte: startOfDay, $lte: endOfDay }
@@ -150,13 +121,15 @@ transactionSchema.statics.getDailyStats = async function(date = new Date()) {
         total_recargas_monto: 1
       }
     }
-  ]).then(results => results[0] || {
+  ])
+  
+  return result[0] || {
     total_transacciones: 0,
     total_viajes: 0,
     total_recargas: 0,
     ingresos_viajes: 0,
     total_recargas_monto: 0
-  })
+  }
 }
 
 module.exports = mongoose.model("Transaction", transactionSchema)

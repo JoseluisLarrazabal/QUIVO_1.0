@@ -11,62 +11,73 @@ app.use(express.json());
 app.use('/', transactionRoutes);
 
 describe('Transaction Routes', () => {
-  let testUser, testCard;
+  let testUser, testCard, testUid, testUsername;
 
   beforeEach(async () => {
-    testUser = await User.create({
-      username: 'testuser',
+    // Generar datos únicos para cada test
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000);
+    testUsername = `testuser_${timestamp}_${random}`;
+    testUid = `TEST_${timestamp}_${random}`;
+
+    testUser = new User({
+      username: testUsername,
       password: '123456',
       nombre: 'Test User',
       tipo_tarjeta: 'adulto',
       email: 'test@example.com'
     });
+    await testUser.save();
 
-    testCard = await Card.create({
-      uid: 'A1B2C3D4',
+    testCard = new Card({
+      uid: testUid,
       usuario_id: testUser._id,
       saldo_actual: 25.00
     });
+    await testCard.save();
   });
 
   describe('GET /historial/:uid', () => {
     beforeEach(async () => {
       // Crear transacciones de prueba
-      await Transaction.create([
-        {
-          tarjeta_uid: 'A1B2C3D4',
-          monto: -2.50,
-          tipo: 'viaje',
-          ubicacion: 'Línea A - El Alto',
-          validador_id: 'VAL001',
-          resultado: 'exitoso'
-        },
-        {
-          tarjeta_uid: 'A1B2C3D4',
-          monto: 20.00,
-          tipo: 'recarga',
-          ubicacion: 'Recarga efectivo',
-          resultado: 'exitoso'
-        },
-        {
-          tarjeta_uid: 'A1B2C3D4',
-          monto: -2.50,
-          tipo: 'viaje',
-          ubicacion: 'Línea B - Zona Sur',
-          validador_id: 'VAL002',
-          resultado: 'exitoso'
-        }
-      ]);
+      const transaction1 = new Transaction({
+        tarjeta_uid: testUid,
+        monto: -2.50,
+        tipo: 'viaje',
+        ubicacion: 'Línea A - El Alto',
+        validador_id: 'VAL001',
+        resultado: 'exitoso'
+      });
+      await transaction1.save();
+
+      const transaction2 = new Transaction({
+        tarjeta_uid: testUid,
+        monto: 20.00,
+        tipo: 'recarga',
+        ubicacion: 'Recarga efectivo',
+        resultado: 'exitoso'
+      });
+      await transaction2.save();
+
+      const transaction3 = new Transaction({
+        tarjeta_uid: testUid,
+        monto: -2.50,
+        tipo: 'viaje',
+        ubicacion: 'Línea B - Zona Sur',
+        validador_id: 'VAL002',
+        resultado: 'exitoso'
+      });
+      await transaction3.save();
     });
 
     test('debería obtener historial de transacciones', async () => {
       const response = await request(app)
-        .get('/historial/A1B2C3D4');
+        .get(`/historial/${testUid}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveLength(3);
-      expect(response.body.data[0].tarjeta_uid).toBe('A1B2C3D4');
+      expect(response.body.data[0].tarjeta_uid).toBe(testUid);
       expect(response.body.data[0].tipo).toBe('viaje');
     });
 
@@ -81,7 +92,7 @@ describe('Transaction Routes', () => {
 
     test('debería respetar límite de transacciones', async () => {
       const response = await request(app)
-        .get('/historial/A1B2C3D4?limit=2');
+        .get(`/historial/${testUid}?limit=2`);
 
       expect(response.status).toBe(200);
       expect(response.body.data).toHaveLength(2);
@@ -89,7 +100,7 @@ describe('Transaction Routes', () => {
 
     test('debería respetar offset', async () => {
       const response = await request(app)
-        .get('/historial/A1B2C3D4?limit=1&offset=1');
+        .get(`/historial/${testUid}?limit=1&offset=1`);
 
       expect(response.status).toBe(200);
       expect(response.body.data).toHaveLength(1);
@@ -98,19 +109,19 @@ describe('Transaction Routes', () => {
 
     test('debería ordenar por fecha descendente', async () => {
       const response = await request(app)
-        .get('/historial/A1B2C3D4');
+        .get(`/historial/${testUid}`);
 
       expect(response.status).toBe(200);
       const transactions = response.body.data;
-      expect(new Date(transactions[0].createdAt).getTime())
-        .toBeGreaterThan(new Date(transactions[1].createdAt).getTime());
+      expect(new Date(transactions[0].fecha_hora).getTime())
+        .toBeGreaterThan(new Date(transactions[1].fecha_hora).getTime());
     });
   });
 
   describe('POST /recargar', () => {
     test('debería recargar tarjeta correctamente', async () => {
       const recargaData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         monto: 20.00,
         metodo_pago: 'efectivo'
       };
@@ -159,7 +170,7 @@ describe('Transaction Routes', () => {
 
     test('debería fallar sin monto', async () => {
       const recargaData = {
-        uid: 'A1B2C3D4'
+        uid: testUid
       };
 
       const response = await request(app)
@@ -173,7 +184,7 @@ describe('Transaction Routes', () => {
 
     test('debería fallar con monto cero', async () => {
       const recargaData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         monto: 0
       };
 
@@ -188,7 +199,7 @@ describe('Transaction Routes', () => {
 
     test('debería fallar con monto negativo', async () => {
       const recargaData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         monto: -10.00
       };
 
@@ -203,7 +214,7 @@ describe('Transaction Routes', () => {
 
     test('debería fallar con monto menor al mínimo', async () => {
       const recargaData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         monto: 3.00
       };
 
@@ -218,7 +229,7 @@ describe('Transaction Routes', () => {
 
     test('debería usar método de pago por defecto', async () => {
       const recargaData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         monto: 20.00
       };
 
@@ -232,7 +243,7 @@ describe('Transaction Routes', () => {
 
     test('debería actualizar saldo en la base de datos', async () => {
       const recargaData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         monto: 20.00
       };
 
@@ -240,13 +251,13 @@ describe('Transaction Routes', () => {
         .post('/recargar')
         .send(recargaData);
 
-      const updatedCard = await Card.findByUid('A1B2C3D4');
+      const updatedCard = await Card.findByUid(testUid);
       expect(updatedCard.saldo_actual).toBe(45.00);
     });
 
     test('debería crear transacción de recarga', async () => {
       const recargaData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         monto: 20.00
       };
 
@@ -254,7 +265,7 @@ describe('Transaction Routes', () => {
         .post('/recargar')
         .send(recargaData);
 
-      const transactions = await Transaction.find({ tarjeta_uid: 'A1B2C3D4' });
+      const transactions = await Transaction.find({ tarjeta_uid: testUid });
       const recargaTransaction = transactions.find(t => t.tipo === 'recarga');
       
       expect(recargaTransaction).toBeDefined();

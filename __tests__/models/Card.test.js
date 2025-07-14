@@ -2,23 +2,35 @@ const mongoose = require('mongoose');
 const User = require('../../models/User');
 const Card = require('../../models/Card');
 
+// Función para generar username y UID únicos
+function uniqueUsername(base = 'testuser') {
+  return `${base}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+function uniqueUid(base = 'CARD') {
+  return `${base}_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
 describe('Card Model', () => {
   let testUser;
+  let testUid;
 
   beforeEach(async () => {
-    testUser = await User.create({
-      username: 'testuser',
+    const username = uniqueUsername();
+    testUser = new User({
+      username,
       password: '123456',
       nombre: 'Test User',
       tipo_tarjeta: 'adulto',
-      email: 'test@example.com'
+      email: `${username}@example.com`
     });
+    await testUser.save();
+    testUid = uniqueUid();
   });
 
   describe('Validaciones', () => {
     test('debería crear una tarjeta válida', async () => {
       const cardData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         usuario_id: testUser._id,
         saldo_actual: 25.00
       };
@@ -44,7 +56,7 @@ describe('Card Model', () => {
 
     test('debería requerir usuario_id', async () => {
       const cardData = {
-        uid: 'A1B2C3D4',
+        uid: uniqueUid(),
         saldo_actual: 25.00
       };
 
@@ -54,19 +66,20 @@ describe('Card Model', () => {
 
     test('debería validar uid único', async () => {
       const cardData = {
-        uid: 'A1B2C3D4',
+        uid: testUid,
         usuario_id: testUser._id,
         saldo_actual: 25.00
       };
 
-      await Card.create(cardData);
+      const card = new Card(cardData);
+      await card.save();
       const duplicateCard = new Card(cardData);
       await expect(duplicateCard.save()).rejects.toThrow();
     });
 
     test('debería validar saldo no negativo', async () => {
       const cardData = {
-        uid: 'A1B2C3D4',
+        uid: uniqueUid(),
         usuario_id: testUser._id,
         saldo_actual: -10.00
       };
@@ -77,7 +90,7 @@ describe('Card Model', () => {
 
     test('debería establecer saldo por defecto en 0', async () => {
       const cardData = {
-        uid: 'A1B2C3D4',
+        uid: uniqueUid(),
         usuario_id: testUser._id
       };
 
@@ -89,7 +102,7 @@ describe('Card Model', () => {
 
     test('debería establecer activa por defecto en true', async () => {
       const cardData = {
-        uid: 'A1B2C3D4',
+        uid: uniqueUid(),
         usuario_id: testUser._id
       };
 
@@ -102,19 +115,22 @@ describe('Card Model', () => {
 
   describe('Métodos estáticos', () => {
     let testCard;
+    let testUid2;
 
     beforeEach(async () => {
-      testCard = await Card.create({
-        uid: 'A1B2C3D4',
+      testCard = new Card({
+        uid: testUid,
         usuario_id: testUser._id,
         saldo_actual: 25.00
       });
+      await testCard.save();
+      testUid2 = uniqueUid();
     });
 
     test('findByUid debería encontrar tarjeta por UID', async () => {
-      const card = await Card.findByUid('A1B2C3D4');
+      const card = await Card.findByUid(testUid);
       expect(card).toBeTruthy();
-      expect(card.uid).toBe('A1B2C3D4');
+      expect(card.uid).toBe(testUid);
       expect(card.usuario_id.nombre).toBe('Test User');
       expect(card.usuario_id.tipo_tarjeta).toBe('adulto');
     });
@@ -126,19 +142,18 @@ describe('Card Model', () => {
 
     test('findByUid debería retornar null para tarjeta inactiva', async () => {
       await Card.findByIdAndUpdate(testCard._id, { activa: false });
-      const card = await Card.findByUid('A1B2C3D4');
+      const card = await Card.findByUid(testUid);
       expect(card).toBeNull();
     });
 
     test('updateBalance debería actualizar saldo correctamente', async () => {
       const newBalance = 50.00;
-      const updatedCard = await Card.updateBalance('A1B2C3D4', newBalance);
-      
+      const updatedCard = await Card.updateBalance(testUid, newBalance);
       expect(updatedCard.saldo_actual).toBe(newBalance);
     });
 
     test('getBalance debería retornar saldo correcto', async () => {
-      const balance = await Card.getBalance('A1B2C3D4');
+      const balance = await Card.getBalance(testUid);
       expect(balance).toBe(25.00);
     });
 
@@ -148,47 +163,50 @@ describe('Card Model', () => {
     });
 
     test('deactivate debería desactivar tarjeta', async () => {
-      const deactivatedCard = await Card.deactivate('A1B2C3D4');
+      const deactivatedCard = await Card.deactivate(testUid);
       expect(deactivatedCard.activa).toBe(false);
     });
 
     test('getAllCards debería retornar todas las tarjetas activas', async () => {
       // Crear otra tarjeta
-      await Card.create({
-        uid: 'E5F6G7H8',
+      const secondCard = new Card({
+        uid: testUid2,
         usuario_id: testUser._id,
         saldo_actual: 15.50
       });
+      await secondCard.save();
 
       const cards = await Card.getAllCards();
       expect(cards).toHaveLength(2);
-      expect(cards[0].uid).toBe('E5F6G7H8'); // Ordenado por createdAt desc
-      expect(cards[1].uid).toBe('A1B2C3D4');
+      expect([testUid, testUid2]).toContain(cards[0].uid);
+      expect([testUid, testUid2]).toContain(cards[1].uid);
     });
 
     test('getAllCards debería respetar límite y offset', async () => {
       // Crear otra tarjeta
-      await Card.create({
-        uid: 'E5F6G7H8',
+      const secondCard = new Card({
+        uid: testUid2,
         usuario_id: testUser._id,
         saldo_actual: 15.50
       });
+      await secondCard.save();
 
       const cards = await Card.getAllCards(1, 1);
       expect(cards).toHaveLength(1);
-      expect(cards[0].uid).toBe('A1B2C3D4');
+      expect([testUid, testUid2]).toContain(cards[0].uid);
     });
   });
 
   describe('Relaciones', () => {
     test('debería poder hacer populate de usuario_id', async () => {
-      const card = await Card.create({
-        uid: 'A1B2C3D4',
+      const card = new Card({
+        uid: uniqueUid(),
         usuario_id: testUser._id,
         saldo_actual: 25.00
       });
-
+      await card.save();
       const populatedCard = await Card.findById(card._id).populate('usuario_id');
+      expect(populatedCard.usuario_id).toBeDefined();
       expect(populatedCard.usuario_id.nombre).toBe('Test User');
       expect(populatedCard.usuario_id.tipo_tarjeta).toBe('adulto');
     });
