@@ -12,13 +12,21 @@ beforeAll(async () => {
       useUnifiedTopology: true,
     });
   }
+  
   // Asegurar índices únicos en los modelos
   const User = require("../models/User")
   const Card = require("../models/Card")
   const Validator = require("../models/Validator")
-  await User.syncIndexes()
-  await Card.syncIndexes()
-  await Validator.syncIndexes()
+  const Transaction = require("../models/Transaction")
+  
+  // Sincronizar índices
+  await Promise.all([
+    User.syncIndexes(),
+    Card.syncIndexes(),
+    Validator.syncIndexes(),
+    Transaction.syncIndexes()
+  ]);
+  
   // Esperar 1500ms para que los índices estén listos y la base de datos esté estable
   await new Promise(r => setTimeout(r, 1500));
 });
@@ -42,4 +50,4 @@ beforeEach(async () => {
 
 // Configurar variables de entorno de prueba
 process.env.NODE_ENV = 'test';
-process.env.PORT = '3001'; 
+process.env.PORT = '3001';
