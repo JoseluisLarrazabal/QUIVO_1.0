@@ -8,6 +8,7 @@ const Validator = require("../models/Validator")
 router.post("/validar", async (req, res) => {
   try {
     const { uid, validador_id } = req.body;
+
     // Validación de campos requeridos
     if (!uid || !validador_id) {
       return res.status(400).json({
@@ -25,8 +26,10 @@ router.post("/validar", async (req, res) => {
       });
     }
 
-    // Obtener información de la tarjeta con población de datos de usuario
-    const card = await Card.findByUid(uid).populate('usuario_id');
+    // Buscar la tarjeta con sus datos de usuario
+    const card = await Card.findOne({ uid }).populate('usuario_id');
+
+    // Si no se encuentra la tarjeta o está inactiva
     if (!card || !card.activa) {
       return res.status(404).json({
         success: false,
@@ -35,66 +38,83 @@ router.post("/validar", async (req, res) => {
     }
 
     // Determinar tarifa según tipo de usuario
-    let tarifa = 2.5; // Default adulto
-    if (card.usuario_id && card.usuario_id.tipo_tarjeta) {
-      switch (card.usuario_id.tipo_tarjeta) {
-        case "estudiante":
-        case "adulto_mayor":
-          tarifa = 1.0;
-          break;
-        default:
-          tarifa = 2.5;
-      }
+    let tarifa = 2.5; // Tarifa por defecto (adulto)
+    if (card.usuario_id.tipo_tarjeta === 'estudiante') {
+      tarifa = 1.0;
+    } else if (card.usuario_id.tipo_tarjeta === 'adulto_mayor') {
+      tarifa = 0.0;
     }
 
-    const saldo_anterior = Number(card.saldo_actual);
-
     // Verificar saldo suficiente
-    if (saldo_anterior < tarifa) {
-      // Registrar transacción fallida por saldo insuficiente
-      const trans = await Transaction.create({
-        tarjeta_uid: card.uid,
-        monto: -tarifa,
+    if (card.saldo_actual < tarifa) {
+      // Crear transacción fallida
+      const failedTransaction = await Transaction.create({
+        tarjeta_uid: uid,
+        monto: -tarifa, // Monto negativo para viajes
         tipo: "viaje",
-        validador_id,
+        validador_id: validador_id,
         resultado: "saldo_insuficiente",
-        metadata: { tipo_tarjeta: card.usuario_id?.tipo_tarjeta }
+        metadata: {
+          saldo_actual: card.saldo_actual,
+          ubicacion: validator.ubicacion
+        }
       });
+
       return res.status(400).json({
         success: false,
         error: "Saldo insuficiente",
-        saldo_actual: saldo_anterior,
-        tarifa_requerida: tarifa
+        saldo_actual: card.saldo_actual,
+        tarifa_requerida: tarifa,
+        usuario: {
+          nombre: card.usuario_id.nombre,
+          tipo: card.usuario_id.tipo_tarjeta
+        },
+        transaccion: failedTransaction
       });
     }
 
-    // Descontar tarifa y actualizar saldo
-    card.saldo_actual = saldo_anterior - tarifa;
-    await card.save();
+    // Actualizar saldo
+    const saldo_anterior = card.saldo_actual;
+    const newBalance = card.saldo_actual - tarifa;
+    await Card.findOneAndUpdate(
+      { uid },
+      { saldo_actual: newBalance },
+      { new: true }
+    );
 
-    // Registrar transacción exitosa
-    const trans = await Transaction.create({
-      tarjeta_uid: card.uid,
-      monto: -tarifa,
+    // Crear transacción exitosa
+    const transaction = await Transaction.create({
+      tarjeta_uid: uid,
+      monto: -tarifa, // Monto negativo para viajes
       tipo: "viaje",
-      validador_id,
+      validador_id: validador_id,
       resultado: "exitoso",
-      metadata: { tipo_tarjeta: card.usuario_id?.tipo_tarjeta }
+      metadata: {
+        saldo_anterior: saldo_anterior,
+        saldo_nuevo: newBalance,
+        ubicacion: validator.ubicacion
+      }
     });
 
-    // Respuesta exitosa
+    // Enviar respuesta exitosa
     return res.status(200).json({
       success: true,
-      saldo_anterior,
-      saldo_actual: card.saldo_actual,
-      tarifa
+      message: "Validación exitosa",
+      saldo_anterior: saldo_anterior,
+      saldo_actual: newBalance,
+      tarifa: tarifa,
+      usuario: {
+        nombre: card.usuario_id.nombre,
+        tipo: card.usuario_id.tipo_tarjeta
+      },
+      transaccion: transaction
     });
+
   } catch (error) {
-    console.error("Error en /validar:", error);
+    console.error("Error en validación:", error);
     return res.status(500).json({
       success: false,
-      error: "Error interno del servidor",
-      details: error.message
+      error: "Error en la validación"
     });
   }
 });

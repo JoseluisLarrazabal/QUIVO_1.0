@@ -30,40 +30,23 @@ cardSchema.index({ usuario_id: 1 })
 cardSchema.index({ activa: 1 })
 cardSchema.index({ uid: 1 }, { unique: true })
 
+// Método estático para buscar tarjeta por UID
 cardSchema.statics.findByUid = async function(uid) {
-  try {
-    const card = await this.findOne({ uid, activa: true })
-      .populate("usuario_id", "nombre tipo_tarjeta email telefono")
-      .exec()
-    
-    if (!card || !card.usuario_id) {
-      return null
-    }
-    return card
-  } catch (error) {
-    console.error("Error en findByUid:", error)
-    return null
-  }
+  return await this.findOne({ uid, activa: true }).populate('usuario_id');
 }
-
-// Removemos este método estático que puede estar causando conflictos
-// cardSchema.statics.create = async function(cardData) {
-//   const card = new this(cardData)
-//   return await card.save()
-// }
 
 cardSchema.statics.updateBalance = async function(uid, newBalance) {
   try {
     const card = await this.findOneAndUpdate(
       { uid, activa: true },
-      { saldo_actual: newBalance },
-      { new: true }
-    ).populate("usuario_id", "nombre tipo_tarjeta email telefono").exec()
+      { $set: { saldo_actual: newBalance } },
+      { new: true, runValidators: true }
+    ).populate("usuario_id", "nombre tipo_tarjeta email telefono")
     
     if (!card || !card.usuario_id) {
-      return null
+      return null;
     }
-    return card
+    return card;
   } catch (error) {
     console.error("Error en updateBalance:", error)
     return null
