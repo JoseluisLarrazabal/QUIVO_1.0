@@ -4,7 +4,7 @@ import { ActivityIndicator, Paragraph } from 'react-native-paper';
 
 const CenteredLoader = ({ message = 'Cargando...' }) => {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="centered-loader">
       <ActivityIndicator size="large" color="#2196F3" />
       <Paragraph style={styles.message}>{message}</Paragraph>
     </View>

@@ -7,6 +7,7 @@ class ApiService {
       console.log('Making API request to:', url);
 
       const response = await fetch(url, {
+        method: 'GET', // Método por defecto
         headers: {
           'Content-Type': 'application/json',
           ...options.headers,
