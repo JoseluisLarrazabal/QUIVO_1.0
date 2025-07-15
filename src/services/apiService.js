@@ -47,6 +47,16 @@ class ApiService {
     });
   }
 
+  async loginWithCard(uid) {
+    if (!uid || uid.trim().length === 0) {
+      throw new Error('UID de tarjeta es requerido');
+    }
+    return this.makeRequest('/auth/login-card', {
+      method: 'POST',
+      body: JSON.stringify({ uid: uid.trim() }),
+    });
+  }
+
   async register(userData) {
     return this.makeRequest('/auth/register', {
       method: 'POST',

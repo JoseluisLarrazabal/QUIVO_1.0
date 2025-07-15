@@ -7,4 +7,4 @@ describe('CenteredLoader', () => {
     const { getByTestId } = render(<CenteredLoader />);
     expect(getByTestId('centered-loader')).toBeTruthy();
   });
-}); 
+});
