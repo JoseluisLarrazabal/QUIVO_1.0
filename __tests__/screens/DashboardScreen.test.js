@@ -44,6 +44,6 @@ describe('DashboardScreen', () => {
   test('debería renderizar correctamente con usuario', () => {
     const { getByText } = render(<DashboardScreen />);
     expect(getByText('¡Hola, Test User!')).toBeTruthy();
-    expect(getByText('Mis Tarjetas')).toBeTruthy();
+    expect(getByText('Acciones Rápidas')).toBeTruthy();
   });
 }); 

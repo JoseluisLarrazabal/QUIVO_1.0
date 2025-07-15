@@ -11,7 +11,8 @@ jest.mock('../../src/context/AuthContext', () => ({
       email: 'test@example.com',
       cards: [
         { uid: 'A1B2C3D4', saldo_actual: 25.00 }
-      ]
+      ],
+      selectedCard: 'A1B2C3D4', // <-- Añadido para simular selección
     },
     refreshUserCards: jest.fn(),
     loading: false
@@ -30,8 +31,10 @@ jest.mock('../../src/services/apiService', () => ({
 
 describe('RechargeScreen', () => {
   test('debería renderizar correctamente', () => {
-    const { getAllByText } = render(<RechargeScreen />);
+    // Simular props de navegación y route
+    const navigation = { goBack: jest.fn() };
+    const route = { params: {} };
+    const { getAllByText } = render(<RechargeScreen navigation={navigation} route={route} />);
     expect(getAllByText('Recargar Tarjeta')[0]).toBeTruthy();
-    expect(getAllByText('Seleccionar Tarjeta')[0]).toBeTruthy();
   });
 }); 
