@@ -12,29 +12,58 @@ import {
     Card,
     Paragraph,
     TextInput,
-    Title
+    Title,
+    SegmentedButtons,
+    Divider,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 
 const LoginScreen = () => {
+  const [authMode, setAuthMode] = useState('credentials');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [cardUid, setCardUid] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loginWithCard } = useAuth();
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu usuario y contraseña');
-      return;
+    if (authMode === 'credentials') {
+      if (!username.trim() || !password.trim()) {
+        Alert.alert('Error', 'Por favor ingresa tu usuario y contraseña');
+        return;
+      }
+    } else {
+      if (!cardUid.trim()) {
+        Alert.alert('Error', 'Por favor ingresa el UID de tu tarjeta');
+        return;
+      }
     }
 
     setLoading(true);
-    const result = await login(username.trim(), password);
+    let result;
+    
+    if (authMode === 'credentials') {
+      result = await login(username.trim(), password);
+    } else {
+      result = await loginWithCard(cardUid.trim());
+    }
+    
     setLoading(false);
 
     if (!result.success) {
-      Alert.alert('Error', result.error || 'No se pudo autenticar al usuario');
+      Alert.alert('Error', result.error || 'No se pudo autenticar');
     }
+  };
+
+  const clearFields = () => {
+    setUsername('');
+    setPassword('');
+    setCardUid('');
+  };
+
+  const handleModeChange = (mode) => {
+    setAuthMode(mode);
+    clearFields();
   };
 
   return (
@@ -44,37 +73,84 @@ const LoginScreen = () => {
     >
       <View style={styles.content}>
         <Image
-          source={require('../../assets/images/icon.png')} // Logo temporal
+          source={require('../../assets/images/icon.png')}
           style={styles.logo}
           resizeMode="contain"
         />
         
         <Title style={styles.title}>Transporte Público Bolivia</Title>
         <Paragraph style={styles.subtitle}>
-          Ingresa tus credenciales para acceder
+          Accede a tu cuenta o tarjeta
         </Paragraph>
+
+        {/* Selector de Modo de Autenticación */}
+        <Card style={styles.modeCard}>
+          <Card.Content>
+            <SegmentedButtons
+              value={authMode}
+              onValueChange={handleModeChange}
+              buttons={[
+                {
+                  value: 'credentials',
+                  label: 'Credenciales',
+                  icon: 'account',
+                },
+                {
+                  value: 'card',
+                  label: 'Tarjeta NFC',
+                  icon: 'credit-card',
+                },
+              ]}
+              style={styles.segmentedButtons}
+            />
+          </Card.Content>
+        </Card>
 
         <Card style={styles.card}>
           <Card.Content>
-            <TextInput
-              label="Usuario"
-              value={username}
-              onChangeText={setUsername}
-              mode="outlined"
-              placeholder="Ej: juan.perez"
-              autoCapitalize="none"
-              style={styles.input}
-            />
+            {authMode === 'credentials' ? (
+              <>
+                <TextInput
+                  label="Usuario"
+                  value={username}
+                  onChangeText={setUsername}
+                  mode="outlined"
+                  placeholder="Ej: juan.perez"
+                  autoCapitalize="none"
+                  style={styles.input}
+                />
 
-            <TextInput
-              label="Contraseña"
-              value={password}
-              onChangeText={setPassword}
-              mode="outlined"
-              placeholder="Ingresa tu contraseña"
-              secureTextEntry
-              style={styles.input}
-            />
+                <TextInput
+                  label="Contraseña"
+                  value={password}
+                  onChangeText={setPassword}
+                  mode="outlined"
+                  placeholder="Ingresa tu contraseña"
+                  secureTextEntry
+                  style={styles.input}
+                />
+
+                <Paragraph style={styles.modeDescription}>
+                  Accede con tu cuenta para gestionar todas tus tarjetas
+                </Paragraph>
+              </>
+            ) : (
+              <>
+                <TextInput
+                  label="UID de Tarjeta"
+                  value={cardUid}
+                  onChangeText={setCardUid}
+                  mode="outlined"
+                  placeholder="Ej: A1B2C3D4"
+                  autoCapitalize="characters"
+                  style={styles.input}
+                />
+
+                <Paragraph style={styles.modeDescription}>
+                  Accede directamente con tu tarjeta NFC para uso rápido
+                </Paragraph>
+              </>
+            )}
 
             <Button
               mode="contained"
@@ -89,7 +165,10 @@ const LoginScreen = () => {
         </Card>
 
         <Paragraph style={styles.helpText}>
-          ¿No tienes cuenta? Contacta al administrador del sistema.
+          {authMode === 'credentials' 
+            ? '¿No tienes cuenta? Contacta al administrador del sistema.'
+            : 'Coloca tu tarjeta cerca del dispositivo para leer el UID automáticamente.'
+          }
         </Paragraph>
       </View>
     </KeyboardAvoidingView>
@@ -122,11 +201,24 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#666',
   },
+  modeCard: {
+    marginBottom: 20,
+  },
+  segmentedButtons: {
+    marginBottom: 10,
+  },
   card: {
     marginBottom: 20,
   },
   input: {
     marginBottom: 20,
+  },
+  modeDescription: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 12,
+    marginBottom: 20,
+    fontStyle: 'italic',
   },
   button: {
     paddingVertical: 8,

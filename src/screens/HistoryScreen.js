@@ -13,12 +13,13 @@ import {
   Searchbar,
   ActivityIndicator,
   Button,
+  Banner,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
 
-const HistoryScreen = () => {
+const HistoryScreen = ({ navigation, route }) => {
   const { user, loading } = useAuth();
   const [selectedCard, setSelectedCard] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -28,10 +29,13 @@ const HistoryScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (user && user.cards && user.cards.length > 0) {
-      setSelectedCard(user.cards[0]);
-    }
-  }, [user]);
+    // Obtener tarjeta seleccionada del contexto o de los parámetros de navegación
+    const cardFromRoute = route.params?.selectedCard;
+    const cardFromContext = user?.cards && user.selectedCard ? 
+      user.cards.find(card => card.uid === user.selectedCard) : null;
+    
+    setSelectedCard(cardFromRoute || cardFromContext);
+  }, [user, route.params]);
 
   useEffect(() => {
     if (selectedCard) {
@@ -129,6 +133,23 @@ const HistoryScreen = () => {
     return <CenteredLoader />;
   }
 
+  if (!selectedCard) {
+    return (
+      <View style={styles.errorContainer}>
+        <Paragraph style={styles.errorText}>
+          No hay tarjeta seleccionada para ver el historial
+        </Paragraph>
+        <Button
+          mode="contained"
+          onPress={() => navigation.goBack()}
+          style={styles.errorButton}
+        >
+          Volver
+        </Button>
+      </View>
+    );
+  }
+
   if (loadingLocal) {
     return (
       <View style={styles.loadingContainer}>
@@ -140,13 +161,44 @@ const HistoryScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Banner de Modo de Autenticación */}
+      {user.authMode === 'card_uid' && (
+        <Banner
+          visible={true}
+          actions={[
+            {
+              label: 'Cambiar a Credenciales',
+              onPress: () => {
+                navigation.navigate('Login');
+              },
+            },
+          ]}
+          icon="credit-card"
+          style={styles.banner}
+        >
+          Modo Tarjeta NFC - Historial de una sola tarjeta
+        </Banner>
+      )}
+
       <View style={styles.header}>
         <Title style={styles.title}>Historial de Transacciones</Title>
         
-        {/* Selección de Tarjeta */}
-        {user.cards && user.cards.length > 1 && (
+        {/* Información de la Tarjeta */}
+        <View style={styles.cardInfo}>
+          <Paragraph style={styles.cardInfoLabel}>Tarjeta:</Paragraph>
+          <Chip mode="outlined" style={styles.cardUidChip}>
+            {selectedCard.uid}
+          </Chip>
+        </View>
+        
+        <Paragraph style={styles.selectedCardInfo}>
+          Saldo actual: {selectedCard.saldo_actual.toFixed(2)} Bs
+        </Paragraph>
+        
+        {/* Selector de Tarjeta (solo en modo credenciales con múltiples tarjetas) */}
+        {user.authMode === 'credentials' && user.cards && user.cards.length > 1 && (
           <View style={styles.cardSelector}>
-            <Paragraph style={styles.cardSelectorLabel}>Seleccionar tarjeta:</Paragraph>
+            <Paragraph style={styles.cardSelectorLabel}>Cambiar tarjeta:</Paragraph>
             <View style={styles.cardButtons}>
               {user.cards.map((card, index) => (
                 <Button
@@ -161,12 +213,6 @@ const HistoryScreen = () => {
               ))}
             </View>
           </View>
-        )}
-        
-        {selectedCard && (
-          <Paragraph style={styles.selectedCardInfo}>
-            Tarjeta: {selectedCard.uid} - Saldo: {selectedCard.saldo_actual.toFixed(2)} Bs
-          </Paragraph>
         )}
         
         <Searchbar
@@ -202,6 +248,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  banner: {
+    backgroundColor: '#fff3cd',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 20,
+  },
+  errorButton: {
+    backgroundColor: '#2196F3',
+  },
   header: {
     padding: 20,
     backgroundColor: 'white',
@@ -210,6 +273,24 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: 15,
     color: '#333',
+  },
+  cardInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cardInfoLabel: {
+    marginRight: 10,
+    color: '#666',
+    fontSize: 14,
+  },
+  cardUidChip: {
+    backgroundColor: '#f0f0f0',
+  },
+  selectedCardInfo: {
+    marginBottom: 15,
+    color: '#2196F3',
+    fontWeight: 'bold',
   },
   cardSelector: {
     marginBottom: 15,
@@ -226,11 +307,6 @@ const styles = StyleSheet.create({
   },
   cardButton: {
     marginBottom: 5,
-  },
-  selectedCardInfo: {
-    marginBottom: 15,
-    color: '#2196F3',
-    fontWeight: 'bold',
   },
   searchbar: {
     elevation: 0,

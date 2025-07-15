@@ -14,26 +14,27 @@ import {
   Chip,
   Divider,
   IconButton,
+  Banner,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
 
-const DashboardScreen = () => {
+const DashboardScreen = ({ navigation }) => {
   const { user, logout, refreshUserCards, loading } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
 
   useEffect(() => {
-    if (user && user.cards && user.cards.length > 0) {
+    if (user && user.selectedCard) {
       loadRecentTransactions();
     }
   }, [user]);
 
   const loadRecentTransactions = async () => {
     try {
-      if (user.cards && user.cards.length > 0) {
-        const response = await apiService.getTransactionHistory(user.cards[0].uid);
+      if (user.selectedCard) {
+        const response = await apiService.getTransactionHistory(user.selectedCard);
         setRecentTransactions(response.data.slice(0, 3)); // Últimas 3 transacciones
       }
     } catch (error) {
@@ -80,9 +81,42 @@ const DashboardScreen = () => {
     }
   };
 
+  const getCurrentCard = () => {
+    if (!user || !user.cards || !user.selectedCard) return null;
+    return user.cards.find(card => card.uid === user.selectedCard);
+  };
+
+  const handleQuickAction = (action) => {
+    const currentCard = getCurrentCard();
+    if (!currentCard) {
+      Alert.alert('Error', 'No hay tarjeta seleccionada');
+      return;
+    }
+
+    switch (action) {
+      case 'recharge':
+        navigation.navigate('Recharge', { selectedCard: currentCard });
+        break;
+      case 'history':
+        navigation.navigate('History', { selectedCard: currentCard });
+        break;
+      case 'cards':
+        if (user.authMode === 'credentials' && user.isMultiCard) {
+          navigation.navigate('Cards');
+        } else {
+          Alert.alert('Información', 'Modo tarjeta única - no hay más tarjetas disponibles');
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
   if (loading || !user) {
     return <CenteredLoader />;
   }
+
+  const currentCard = getCurrentCard();
 
   return (
     <ScrollView
@@ -91,6 +125,26 @@ const DashboardScreen = () => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
+      {/* Banner de Modo de Autenticación */}
+      {user.authMode === 'card_uid' && (
+        <Banner
+          visible={true}
+          actions={[
+            {
+              label: 'Cambiar a Credenciales',
+              onPress: () => {
+                logout();
+                navigation.replace('Login');
+              },
+            },
+          ]}
+          icon="credit-card"
+          style={styles.banner}
+        >
+          Modo Tarjeta NFC - Acceso limitado a una sola tarjeta
+        </Banner>
+      )}
+
       <View style={styles.header}>
         <Title style={styles.welcomeText}>¡Hola, {user.nombre}!</Title>
         <IconButton
@@ -113,50 +167,65 @@ const DashboardScreen = () => {
               {getCardTypeLabel(user.tipo_tarjeta)}
             </Chip>
           </View>
-          <Paragraph style={styles.userEmail}>{user.email}</Paragraph>
-        </Card.Content>
-      </Card>
-
-      {/* Tarjetas del Usuario */}
-      <Card style={styles.cardsCard}>
-        <Card.Content>
-          <Title style={styles.sectionTitle}>Mis Tarjetas</Title>
-          {user.cards && user.cards.length > 0 ? (
-            user.cards.map((card, index) => (
-              <Card key={index} style={[styles.cardItem, { borderLeftColor: getCardColor(user.tipo_tarjeta) }]}>
-                <Card.Content>
-                  <View style={styles.cardHeader}>
-                    <View>
-                      <Title style={styles.balanceTitle}>Saldo</Title>
-                      <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
-                        {card.saldo_actual.toFixed(2)} Bs
-                      </Title>
-                    </View>
-                    <Chip mode="outlined" style={styles.uidChip}>
-                      {card.uid}
-                    </Chip>
-                  </View>
-                  
-                  <Divider style={styles.divider} />
-                  
-                  <View style={styles.cardInfo}>
-                    <Paragraph style={styles.infoText}>
-                      Tarifa por viaje: {getTarifa(user.tipo_tarjeta)} Bs
-                    </Paragraph>
-                    <Paragraph style={styles.infoText}>
-                      Viajes disponibles: {Math.floor(card.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
-                    </Paragraph>
-                  </View>
-                </Card.Content>
-              </Card>
-            ))
-          ) : (
-            <Paragraph style={styles.noCards}>
-              No tienes tarjetas registradas
+          {user.email && (
+            <Paragraph style={styles.userEmail}>{user.email}</Paragraph>
+          )}
+          {user.authMode === 'card_uid' && (
+            <Paragraph style={styles.modeInfo}>
+              Modo: Acceso por Tarjeta NFC
             </Paragraph>
           )}
         </Card.Content>
       </Card>
+
+      {/* Tarjeta Actual */}
+      {currentCard && (
+        <Card style={styles.cardsCard}>
+          <Card.Content>
+            <View style={styles.cardHeader}>
+              <Title style={styles.sectionTitle}>
+                {user.authMode === 'credentials' ? 'Tarjeta Seleccionada' : 'Mi Tarjeta'}
+              </Title>
+              {user.authMode === 'credentials' && user.isMultiCard && (
+                <Button
+                  mode="text"
+                  onPress={() => handleQuickAction('cards')}
+                  style={styles.manageCardsButton}
+                >
+                  Gestionar Tarjetas
+                </Button>
+              )}
+            </View>
+            
+            <Card style={[styles.cardItem, { borderLeftColor: getCardColor(user.tipo_tarjeta) }]}>
+              <Card.Content>
+                <View style={styles.cardHeader}>
+                  <View>
+                    <Title style={styles.balanceTitle}>Saldo</Title>
+                    <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
+                      {currentCard.saldo_actual.toFixed(2)} Bs
+                    </Title>
+                  </View>
+                  <Chip mode="outlined" style={styles.uidChip}>
+                    {currentCard.uid}
+                  </Chip>
+                </View>
+                
+                <Divider style={styles.divider} />
+                
+                <View style={styles.cardInfo}>
+                  <Paragraph style={styles.infoText}>
+                    Tarifa por viaje: {getTarifa(user.tipo_tarjeta)} Bs
+                  </Paragraph>
+                  <Paragraph style={styles.infoText}>
+                    Viajes disponibles: {Math.floor(currentCard.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
+                  </Paragraph>
+                </View>
+              </Card.Content>
+            </Card>
+          </Card.Content>
+        </Card>
+      )}
 
       {/* Acciones Rápidas */}
       <Card style={styles.actionsCard}>
@@ -167,7 +236,7 @@ const DashboardScreen = () => {
               mode="contained"
               icon="credit-card-plus"
               style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
-              onPress={() => {/* Navegar a recarga */}}
+              onPress={() => handleQuickAction('recharge')}
             >
               Recargar
             </Button>
@@ -175,11 +244,21 @@ const DashboardScreen = () => {
               mode="outlined"
               icon="history"
               style={styles.actionButton}
-              onPress={() => {/* Navegar a historial */}}
+              onPress={() => handleQuickAction('history')}
             >
               Ver Historial
             </Button>
           </View>
+          {user.authMode === 'credentials' && user.isMultiCard && (
+            <Button
+              mode="outlined"
+              icon="credit-card-multiple"
+              style={[styles.actionButton, { marginTop: 10 }]}
+              onPress={() => handleQuickAction('cards')}
+            >
+              Gestionar Todas las Tarjetas
+            </Button>
+          )}
         </Card.Content>
       </Card>
 
@@ -222,6 +301,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  banner: {
+    backgroundColor: '#fff3cd',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -254,10 +336,28 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
   },
+  modeInfo: {
+    color: '#2196F3',
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 5,
+  },
   cardsCard: {
     margin: 20,
     marginTop: 0,
     elevation: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+  },
+  manageCardsButton: {
+    margin: 0,
   },
   cardItem: {
     marginBottom: 15,
@@ -266,11 +366,6 @@ const styles = StyleSheet.create({
   },
   uidChip: {
     marginTop: 5,
-  },
-  noCards: {
-    textAlign: 'center',
-    color: '#666',
-    fontStyle: 'italic',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -301,10 +396,6 @@ const styles = StyleSheet.create({
   actionsCard: {
     margin: 20,
     marginTop: 0,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    marginBottom: 15,
   },
   actionButtons: {
     flexDirection: 'row',

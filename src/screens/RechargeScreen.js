@@ -20,18 +20,22 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
 
-const RechargeScreen = () => {
+const RechargeScreen = ({ navigation, route }) => {
   const { user, refreshUserCards, loading } = useAuth();
-  const [selectedCard, setSelectedCard] = useState(null);
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [loadingLocal, setLoadingLocal] = useState(false);
+
+  // Obtener tarjeta seleccionada del contexto o de los parámetros de navegación
+  const selectedCard = route.params?.selectedCard || 
+    (user?.cards && user.selectedCard ? 
+      user.cards.find(card => card.uid === user.selectedCard) : null);
 
   const predefinedAmounts = [10, 20, 50, 100];
 
   const handleRecharge = async () => {
     if (!selectedCard) {
-      Alert.alert('Error', 'Por favor selecciona una tarjeta');
+      Alert.alert('Error', 'No hay tarjeta seleccionada');
       return;
     }
 
@@ -73,7 +77,7 @@ const RechargeScreen = () => {
           `Se han agregado ${amount} Bs a la tarjeta ${selectedCard.uid}`,
           [{ text: 'OK', onPress: () => {
             setAmount('');
-            setSelectedCard(null);
+            navigation.goBack();
           }}]
         );
       } else {
@@ -104,42 +108,50 @@ const RechargeScreen = () => {
     return <CenteredLoader />;
   }
 
+  if (!selectedCard) {
+    return (
+      <View style={styles.errorContainer}>
+        <Paragraph style={styles.errorText}>
+          No hay tarjeta seleccionada para recargar
+        </Paragraph>
+        <Button
+          mode="contained"
+          onPress={() => navigation.goBack()}
+          style={styles.errorButton}
+        >
+          Volver
+        </Button>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Title style={styles.title}>Recargar Tarjeta</Title>
         <Paragraph style={styles.subtitle}>
-          Selecciona una tarjeta para recargar
+          Tarjeta: {selectedCard.uid}
         </Paragraph>
       </View>
 
-      {/* Selección de Tarjeta */}
+      {/* Información de la Tarjeta */}
       <Card style={styles.card}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Seleccionar Tarjeta</Title>
-          {user.cards && user.cards.length > 0 ? (
-            <View style={styles.cardsContainer}>
-              {user.cards.map((card, index) => (
-                <Button
-                  key={index}
-                  mode={selectedCard?.uid === card.uid ? 'contained' : 'outlined'}
-                  onPress={() => setSelectedCard(card)}
-                  style={styles.cardButton}
-                >
-                  <View style={styles.cardButtonContent}>
-                    <Paragraph style={styles.cardUid}>{card.uid}</Paragraph>
-                    <Paragraph style={styles.cardBalance}>
-                      Saldo: {card.saldo_actual.toFixed(2)} Bs
-                    </Paragraph>
-                  </View>
-                </Button>
-              ))}
+          <Title style={styles.sectionTitle}>Tarjeta Seleccionada</Title>
+          <View style={styles.cardInfo}>
+            <View style={styles.cardDetail}>
+              <Paragraph style={styles.cardLabel}>UID:</Paragraph>
+              <Chip mode="outlined" style={styles.cardUidChip}>
+                {selectedCard.uid}
+              </Chip>
             </View>
-          ) : (
-            <Paragraph style={styles.noCards}>
-              No tienes tarjetas registradas
-            </Paragraph>
-          )}
+            <View style={styles.cardDetail}>
+              <Paragraph style={styles.cardLabel}>Saldo Actual:</Paragraph>
+              <Title style={styles.currentBalance}>
+                {selectedCard.saldo_actual.toFixed(2)} Bs
+              </Title>
+            </View>
+          </View>
         </Card.Content>
       </Card>
 
@@ -235,7 +247,7 @@ const RechargeScreen = () => {
       </Card>
 
       {/* Resumen */}
-      {amount && parseFloat(amount) > 0 && selectedCard && (
+      {amount && parseFloat(amount) > 0 && (
         <Card style={styles.card}>
           <Card.Content>
             <Title style={styles.sectionTitle}>Resumen</Title>
@@ -270,7 +282,7 @@ const RechargeScreen = () => {
           mode="contained"
           onPress={handleRecharge}
           loading={loadingLocal}
-          disabled={loadingLocal || !amount || parseFloat(amount) <= 0 || !selectedCard}
+          disabled={loadingLocal || !amount || parseFloat(amount) <= 0}
           style={styles.rechargeButton}
           contentStyle={styles.rechargeButtonContent}
         >
@@ -292,6 +304,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 20,
+  },
+  errorButton: {
+    backgroundColor: '#2196F3',
+  },
   header: {
     padding: 20,
     backgroundColor: 'white',
@@ -308,31 +334,28 @@ const styles = StyleSheet.create({
     margin: 20,
     marginTop: 10,
   },
-  cardsContainer: {
-    gap: 10,
-  },
-  cardButton: {
-    marginBottom: 10,
-  },
-  cardButtonContent: {
-    alignItems: 'center',
-  },
-  cardUid: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  cardBalance: {
-    color: '#666',
-    fontSize: 14,
-  },
-  noCards: {
-    textAlign: 'center',
-    color: '#666',
-    fontStyle: 'italic',
-  },
   sectionTitle: {
     fontSize: 18,
     marginBottom: 15,
+  },
+  cardInfo: {
+    gap: 15,
+  },
+  cardDetail: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardLabel: {
+    color: '#666',
+    fontSize: 14,
+  },
+  cardUidChip: {
+    backgroundColor: '#f0f0f0',
+  },
+  currentBalance: {
+    color: '#4CAF50',
+    fontSize: 18,
   },
   predefinedAmounts: {
     flexDirection: 'row',
