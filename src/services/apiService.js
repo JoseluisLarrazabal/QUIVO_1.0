@@ -1,4 +1,12 @@
-const API_BASE_URL = 'http://192.168.0.4:3000/api'; // IP de la máquina para acceso móvil
+// Para configurar la IP del backend, crea un archivo .env en la raíz de frontend con:
+// API_BASE_URL=http://TU_IP_LOCAL:3000/api
+
+import Constants from 'expo-constants';
+
+const API_BASE_URL =
+  Constants.expoConfig?.extra?.API_BASE_URL ||
+  process.env.API_BASE_URL ||
+  'http://172.20.10.2:3000/api'; // Fallback: IP de tu PC
 
 class ApiService {
   async makeRequest(endpoint, options = {}) {
