@@ -49,11 +49,28 @@ userSchema.index({ tipo_tarjeta: 1 })
 userSchema.index({ activo: 1 })
 userSchema.index({ username: 1 }, { unique: true })
 
+// Middleware para manejar errores de duplicado en save y insertMany
+userSchema.post('save', function(error, doc, next) {
+  if (error.name === 'MongoServerError' && error.code === 11000) {
+    next(new Error('Duplicado: el nombre de usuario ya existe.'));
+  } else {
+    next(error);
+  }
+});
+userSchema.post('insertMany', function(error, docs, next) {
+  if (error.name === 'MongoServerError' && error.code === 11000) {
+    next(new Error('Duplicado: el nombre de usuario ya existe.'));
+  } else {
+    next(error);
+  }
+});
+
 // Virtual para obtener las tarjetas del usuario
 userSchema.virtual("tarjetas", {
   ref: "Card",
   localField: "_id",
-  foreignField: "usuario_id"
+  foreignField: "usuario_id",
+  justOne: false
 })
 
 // Configurar virtuals para que se incluyan en JSON
@@ -79,57 +96,43 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 }
 
 // Métodos estáticos
-userSchema.statics.findByUsername = async function(username) {
+userSchema.statics.findByUsername = async function(username, onlyActive = true) {
   try {
-    return await this.findOne({ username, activo: true }).exec()
+    // Buscar usuario por username, por defecto solo activos
+    const filter = onlyActive ? { username, activo: true } : { username };
+    return await this.findOne(filter).exec();
   } catch (error) {
-    console.error("Error en findByUsername:", error)
-    return null
+    console.error("Error en findByUsername:", error);
+    return null;
   }
-}
+};
 
 userSchema.statics.authenticate = async function(username, password) {
   try {
-    const user = await this.findOne({ username, activo: true }).exec()
+    const user = await this.findOne({ username, activo: true }).exec();
     if (!user) {
-      return null
+      return null;
     }
-    
-    const isMatch = await user.comparePassword(password)
-    return isMatch ? user : null
+    const isMatch = await user.comparePassword(password);
+    return isMatch ? user : null;
   } catch (error) {
-    console.error("Error en authenticate:", error)
-    return null
+    console.error("Error en authenticate:", error);
+    return null;
   }
-}
+};
 
 userSchema.statics.findByCardUid = async function(uid) {
   try {
-    const results = await this.aggregate([
-      {
-        $lookup: {
-          from: "cards",
-          localField: "_id",
-          foreignField: "usuario_id",
-          as: "tarjetas"
-        }
-      },
-      {
-        $unwind: "$tarjetas"
-      },
-      {
-        $match: {
-          "tarjetas.uid": uid,
-          "tarjetas.activa": true
-        }
-      }
-    ])
-    return results[0] || null
+    // Buscar la tarjeta y poblar el usuario
+    const card = await mongoose.model('Card').findOne({ uid, activa: true });
+    if (!card) return null;
+    const user = await this.findById(card.usuario_id);
+    return user;
   } catch (error) {
-    console.error("Error en findByCardUid:", error)
-    return null
+    console.error("Error en findByCardUid:", error);
+    return null;
   }
-}
+};
 
 userSchema.statics.update = async function(id, userData) {
   try {
@@ -137,12 +140,12 @@ userSchema.statics.update = async function(id, userData) {
       id,
       { ...userData, updatedAt: new Date() },
       { new: true, runValidators: true }
-    )
+    ).exec();
   } catch (error) {
-    console.error("Error en update:", error)
-    return null
+    console.error("Error en update:", error);
+    return null;
   }
-}
+};
 
 userSchema.statics.delete = async function(id) {
   try {

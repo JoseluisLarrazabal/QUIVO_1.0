@@ -280,6 +280,71 @@ describe('Transaction Model', () => {
     });
   });
 
+  describe('Métodos adicionales', () => {
+    let card;
+    beforeEach(async () => {
+      card = new Card({
+        uid: uniqueUid(),
+        usuario_id: testUser._id,
+        saldo_actual: 100
+      });
+      await card.save();
+    });
+
+    test('createTransaction debe crear una transacción de viaje negativa', async () => {
+      const [tx] = await Transaction.createTransaction({
+        tarjeta_uid: card.uid,
+        monto: 2.5,
+        tipo: 'viaje',
+        ubicacion: 'Bus',
+        resultado: 'exitoso'
+      });
+      expect(tx).toBeTruthy();
+      expect(tx.monto).toBe(-2.5);
+      expect(tx.tipo).toBe('viaje');
+    });
+
+    test('createTransaction debe crear una transacción de recarga positiva', async () => {
+      const [tx] = await Transaction.createTransaction({
+        tarjeta_uid: card.uid,
+        monto: 10,
+        tipo: 'recarga',
+        ubicacion: 'Recarga',
+        resultado: 'exitoso'
+      });
+      expect(tx).toBeTruthy();
+      expect(tx.monto).toBe(10);
+      expect(tx.tipo).toBe('recarga');
+    });
+
+    test('wasSuccessful debe indicar si la transacción fue exitosa', async () => {
+      const tx = new Transaction({
+        tarjeta_uid: card.uid,
+        monto: 5,
+        tipo: 'recarga',
+        resultado: 'exitoso'
+      });
+      expect(tx.wasSuccessful()).toBe(true);
+      tx.resultado = 'fallido';
+      expect(tx.wasSuccessful()).toBe(false);
+    });
+
+    test('isRefund debe indicar si la transacción es recarga positiva', async () => {
+      const tx = new Transaction({
+        tarjeta_uid: card.uid,
+        monto: 10,
+        tipo: 'recarga',
+        resultado: 'exitoso'
+      });
+      expect(tx.isRefund()).toBe(true);
+      tx.tipo = 'viaje';
+      expect(tx.isRefund()).toBe(false);
+      tx.tipo = 'recarga';
+      tx.monto = -5;
+      expect(tx.isRefund()).toBe(false);
+    });
+  });
+
   describe('Índices', () => {
     test('debería tener índices configurados', async () => {
       const indexes = await Transaction.collection.getIndexes();

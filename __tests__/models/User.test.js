@@ -214,3 +214,42 @@ describe('User Model', () => {
     });
   });
 }); 
+
+describe('Métodos estáticos adicionales', () => {
+  let user;
+  beforeEach(async () => {
+    user = new User({
+      username: uniqueUsername(),
+      password: '123456',
+      nombre: 'Usuario Update',
+      tipo_tarjeta: 'adulto',
+      email: 'update@example.com'
+    });
+    await user.save();
+  });
+
+  test('update debe actualizar los datos del usuario', async () => {
+    const nuevoNombre = 'Usuario Actualizado';
+    const updated = await User.update(user._id, { nombre: nuevoNombre });
+    expect(updated).toBeTruthy();
+    expect(updated.nombre).toBe(nuevoNombre);
+  });
+
+  test('delete debe marcar el usuario como inactivo', async () => {
+    const deleted = await User.delete(user._id);
+    expect(deleted).toBeTruthy();
+    expect(deleted.activo).toBe(false);
+  });
+
+  test('findByCardUid debe encontrar usuario por UID de tarjeta', async () => {
+    const card = new Card({
+      uid: uniqueUid(),
+      usuario_id: user._id,
+      saldo_actual: 10
+    });
+    await card.save();
+    const found = await User.findByCardUid(card.uid);
+    expect(found).toBeTruthy();
+    expect(found.username).toBe(user.username);
+  });
+}); 

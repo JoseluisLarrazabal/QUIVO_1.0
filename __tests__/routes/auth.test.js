@@ -292,7 +292,9 @@ describe('Auth Routes', () => {
         .post('/auth/register')
         .send(userData);
 
-      expect(response.status).toBe(500); // Error de validación de Mongoose
+      expect(response.status).toBe(400); // Error de validación de Mongoose
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toMatch(/tipo_tarjeta|enum value/);
     });
 
     test('debería encriptar la contraseña', async () => {
@@ -313,6 +315,68 @@ describe('Auth Routes', () => {
       const savedUser = await User.findOne({ username: 'newuser' });
       expect(savedUser.password).not.toBe('123456');
       expect(savedUser.password).toMatch(/^\$2[aby]\$\d{1,2}\$[./A-Za-z0-9]{53}$/);
+    });
+  });
+
+  describe('POST /auth/login-card', () => {
+    it('should login successfully with valid card UID', async () => {
+      const cardData = {
+        uid: '1234567890ABCDEF',
+        usuario_id: testUser._id,
+        saldo_actual: 50.0,
+        activa: true
+      };
+      const card = await Card.create(cardData);
+
+      const response = await request(app)
+        .post('/auth/login-card')
+        .send({ uid: card.uid })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.authMode).toBe('card');
+      expect(response.body.data.card.uid).toBe(card.uid);
+      expect(response.body.data.card.saldo_actual).toBe(50.0);
+      expect(response.body.data.card.usuario.nombre).toBe('Test User');
+      expect(response.body.data.card.usuario.tipo_tarjeta).toBe('adulto');
+    });
+
+    it('should fail with missing UID', async () => {
+      const response = await request(app)
+        .post('/auth/login-card')
+        .send({})
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('UID de tarjeta es requerido');
+    });
+
+    it('should fail with non-existent card', async () => {
+      const response = await request(app)
+        .post('/auth/login-card')
+        .send({ uid: 'NONEXISTENT' })
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('Tarjeta no encontrada o inactiva');
+    });
+
+    it('should fail with inactive card', async () => {
+      const cardData = {
+        uid: 'INACTIVE',
+        usuario_id: testUser._id,
+        saldo_actual: 50.0,
+        activa: false
+      };
+      await Card.create(cardData);
+
+      const response = await request(app)
+        .post('/auth/login-card')
+        .send({ uid: 'INACTIVE' })
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error).toBe('Tarjeta no encontrada o inactiva');
     });
   });
 }); 

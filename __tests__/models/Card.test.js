@@ -197,6 +197,39 @@ describe('Card Model', () => {
     });
   });
 
+  describe('Métodos de instancia', () => {
+    let card;
+    beforeEach(async () => {
+      card = new Card({
+        uid: uniqueUid(),
+        usuario_id: testUser._id,
+        saldo_actual: 20
+      });
+      await card.save();
+    });
+
+    test('hasEnoughBalance debe detectar saldo suficiente', () => {
+      expect(card.hasEnoughBalance(10)).toBe(true);
+      expect(card.hasEnoughBalance(25)).toBe(false);
+    });
+
+    test('addBalance debe sumar saldo correctamente', async () => {
+      await card.addBalance(15);
+      const updated = await Card.findById(card._id);
+      expect(updated.saldo_actual).toBe(35);
+    });
+
+    test('deductBalance debe restar saldo correctamente', async () => {
+      await card.deductBalance(5);
+      const updated = await Card.findById(card._id);
+      expect(updated.saldo_actual).toBe(15);
+    });
+
+    test('deductBalance debe lanzar error si saldo insuficiente', async () => {
+      await expect(card.deductBalance(50)).rejects.toThrow('Saldo insuficiente');
+    });
+  });
+
   describe('Relaciones', () => {
     test('debería poder hacer populate de usuario_id', async () => {
       const card = new Card({

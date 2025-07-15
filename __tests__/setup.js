@@ -1,53 +1,91 @@
 const mongoose = require('mongoose');
-require('dotenv').config({ path: '.env.test' });
+const { MongoMemoryServer } = require('mongodb-memory-server');
 
-// Configurar MongoDB de prueba
-const TEST_MONGODB_URI = process.env.TEST_MONGODB_URI || 'mongodb://localhost:27017/nfc_transport_test';
+let mongoServer;
 
 beforeAll(async () => {
-  // Conectar a la base de datos de prueba solo si no está conectado
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(TEST_MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-  }
-  
-  // Asegurar índices únicos en los modelos
-  const User = require("../models/User")
-  const Card = require("../models/Card")
-  const Validator = require("../models/Validator")
-  const Transaction = require("../models/Transaction")
-  
-  // Sincronizar índices
-  await Promise.all([
-    User.syncIndexes(),
-    Card.syncIndexes(),
-    Validator.syncIndexes(),
-    Transaction.syncIndexes()
-  ]);
-  
-  // Esperar 1500ms para que los índices estén listos y la base de datos esté estable
-  await new Promise(r => setTimeout(r, 1500));
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+  await mongoose.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
 });
 
 afterAll(async () => {
-  // Limpiar y desconectar
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
+  await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
-beforeEach(async () => {
-  // Limpiar todas las colecciones antes de cada test
+afterEach(async () => {
+  // Limpia todas las colecciones después de cada test
   const collections = mongoose.connection.collections;
   for (const key in collections) {
-    const collection = collections[key];
-    await collection.deleteMany();
+    await collections[key].deleteMany({});
   }
-  // Esperar 500ms para que MongoDB procese la limpieza antes de crear nuevos documentos
-  await new Promise(r => setTimeout(r, 500));
 });
 
-// Configurar variables de entorno de prueba
-process.env.NODE_ENV = 'test';
-process.env.PORT = '3001';
+// Funciones helper globales para las pruebas
+global.generateUniqueId = (prefix = '') => {
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 10000);
+  return `${prefix}${timestamp}_${random}`;
+};
+
+// Función mejorada para crear usuario de prueba
+global.createTestUser = async (overrides = {}) => {
+  const User = require("../models/User");
+  const defaultUser = {
+    username: generateUniqueId('user_'),
+    password: '123456',
+    nombre: 'Test User',
+    tipo_tarjeta: 'adulto',
+    email: `${generateUniqueId('email_')}@example.com`,
+    ...overrides
+  };
+
+  try {
+    return await User.create(defaultUser);
+  } catch (error) {
+    console.error('Error al crear usuario de prueba:', error);
+    throw error;
+  }
+};
+
+// Función mejorada para crear tarjeta de prueba
+global.createTestCard = async (userId, overrides = {}) => {
+  const Card = require("../models/Card");
+  const defaultCard = {
+    uid: generateUniqueId('card_'),
+    usuario_id: userId,
+    saldo_actual: 25.00,
+    activa: true,
+    ...overrides
+  };
+
+  try {
+    return await Card.create(defaultCard);
+  } catch (error) {
+    console.error('Error al crear tarjeta de prueba:', error);
+    throw error;
+  }
+};
+
+// Función mejorada para crear validador de prueba
+global.createTestValidator = async (overrides = {}) => {
+  const Validator = require("../models/Validator");
+  const defaultValidator = {
+    id_validador: generateUniqueId('val_'),
+    bus_id: generateUniqueId('bus_'),
+    ubicacion: 'Test Location',
+    estado: 'activo',
+    ...overrides
+  };
+
+  try {
+    return await Validator.create(defaultValidator);
+  } catch (error) {
+    console.error('Error al crear validador de prueba:', error);
+    throw error;
+  }
+};
