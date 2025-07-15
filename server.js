@@ -4,6 +4,7 @@ const helmet = require("helmet")
 const rateLimit = require("express-rate-limit")
 const morgan = require("morgan")
 require("dotenv").config()
+const os = require('os');
 
 const { connectDB } = require("./config/database")
 const authRoutes = require("./routes/auth")
@@ -86,10 +87,21 @@ const startServer = async () => {
     await connectDB()
     console.log("✅ Conexión a MongoDB Atlas establecida")
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`)
-      console.log(`📱 API disponible en http://localhost:${PORT}/api`)
-      console.log(`🏥 Health check en http://localhost:${PORT}/health`)
+    app.listen(PORT, '0.0.0.0', () => {
+      // Detectar IP local para mostrar en el log
+      const interfaces = os.networkInterfaces();
+      let localIp = 'localhost';
+      for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+          if (iface.family === 'IPv4' && !iface.internal) {
+            localIp = iface.address;
+            break;
+          }
+        }
+      }
+      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+      console.log(`📱 API disponible en http://${localIp}:${PORT}/api`);
+      console.log(`🏥 Health check en http://${localIp}:${PORT}/health`);
     })
   } catch (error) {
     console.error("❌ Error al iniciar el servidor:", error)
