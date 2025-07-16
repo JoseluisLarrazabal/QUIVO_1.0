@@ -57,6 +57,9 @@
       "html"
     ],
     "maxWorkers": 1,
-    "testTimeout": 30000
+    "testTimeout": 30000,
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|svg)$": "<rootDir>/__mocks__/fileMock.js"
+    }
   }
 }

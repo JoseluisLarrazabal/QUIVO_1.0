@@ -1,5 +1,14 @@
 import { apiService } from '../../src/services/apiService';
 
+// Mockear expo-constants para fijar la URL base en los tests
+jest.mock('expo-constants', () => ({
+  expoConfig: {
+    extra: {
+      API_BASE_URL: 'http://localhost:3000/api'
+    }
+  }
+}));
+
 // Mock fetch global
 global.fetch = jest.fn();
 
@@ -32,7 +41,7 @@ describe('API Service', () => {
 
       const result = await apiService.login('testuser', '123456');
 
-      expect(fetch).toHaveBeenCalledWith('http://192.168.0.4:3000/api/auth/login', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +92,7 @@ describe('API Service', () => {
 
       const result = await apiService.register(userData);
 
-      expect(fetch).toHaveBeenCalledWith('http://192.168.0.4:3000/api/auth/register', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +124,7 @@ describe('API Service', () => {
 
       const result = await apiService.getCardInfo('A1B2C3D4');
 
-      expect(fetch).toHaveBeenCalledWith('http://192.168.0.4:3000/api/saldo/A1B2C3D4', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/saldo/A1B2C3D4', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -150,7 +159,7 @@ describe('API Service', () => {
 
       const result = await apiService.getTransactionHistory('A1B2C3D4');
 
-      expect(fetch).toHaveBeenCalledWith('http://192.168.0.4:3000/api/historial/A1B2C3D4', { 
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/historial/A1B2C3D4', { 
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -185,7 +194,7 @@ describe('API Service', () => {
 
       const result = await apiService.rechargeCard('A1B2C3D4', 20.00, 'efectivo');
 
-      expect(fetch).toHaveBeenCalledWith('http://192.168.0.4:3000/api/recargar', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/recargar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
