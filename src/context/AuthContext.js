@@ -1,8 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { apiService } from '../services/apiService';
+import { useAuthState } from '../hooks/useAuthState';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -13,92 +13,162 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, setUser, checkAuthState } = useAuthState();
 
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  const checkAuthState = async () => {
+  const login = async (username, password) => {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        // Validar que los datos del usuario sean válidos
-        if (parsedUser && parsedUser.uid) {
-          setUser(parsedUser);
-        } else {
-          // Si los datos no son válidos, limpiar el storage
-          await AsyncStorage.removeItem('user');
-        }
-      }
-    } catch (error) {
-      console.error('Error checking auth state:', error);
-      // En caso de error, limpiar el storage
-      try {
-        await AsyncStorage.removeItem('user');
-      } catch (clearError) {
-        console.error('Error clearing storage:', clearError);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (uid) => {
-    try {
-      if (!uid || uid.trim().length === 0) {
-        return { success: false, error: 'UID no puede estar vacío' };
+      if (!username || !password) {
+        return { success: false, error: 'Usuario y contraseña son requeridos' };
       }
 
-      const response = await apiService.getCardInfo(uid.trim());
+      const response = await apiService.login(username, password);
       
       if (!response || !response.data) {
-        return { success: false, error: 'No se pudo obtener información de la tarjeta' };
+        return { success: false, error: 'No se pudo autenticar al usuario' };
       }
 
       const userData = {
-        uid: uid.trim(),
-        ...response.data
+        ...response.data.user,
+        cards: response.data.cards,
+        authMode: 'credentials',
+        isMultiCard: response.data.cards && response.data.cards.length > 1,
+        selectedCard: response.data.cards && response.data.cards.length > 0 ? response.data.cards[0].uid : null
       };
 
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
+      await setUser(userData);
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
       return { 
         success: false, 
-        error: error.message || 'Error al iniciar sesión. Verifica el UID de tu tarjeta.' 
+        error: error.message || 'Error al iniciar sesión. Verifica tus credenciales.' 
+      };
+    }
+  };
+
+  const loginWithCard = async (cardUid) => {
+    try {
+      if (!cardUid) {
+        return { success: false, error: 'UID de tarjeta es requerido' };
+      }
+
+      // Obtener información de la tarjeta
+      const cardResponse = await apiService.getCardInfo(cardUid);
+      
+      if (!cardResponse || !cardResponse.data) {
+        return { success: false, error: 'Tarjeta no encontrada o inactiva' };
+      }
+
+      // Crear un usuario temporal para modo tarjeta
+      const cardUser = {
+        id: `card_${cardUid}`,
+        nombre: cardResponse.data.nombre,
+        tipo_tarjeta: cardResponse.data.tipo_tarjeta,
+        email: null,
+        telefono: null,
+        cards: [{
+          uid: cardUid,
+          saldo_actual: cardResponse.data.saldo_actual,
+          activa: true
+        }],
+        authMode: 'card_uid',
+        isMultiCard: false,
+        selectedCard: cardUid
+      };
+
+      await setUser(cardUser);
+      return { success: true };
+    } catch (error) {
+      console.error('Card login error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Error al autenticar con tarjeta. Verifica el UID.' 
+      };
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      const response = await apiService.register(userData);
+      
+      if (!response || !response.data) {
+        return { success: false, error: 'No se pudo registrar al usuario' };
+      }
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Register error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Error al registrar usuario.' 
       };
     }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('user');
-      setUser(null);
+      await setUser(null);
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
 
-  const updateUserBalance = (newBalance) => {
-    if (user && typeof newBalance === 'number' && newBalance >= 0) {
-      const updatedUser = { ...user, saldo_actual: newBalance };
-      setUser(updatedUser);
-      AsyncStorage.setItem('user', JSON.stringify(updatedUser)).catch(error => {
-        console.error('Error updating user balance in storage:', error);
-      });
+  const updateUserCards = async (updatedCards) => {
+    if (user && Array.isArray(updatedCards)) {
+      const updatedUser = { ...user, cards: updatedCards };
+      await setUser(updatedUser);
+    }
+  };
+
+  const refreshUserCards = async () => {
+    if (user && user.id && user.authMode === 'credentials') {
+      try {
+        const response = await apiService.getUserCards(user.id);
+        if (response && response.data) {
+          updateUserCards(response.data);
+        }
+      } catch (error) {
+        console.error('Error refreshing user cards:', error);
+      }
+    } else if (user && user.authMode === 'card_uid' && user.selectedCard) {
+      try {
+        const cardResponse = await apiService.getCardInfo(user.selectedCard);
+        if (cardResponse && cardResponse.data) {
+          const updatedUser = {
+            ...user,
+            cards: [{
+              uid: user.selectedCard,
+              saldo_actual: cardResponse.data.saldo_actual,
+              activa: true
+            }]
+          };
+          await setUser(updatedUser);
+        }
+      } catch (error) {
+        console.error('Error refreshing card:', error);
+      }
+    }
+  };
+
+  const selectCard = async (cardUid) => {
+    if (user && user.cards) {
+      const selectedCard = user.cards.find(card => card.uid === cardUid);
+      if (selectedCard) {
+        const updatedUser = { ...user, selectedCard: cardUid };
+        await setUser(updatedUser);
+      }
     }
   };
 
   const value = {
     user,
     login,
+    loginWithCard,
+    register,
     logout,
-    updateUserBalance,
+    updateUserCards,
+    refreshUserCards,
+    selectCard,
     loading
   };
 

@@ -3,17 +3,22 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import DashboardScreen from './src/screens/DashboardScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RechargeScreen from './src/screens/RechargeScreen';
+import CardsScreen from './src/screens/CardsScreen';
+import RegisterCardScreen from './src/screens/RegisterCardScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 
 const TabNavigator = () => {
   return (
@@ -54,18 +59,33 @@ const TabNavigator = () => {
   );
 };
 
+const DrawerNavigator = () => {
+  return (
+    <Drawer.Navigator initialRouteName="MainTabs">
+      <Drawer.Screen name="Inicio" component={TabNavigator} options={{ title: 'Inicio' }} />
+      <Drawer.Screen name="Cards" component={CardsScreen} options={{ title: 'Mis Tarjetas' }} />
+      <Drawer.Screen name="RegisterCard" component={RegisterCardScreen} options={{ title: 'Registrar Tarjeta' }} />
+    </Drawer.Navigator>
+  );
+};
+
 const AppNavigator = () => {
   const { user, loading } = useAuth();
 
+  // Mostrar un loader mientras se verifica el estado de autenticación
   if (loading) {
-    return null; // O un componente de carga
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#2196F3" />
+      </View>
+    );
   }
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Main" component={TabNavigator} />
+          <Stack.Screen name="Main" component={DrawerNavigator} />
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}

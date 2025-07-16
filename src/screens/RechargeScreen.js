@@ -14,19 +14,31 @@ import {
   RadioButton,
   Divider,
   ActivityIndicator,
+  Chip,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
+import CenteredLoader from '../components/CenteredLoader';
 
-const RechargeScreen = () => {
-  const { user, updateUserBalance } = useAuth();
+const RechargeScreen = ({ navigation, route }) => {
+  const { user, refreshUserCards, loading } = useAuth();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
-  const [loading, setLoading] = useState(false);
+  const [loadingLocal, setLoadingLocal] = useState(false);
+
+  // Obtener tarjeta seleccionada del contexto o de los parámetros de navegación
+  const selectedCard = route.params?.selectedCard || 
+    (user?.cards && user.selectedCard ? 
+      user.cards.find(card => card.uid === user.selectedCard) : null);
 
   const predefinedAmounts = [10, 20, 50, 100];
 
   const handleRecharge = async () => {
+    if (!selectedCard) {
+      Alert.alert('Error', 'No hay tarjeta seleccionada');
+      return;
+    }
+
     const rechargeAmount = parseFloat(amount);
     
     if (!rechargeAmount || rechargeAmount <= 0) {
@@ -41,7 +53,7 @@ const RechargeScreen = () => {
 
     Alert.alert(
       'Confirmar Recarga',
-      `¿Estás seguro de recargar ${rechargeAmount.toFixed(2)} Bs con ${getPaymentMethodLabel(paymentMethod)}?`,
+      `¿Estás seguro de recargar ${rechargeAmount.toFixed(2)} Bs en la tarjeta ${selectedCard.uid} con ${getPaymentMethodLabel(paymentMethod)}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Confirmar', onPress: processRecharge }
@@ -50,20 +62,23 @@ const RechargeScreen = () => {
   };
 
   const processRecharge = async () => {
-    setLoading(true);
+    setLoadingLocal(true);
     try {
       const response = await apiService.rechargeCard(
-        user.uid,
+        selectedCard.uid,
         parseFloat(amount),
         paymentMethod
       );
 
       if (response.success) {
-        updateUserBalance(user.saldo_actual + parseFloat(amount));
+        await refreshUserCards();
         Alert.alert(
           'Recarga Exitosa',
-          `Se han agregado ${amount} Bs a tu tarjeta`,
-          [{ text: 'OK', onPress: () => setAmount('') }]
+          `Se han agregado ${amount} Bs a la tarjeta ${selectedCard.uid}`,
+          [{ text: 'OK', onPress: () => {
+            setAmount('');
+            navigation.goBack();
+          }}]
         );
       } else {
         Alert.alert('Error', response.message || 'No se pudo procesar la recarga');
@@ -71,7 +86,7 @@ const RechargeScreen = () => {
     } catch (error) {
       Alert.alert('Error', 'No se pudo conectar con el servidor');
     } finally {
-      setLoading(false);
+      setLoadingLocal(false);
     }
   };
 
@@ -88,14 +103,57 @@ const RechargeScreen = () => {
     setAmount(value.toString());
   };
 
+  // Retorno temprano DESPUÉS de todos los hooks
+  if (loading || !user) {
+    return <CenteredLoader />;
+  }
+
+  if (!selectedCard) {
+    return (
+      <View style={styles.errorContainer}>
+        <Paragraph style={styles.errorText}>
+          No hay tarjeta seleccionada para recargar
+        </Paragraph>
+        <Button
+          mode="contained"
+          onPress={() => navigation.goBack()}
+          style={styles.errorButton}
+        >
+          Volver
+        </Button>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Title style={styles.title}>Recargar Tarjeta</Title>
         <Paragraph style={styles.subtitle}>
-          Saldo actual: {user.saldo_actual.toFixed(2)} Bs
+          Tarjeta: {selectedCard.uid}
         </Paragraph>
       </View>
+
+      {/* Información de la Tarjeta */}
+      <Card style={styles.card}>
+        <Card.Content>
+          <Title style={styles.sectionTitle}>Tarjeta Seleccionada</Title>
+          <View style={styles.cardInfo}>
+            <View style={styles.cardDetail}>
+              <Paragraph style={styles.cardLabel}>UID:</Paragraph>
+              <Chip mode="outlined" style={styles.cardUidChip}>
+                {selectedCard.uid}
+              </Chip>
+            </View>
+            <View style={styles.cardDetail}>
+              <Paragraph style={styles.cardLabel}>Saldo Actual:</Paragraph>
+              <Title style={styles.currentBalance}>
+                {selectedCard.saldo_actual.toFixed(2)} Bs
+              </Title>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
 
       {/* Montos Predefinidos */}
       <Card style={styles.card}>
@@ -194,6 +252,10 @@ const RechargeScreen = () => {
           <Card.Content>
             <Title style={styles.sectionTitle}>Resumen</Title>
             <View style={styles.summaryRow}>
+              <Paragraph>Tarjeta:</Paragraph>
+              <Paragraph>{selectedCard.uid}</Paragraph>
+            </View>
+            <View style={styles.summaryRow}>
               <Paragraph>Monto a recargar:</Paragraph>
               <Paragraph style={styles.summaryAmount}>
                 {parseFloat(amount).toFixed(2)} Bs
@@ -201,13 +263,13 @@ const RechargeScreen = () => {
             </View>
             <View style={styles.summaryRow}>
               <Paragraph>Saldo actual:</Paragraph>
-              <Paragraph>{user.saldo_actual.toFixed(2)} Bs</Paragraph>
+              <Paragraph>{selectedCard.saldo_actual.toFixed(2)} Bs</Paragraph>
             </View>
             <Divider style={styles.divider} />
             <View style={styles.summaryRow}>
               <Paragraph style={styles.summaryTotal}>Nuevo saldo:</Paragraph>
               <Paragraph style={styles.summaryTotal}>
-                {(user.saldo_actual + parseFloat(amount)).toFixed(2)} Bs
+                {(selectedCard.saldo_actual + parseFloat(amount)).toFixed(2)} Bs
               </Paragraph>
             </View>
           </Card.Content>
@@ -219,12 +281,12 @@ const RechargeScreen = () => {
         <Button
           mode="contained"
           onPress={handleRecharge}
-          loading={loading}
-          disabled={loading || !amount || parseFloat(amount) <= 0}
+          loading={loadingLocal}
+          disabled={loadingLocal || !amount || parseFloat(amount) <= 0}
           style={styles.rechargeButton}
           contentStyle={styles.rechargeButtonContent}
         >
-          {loading ? 'Procesando...' : 'Recargar Tarjeta'}
+          {loadingLocal ? 'Procesando...' : 'Recargar Tarjeta'}
         </Button>
       </View>
 
@@ -241,6 +303,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 20,
+  },
+  errorButton: {
+    backgroundColor: '#2196F3',
   },
   header: {
     padding: 20,
@@ -261,6 +337,25 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     marginBottom: 15,
+  },
+  cardInfo: {
+    gap: 15,
+  },
+  cardDetail: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardLabel: {
+    color: '#666',
+    fontSize: 14,
+  },
+  cardUidChip: {
+    backgroundColor: '#f0f0f0',
+  },
+  currentBalance: {
+    color: '#4CAF50',
+    fontSize: 18,
   },
   predefinedAmounts: {
     flexDirection: 'row',

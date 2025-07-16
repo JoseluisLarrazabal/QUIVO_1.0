@@ -1,4 +1,27 @@
-const API_BASE_URL = 'http://localhost:3000/api'; // Cambiar por tu URL del backend
+// Para configurar la IP del backend, crea un archivo .env en la raíz de frontend con:
+// API_BASE_URL=http://TU_IP_LOCAL:3000/api
+
+import Constants from 'expo-constants';
+
+// Opción automática: obtiene la IP del host de Metro Bundler
+const getExpoHost = () => {
+  // Para proyectos managed (Expo Go)
+  if (Constants.manifest?.debuggerHost) {
+    return Constants.manifest.debuggerHost.split(':').shift();
+  }
+  // Para EAS Build y nuevas versiones de Expo
+  if (Constants.expoConfig?.hostUri) {
+    return Constants.expoConfig.hostUri.split(':').shift();
+  }
+  return null;
+};
+
+const host = getExpoHost();
+const API_BASE_URL =
+  (host ? `http://${host}:3000/api` : null) ||
+  Constants.expoConfig?.extra?.API_BASE_URL ||
+  process.env.API_BASE_URL ||
+  'http://localhost:3000/api';
 
 class ApiService {
   async makeRequest(endpoint, options = {}) {
@@ -7,6 +30,7 @@ class ApiService {
       console.log('Making API request to:', url);
 
       const response = await fetch(url, {
+        method: 'GET', // Método por defecto
         headers: {
           'Content-Type': 'application/json',
           ...options.headers,
@@ -33,6 +57,86 @@ class ApiService {
       
       throw error;
     }
+  }
+
+  // Autenticación
+  async login(username, password) {
+    if (!username || !password) {
+      throw new Error('Usuario y contraseña son requeridos');
+    }
+    return this.makeRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+  }
+
+  async loginWithCard(uid) {
+    if (!uid || uid.trim().length === 0) {
+      throw new Error('UID de tarjeta es requerido');
+    }
+    return this.makeRequest('/auth/login-card', {
+      method: 'POST',
+      body: JSON.stringify({ uid: uid.trim() }),
+    });
+  }
+
+  async register(userData) {
+    return this.makeRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  // Tarjetas
+  async getUserCards(userId) {
+    if (!userId) {
+      throw new Error('ID de usuario es requerido');
+    }
+    return this.makeRequest(`/usuario/${userId}/tarjetas`);
+  }
+
+  async addCardToUser(userId, cardData) {
+    if (!userId) {
+      throw new Error('ID de usuario es requerido');
+    }
+    
+    if (!cardData || !cardData.uid) {
+      throw new Error('UID de tarjeta es requerido');
+    }
+
+    return this.makeRequest(`/usuario/${userId}/tarjetas`, {
+      method: 'POST',
+      body: JSON.stringify(cardData),
+    });
+  }
+
+  async updateCardAlias(uid, alias) {
+    if (!uid || uid.trim().length === 0) {
+      throw new Error('UID de tarjeta es requerido');
+    }
+    
+    if (!alias || alias.trim().length === 0) {
+      throw new Error('Alias es requerido');
+    }
+
+    if (alias.trim().length > 50) {
+      throw new Error('Alias no puede tener más de 50 caracteres');
+    }
+
+    return this.makeRequest(`/tarjetas/${uid.trim()}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ alias: alias.trim() }),
+    });
+  }
+
+  async deleteCard(uid) {
+    if (!uid || uid.trim().length === 0) {
+      throw new Error('UID de tarjeta es requerido');
+    }
+
+    return this.makeRequest(`/tarjetas/${uid.trim()}`, {
+      method: 'DELETE',
+    });
   }
 
   async getCardInfo(uid) {

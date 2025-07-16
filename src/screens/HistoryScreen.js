@@ -12,34 +12,52 @@ import {
   Chip,
   Searchbar,
   ActivityIndicator,
+  Button,
+  Banner,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
+import CenteredLoader from '../components/CenteredLoader';
 
-const HistoryScreen = () => {
-  const { user } = useAuth();
+const HistoryScreen = ({ navigation, route }) => {
+  const { user, loading } = useAuth();
+  const [selectedCard, setSelectedCard] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingLocal, setLoadingLocal] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    loadTransactions();
-  }, []);
+    // Obtener tarjeta seleccionada del contexto o de los parámetros de navegación
+    const cardFromRoute = route.params?.selectedCard;
+    const cardFromContext = user?.cards && user.selectedCard ? 
+      user.cards.find(card => card.uid === user.selectedCard) : null;
+    
+    setSelectedCard(cardFromRoute || cardFromContext);
+  }, [user, route.params]);
+
+  useEffect(() => {
+    if (selectedCard) {
+      loadTransactions();
+    }
+  }, [selectedCard]);
 
   useEffect(() => {
     filterTransactions();
   }, [searchQuery, transactions]);
 
   const loadTransactions = async () => {
+    if (!selectedCard) return;
+    
     try {
-      const response = await apiService.getTransactionHistory(user.uid);
+      setLoadingLocal(true);
+      const response = await apiService.getTransactionHistory(selectedCard.uid);
       setTransactions(response.data);
     } catch (error) {
       console.error('Error loading transactions:', error);
     } finally {
-      setLoading(false);
+      setLoadingLocal(false);
     }
   };
 
@@ -111,7 +129,28 @@ const HistoryScreen = () => {
     </Card>
   );
 
-  if (loading) {
+  if (loading || !user) {
+    return <CenteredLoader />;
+  }
+
+  if (!selectedCard) {
+    return (
+      <View style={styles.errorContainer}>
+        <Paragraph style={styles.errorText}>
+          No hay tarjeta seleccionada para ver el historial
+        </Paragraph>
+        <Button
+          mode="contained"
+          onPress={() => navigation.goBack()}
+          style={styles.errorButton}
+        >
+          Volver
+        </Button>
+      </View>
+    );
+  }
+
+  if (loadingLocal) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
@@ -122,8 +161,60 @@ const HistoryScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Banner de Modo de Autenticación */}
+      {user.authMode === 'card_uid' && (
+        <Banner
+          visible={true}
+          actions={[
+            {
+              label: 'Cambiar a Credenciales',
+              onPress: () => {
+                navigation.navigate('Login');
+              },
+            },
+          ]}
+          icon="credit-card"
+          style={styles.banner}
+        >
+          Modo Tarjeta NFC - Historial de una sola tarjeta
+        </Banner>
+      )}
+
       <View style={styles.header}>
         <Title style={styles.title}>Historial de Transacciones</Title>
+        
+        {/* Información de la Tarjeta */}
+        <View style={styles.cardInfo}>
+          <Paragraph style={styles.cardInfoLabel}>Tarjeta:</Paragraph>
+          <Chip mode="outlined" style={styles.cardUidChip}>
+            {selectedCard.uid}
+          </Chip>
+        </View>
+        
+        <Paragraph style={styles.selectedCardInfo}>
+          Saldo actual: {selectedCard.saldo_actual.toFixed(2)} Bs
+        </Paragraph>
+        
+        {/* Selector de Tarjeta (solo en modo credenciales con múltiples tarjetas) */}
+        {user.authMode === 'credentials' && user.cards && user.cards.length > 1 && (
+          <View style={styles.cardSelector}>
+            <Paragraph style={styles.cardSelectorLabel}>Cambiar tarjeta:</Paragraph>
+            <View style={styles.cardButtons}>
+              {user.cards.map((card, index) => (
+                <Button
+                  key={index}
+                  mode={selectedCard?.uid === card.uid ? 'contained' : 'outlined'}
+                  onPress={() => setSelectedCard(card)}
+                  style={styles.cardButton}
+                  compact
+                >
+                  {card.uid}
+                </Button>
+              ))}
+            </View>
+          </View>
+        )}
+        
         <Searchbar
           placeholder="Buscar por ubicación o fecha..."
           onChangeText={setSearchQuery}
@@ -157,6 +248,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  banner: {
+    backgroundColor: '#fff3cd',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 20,
+  },
+  errorButton: {
+    backgroundColor: '#2196F3',
+  },
   header: {
     padding: 20,
     backgroundColor: 'white',
@@ -165,6 +273,40 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: 15,
     color: '#333',
+  },
+  cardInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cardInfoLabel: {
+    marginRight: 10,
+    color: '#666',
+    fontSize: 14,
+  },
+  cardUidChip: {
+    backgroundColor: '#f0f0f0',
+  },
+  selectedCardInfo: {
+    marginBottom: 15,
+    color: '#2196F3',
+    fontWeight: 'bold',
+  },
+  cardSelector: {
+    marginBottom: 15,
+  },
+  cardSelectorLabel: {
+    marginBottom: 10,
+    color: '#666',
+    fontSize: 14,
+  },
+  cardButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  cardButton: {
+    marginBottom: 5,
   },
   searchbar: {
     elevation: 0,
