@@ -244,4 +244,60 @@ describe('Card Model', () => {
       expect(populatedCard.usuario_id.tipo_tarjeta).toBe('adulto');
     });
   });
+});
+
+describe('Campo alias en Card', () => {
+  let testUserAlias;
+
+  beforeEach(async () => {
+    const username = uniqueUsername('aliasuser');
+    testUserAlias = new User({
+      username,
+      password: '123456',
+      nombre: 'Test User Alias',
+      tipo_tarjeta: 'adulto',
+      email: `${username}@example.com`
+    });
+    await testUserAlias.save();
+  });
+
+  afterEach(async () => {
+    if (testUserAlias && testUserAlias._id) {
+      await Card.deleteMany({ usuario_id: testUserAlias._id });
+      await User.findByIdAndDelete(testUserAlias._id);
+    }
+  });
+
+  it('debe permitir crear una tarjeta con alias', async () => {
+    const card = await Card.create({
+      uid: uniqueUid(),
+      usuario_id: testUserAlias._id,
+      alias: 'Mi Tarjeta Favorita',
+      saldo_actual: 10
+    });
+    expect(card.alias).toBe('Mi Tarjeta Favorita');
+  });
+
+  it('debe permitir actualizar el alias de una tarjeta', async () => {
+    const card = await Card.create({
+      uid: uniqueUid(),
+      usuario_id: testUserAlias._id,
+      alias: 'Alias Inicial',
+      saldo_actual: 5
+    });
+    card.alias = 'Alias Actualizado';
+    await card.save();
+    const updated = await Card.findById(card._id);
+    expect(updated.alias).toBe('Alias Actualizado');
+  });
+
+  it('no debe permitir alias de más de 50 caracteres', async () => {
+    const longAlias = 'a'.repeat(51);
+    await expect(Card.create({
+      uid: uniqueUid(),
+      usuario_id: testUserAlias._id,
+      alias: longAlias,
+      saldo_actual: 5
+    })).rejects.toThrow();
+  });
 }); 

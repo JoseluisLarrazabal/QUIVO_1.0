@@ -116,6 +116,110 @@ router.get("/usuario/:userId/tarjetas", async (req, res) => {
   }
 })
 
+// Agregar tarjeta a usuario existente
+router.post('/usuario/:userId/tarjetas', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { uid, alias = '', tipo_tarjeta, saldo_inicial = 0 } = req.body;
+
+    // Validar que la tarjeta no exista
+    const existingCard = await Card.findByUid(uid);
+    if (existingCard) {
+      return res.status(400).json({
+        success: false,
+        error: 'La tarjeta ya está registrada',
+      });
+    }
+
+    // Buscar usuario existente
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado',
+      });
+    }
+
+    // Crear tarjeta
+    const card = await Card.create({
+      uid,
+      usuario_id: user._id,
+      alias,
+      saldo_actual: saldo_inicial,
+    });
+
+    // (Opcional) Actualizar tipo_tarjeta del usuario si se provee
+    if (tipo_tarjeta) {
+      user.tipo_tarjeta = tipo_tarjeta;
+      await user.save();
+    }
+
+    res.status(201).json({
+      success: true,
+      data: card,
+    });
+  } catch (error) {
+    console.error('Error al agregar tarjeta a usuario:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al agregar la tarjeta',
+    });
+  }
+});
+
+// Eliminar (desactivar) tarjeta
+router.delete('/tarjetas/:uid', async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const card = await Card.deactivate(uid);
+    res.json({
+      success: true,
+      data: card,
+    });
+  } catch (error) {
+    console.error('Error al eliminar tarjeta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar la tarjeta',
+    });
+  }
+});
+
+// Actualizar alias de tarjeta
+router.patch('/tarjetas/:uid', async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const { alias } = req.body;
+    if (typeof alias !== 'string' || alias.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error: 'Alias inválido',
+      });
+    }
+    const card = await Card.findOneAndUpdate(
+      { uid },
+      { alias },
+      { new: true, runValidators: true }
+    );
+    if (!card) {
+      return res.status(404).json({
+        success: false,
+        error: 'Tarjeta no encontrada',
+      });
+    }
+    res.json({
+      success: true,
+      data: card,
+    });
+  } catch (error) {
+    console.error('Error al actualizar alias de tarjeta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al actualizar el alias',
+    });
+  }
+});
+
 // Listar todas las tarjetas (admin)
 router.get("/tarjetas", async (req, res) => {
   try {

@@ -15,6 +15,12 @@ const cardSchema = new mongoose.Schema({
     required: [true, "El usuario es requerido"],
     index: true
   },
+  alias: {
+    type: String,
+    trim: true,
+    maxlength: [50, "El alias no puede tener más de 50 caracteres"],
+    default: ''
+  },
   saldo_actual: {
     type: Number,
     default: 0.00,
