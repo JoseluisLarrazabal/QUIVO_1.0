@@ -4,6 +4,7 @@ const helmet = require("helmet")
 const rateLimit = require("express-rate-limit")
 const morgan = require("morgan")
 require("dotenv").config()
+const os = require('os');
 
 const { connectDB } = require("./config/database")
 const authRoutes = require("./routes/auth")
@@ -19,7 +20,13 @@ const PORT = process.env.PORT || 3000
 app.use(helmet())
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000", "http://localhost:19006"],
+    origin: process.env.ALLOWED_ORIGINS?.split(",") || [
+      "http://localhost:3000", 
+      "http://localhost:19006",
+      "http://192.168.0.5:3000",
+      "http://192.168.0.5:19006",
+      "exp://192.168.0.5:19000"
+    ],
     credentials: true,
   }),
 )
@@ -80,10 +87,21 @@ const startServer = async () => {
     await connectDB()
     console.log("✅ Conexión a MongoDB Atlas establecida")
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`)
-      console.log(`📱 API disponible en http://localhost:${PORT}/api`)
-      console.log(`🏥 Health check en http://localhost:${PORT}/health`)
+    app.listen(PORT, '0.0.0.0', () => {
+      // Detectar IP local para mostrar en el log
+      const interfaces = os.networkInterfaces();
+      let localIp = 'localhost';
+      for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+          if (iface.family === 'IPv4' && !iface.internal) {
+            localIp = iface.address;
+            break;
+          }
+        }
+      }
+      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+      console.log(`📱 API disponible en http://${localIp}:${PORT}/api`);
+      console.log(`🏥 Health check en http://${localIp}:${PORT}/health`);
     })
   } catch (error) {
     console.error("❌ Error al iniciar el servidor:", error)
@@ -91,7 +109,10 @@ const startServer = async () => {
   }
 }
 
-startServer()
+// Solo iniciar el servidor si no estamos en modo test
+if (process.env.NODE_ENV !== 'test') {
+  startServer()
+}
 
 // Manejo de cierre graceful
 process.on("SIGTERM", () => {
@@ -103,3 +124,6 @@ process.on("SIGINT", () => {
   console.log("🛑 Cerrando servidor...")
   process.exit(0)
 })
+
+// Exportar la aplicación para tests
+module.exports = app

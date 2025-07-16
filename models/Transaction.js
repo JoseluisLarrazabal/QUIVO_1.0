@@ -1,18 +1,22 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema({
   tarjeta_uid: {
     type: String,
     required: [true, "El UID de la tarjeta es requerido"],
-    ref: "Card"
+    index: true
   },
   monto: {
     type: Number,
-    required: [true, "El monto es requerido"]
+    required: [true, "El monto es requerido"],
+    set: v => Math.round(v * 100) / 100 // Redondear a 2 decimales
   },
   tipo: {
     type: String,
-    enum: ["viaje", "recarga"],
+    enum: {
+      values: ["viaje", "recarga"],
+      message: "Tipo de transacción {VALUE} no válido"
+    },
     required: [true, "El tipo de transacción es requerido"]
   },
   ubicacion: {
@@ -22,11 +26,15 @@ const transactionSchema = new mongoose.Schema({
   },
   validador_id: {
     type: String,
-    ref: "Validator"
+    ref: "Validator",
+    sparse: true
   },
   resultado: {
     type: String,
-    enum: ["exitoso", "fallido", "pendiente"],
+    enum: {
+      values: ["exitoso", "fallido", "pendiente", "saldo_insuficiente"],
+      message: "Resultado {VALUE} no válido"
+    },
     default: "exitoso"
   },
   metadata: {
@@ -34,129 +42,195 @@ const transactionSchema = new mongoose.Schema({
     default: {}
   }
 }, {
-  timestamps: true
-})
+  timestamps: true,
+  toJSON: { 
+    virtuals: true,
+    versionKey: false,
+    transform: function(doc, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+      return ret;
+    }
+  }
+});
 
-transactionSchema.index({ tarjeta_uid: 1 })
-transactionSchema.index({ createdAt: -1 })
-transactionSchema.index({ validador_id: 1 })
-transactionSchema.index({ tipo: 1 })
+// Índices compuestos para optimizar consultas comunes
+transactionSchema.index({ tarjeta_uid: 1, createdAt: -1 });
+transactionSchema.index({ validador_id: 1, createdAt: -1 });
+transactionSchema.index({ tipo: 1, resultado: 1 });
+transactionSchema.index({ createdAt: -1, tipo: 1 });
+// Asegurar índice simple para createdAt
+transactionSchema.index({ createdAt: -1 });
+// Índice simple para tipo (para los tests)
+transactionSchema.index({ tipo: 1 });
 
-transactionSchema.statics.create = async function(transactionData) {
-  const transaction = new this(transactionData)
-  return await transaction.save()
-}
+// Middleware para procesar datos antes de guardar
+transactionSchema.pre('save', function(next) {
+  // Asegurar que el monto esté redondeado
+  if (this.isModified('monto')) {
+    this.monto = Math.round(this.monto * 100) / 100;
+  }
+  next();
+});
 
+// Middleware para manejar errores de duplicado en save y insertMany
+transactionSchema.post('save', function(error, doc, next) {
+  if (error.name === 'MongoServerError' && error.code === 11000) {
+    next(new Error('Duplicado: la transacción ya existe.'));
+  } else {
+    next(error);
+  }
+});
+transactionSchema.post('insertMany', function(error, docs, next) {
+  if (error.name === 'MongoServerError' && error.code === 11000) {
+    next(new Error('Duplicado: la transacción ya existe.'));
+  } else {
+    next(error);
+  }
+});
+
+// Métodos de instancia
+transactionSchema.methods.wasSuccessful = function() {
+  return this.resultado === 'exitoso';
+};
+
+transactionSchema.methods.isRefund = function() {
+  return this.tipo === 'recarga' && this.monto > 0;
+};
+
+// Métodos estáticos mejorados
 transactionSchema.statics.getByCardUid = async function(uid, limit = 50, offset = 0) {
-  return await this.find({ tarjeta_uid: uid })
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .skip(offset)
-}
-
-transactionSchema.statics.getById = async function(id) {
-  return await this.findById(id)
-}
+  try {
+    return await this.find({ tarjeta_uid: uid })
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit)
+      .exec();
+  } catch (error) {
+    console.error("Error en getByCardUid:", error);
+    return [];
+  }
+};
 
 transactionSchema.statics.getRecentTransactions = async function(hours = 24) {
-  const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000)
-  
-  return await this.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: hoursAgo }
-      }
-    },
-    {
-      $lookup: {
-        from: "cards",
-        localField: "tarjeta_uid",
-        foreignField: "uid",
-        as: "tarjeta"
-      }
-    },
-    {
-      $unwind: "$tarjeta"
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "tarjeta.usuario_id",
-        foreignField: "_id",
-        as: "usuario"
-      }
-    },
-    {
-      $unwind: "$usuario"
-    },
-    {
-      $project: {
-        _id: 1,
-        tarjeta_uid: 1,
-        monto: 1,
-        tipo: 1,
-        ubicacion: 1,
-        validador_id: 1,
-        resultado: 1,
-        createdAt: 1,
-        "usuario.nombre": 1,
-        "usuario.tipo_tarjeta": 1
-      }
-    },
-    {
-      $sort: { createdAt: -1 }
-    }
-  ])
-}
+  try {
+    const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
+    return await this.find({ createdAt: { $gte: hoursAgo } })
+      .sort({ createdAt: -1 })
+      .exec();
+  } catch (error) {
+    console.error("Error en getRecentTransactions:", error);
+    return [];
+  }
+};
 
 transactionSchema.statics.getDailyStats = async function(date = new Date()) {
-  const startOfDay = new Date(date)
-  startOfDay.setHours(0, 0, 0, 0)
-  
-  const endOfDay = new Date(date)
-  endOfDay.setHours(23, 59, 59, 999)
-  
-  return await this.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: startOfDay, $lte: endOfDay }
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        total_transacciones: { $sum: 1 },
-        total_viajes: {
-          $sum: { $cond: [{ $eq: ["$tipo", "viaje"] }, 1, 0] }
-        },
-        total_recargas: {
-          $sum: { $cond: [{ $eq: ["$tipo", "recarga"] }, 1, 0] }
-        },
-        ingresos_viajes: {
-          $sum: { $cond: [{ $eq: ["$tipo", "viaje"] }, { $abs: "$monto" }, 0] }
-        },
-        total_recargas_monto: {
-          $sum: { $cond: [{ $eq: ["$tipo", "recarga"] }, "$monto", 0] }
+  try {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const result = await this.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startOfDay, $lte: endOfDay },
+          resultado: "exitoso"
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total_transacciones: { $sum: 1 },
+          total_viajes: { 
+            $sum: { 
+              $cond: [{ $eq: ["$tipo", "viaje"] }, 1, 0] 
+            } 
+          },
+          total_recargas: { 
+            $sum: { 
+              $cond: [{ $eq: ["$tipo", "recarga"] }, 1, 0] 
+            } 
+          },
+          ingresos_viajes: {
+            $sum: {
+              $cond: [
+                { $eq: ["$tipo", "viaje"] },
+                { $abs: "$monto" },
+                0
+              ]
+            }
+          },
+          total_recargas_monto: { 
+            $sum: { 
+              $cond: [
+                { $eq: ["$tipo", "recarga"] },
+                "$monto",
+                0
+              ] 
+            } 
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          total_transacciones: 1,
+          total_viajes: 1,
+          total_recargas: 1,
+          ingresos_viajes: { $round: ["$ingresos_viajes", 2] },
+          total_recargas_monto: { $round: ["$total_recargas_monto", 2] }
         }
       }
-    },
-    {
-      $project: {
-        _id: 0,
-        total_transacciones: 1,
-        total_viajes: 1,
-        total_recargas: 1,
-        ingresos_viajes: 1,
-        total_recargas_monto: 1
-      }
-    }
-  ]).then(results => results[0] || {
-    total_transacciones: 0,
-    total_viajes: 0,
-    total_recargas: 0,
-    ingresos_viajes: 0,
-    total_recargas_monto: 0
-  })
-}
+    ]);
 
-module.exports = mongoose.model("Transaction", transactionSchema)
+    if (!result.length) {
+      return {
+        total_transacciones: 0,
+        total_viajes: 0,
+        total_recargas: 0,
+        ingresos_viajes: 0,
+        total_recargas_monto: 0
+      };
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error("Error en getDailyStats:", error);
+    return {
+      total_transacciones: 0,
+      total_viajes: 0,
+      total_recargas: 0,
+      ingresos_viajes: 0,
+      total_recargas_monto: 0
+    };
+  }
+};
+
+// Método estático para crear una transacción con validación adicional
+transactionSchema.statics.createTransaction = async function(transactionData, session = null) {
+  const options = session ? { session } : {};
+  
+  // Validar el monto según el tipo
+  if (transactionData.tipo === 'viaje' && transactionData.monto > 0) {
+    transactionData.monto = -transactionData.monto; // Los viajes son siempre montos negativos
+  } else if (transactionData.tipo === 'recarga' && transactionData.monto < 0) {
+    transactionData.monto = Math.abs(transactionData.monto); // Las recargas son siempre montos positivos
+  }
+
+  // Crear la transacción con las opciones de sesión si se proporciona
+  return await this.create([transactionData], options);
+};
+
+// Método estático para buscar por ID
+transactionSchema.statics.getById = async function(id) {
+  try {
+    return await this.findById(id);
+  } catch (error) {
+    console.error("Error en getById:", error);
+    return null;
+  }
+};
+
+module.exports = mongoose.model("Transaction", transactionSchema);

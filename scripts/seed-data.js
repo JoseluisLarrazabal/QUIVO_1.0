@@ -11,31 +11,55 @@ const seedData = async () => {
     await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/nfc_transport")
     console.log("✅ Conectado a MongoDB")
 
-    // Limpiar datos existentes
-    await User.deleteMany({})
-    await Card.deleteMany({})
-    await Validator.deleteMany({})
-    console.log("🗑️ Datos existentes eliminados")
+    // Limpiar datos existentes y eliminar colecciones para evitar conflictos de índices
+    await mongoose.connection.dropCollection('users').catch(() => console.log("Colección users no existía"))
+    await mongoose.connection.dropCollection('cards').catch(() => console.log("Colección cards no existía"))
+    await mongoose.connection.dropCollection('validators').catch(() => console.log("Colección validators no existía"))
+    console.log("🗑️ Colecciones eliminadas")
 
     // Crear usuarios de ejemplo
     const users = await User.create([
       {
+        username: "juan.perez",
+        password: "123456",
         nombre: "Juan Pérez",
         tipo_tarjeta: "adulto",
         telefono: "59171234567",
         email: "juan.perez@email.com"
       },
       {
+        username: "maria.garcia",
+        password: "123456",
         nombre: "María García",
         tipo_tarjeta: "estudiante",
         telefono: "59172345678",
         email: "maria.garcia@email.com"
       },
       {
+        username: "carlos.mamani",
+        password: "123456",
         nombre: "Carlos Mamani",
         tipo_tarjeta: "adulto_mayor",
         telefono: "59173456789",
         email: "carlos.mamani@email.com"
+      },
+      // Usuario con varias tarjetas
+      {
+        username: "multi.tarjetas",
+        password: "123456",
+        nombre: "Multi Tarjetas",
+        tipo_tarjeta: "adulto",
+        telefono: "59170000001",
+        email: "multi.tarjetas@email.com"
+      },
+      // Usuario con tarjeta inactiva
+      {
+        username: "inactivo",
+        password: "123456",
+        nombre: "Usuario Inactivo",
+        tipo_tarjeta: "estudiante",
+        telefono: "59170000002",
+        email: "inactivo@email.com"
       }
     ])
 
@@ -57,6 +81,24 @@ const seedData = async () => {
         uid: "I9J0K1L2",
         usuario_id: users[2]._id,
         saldo_actual: 30.00
+      },
+      // Tarjetas para usuario multi.tarjetas
+      {
+        uid: "MULTI1",
+        usuario_id: users[3]._id,
+        saldo_actual: 40.00
+      },
+      {
+        uid: "MULTI2",
+        usuario_id: users[3]._id,
+        saldo_actual: 10.00
+      },
+      // Tarjeta inactiva para usuario inactivo
+      {
+        uid: "INACTIVA1",
+        usuario_id: users[4]._id,
+        saldo_actual: 5.00,
+        activa: false
       }
     ])
 
@@ -99,7 +141,7 @@ const seedData = async () => {
     console.log("Tarjetas disponibles:")
     cards.forEach(card => {
       const user = users.find(u => u._id.toString() === card.usuario_id.toString())
-      console.log(`- ${card.uid}: ${user.nombre} (${user.tipo_tarjeta}) - ${card.saldo_actual} Bs`)
+      console.log(`- ${card.uid}: ${user ? user.nombre : 'Sin usuario'} (${user ? user.tipo_tarjeta : 'N/A'}) - ${card.saldo_actual} Bs`)
     })
 
     console.log("\nValidadores disponibles:")

@@ -17,15 +17,20 @@ router.get("/saldo/:uid", validateUid, async (req, res) => {
       })
     }
 
+    // Formatear la tarjeta para la respuesta
+    const formattedCard = {
+      id: card._id,
+      uid: card.uid,
+      saldo_actual: card.saldo_actual,
+      fecha_creacion: card.createdAt,
+      usuario: card.usuario_id ? {
+        nombre: card.usuario_id.nombre,
+        tipo_tarjeta: card.usuario_id.tipo_tarjeta
+      } : undefined
+    }
     res.json({
       success: true,
-      data: {
-        uid: card.uid,
-        nombre: card.usuario_id.nombre,
-        tipo_tarjeta: card.usuario_id.tipo_tarjeta,
-        saldo_actual: Number.parseFloat(card.saldo_actual),
-        fecha_creacion: card.createdAt,
-      },
+      data: formattedCard
     })
   } catch (error) {
     console.error("Error al obtener saldo:", error)
@@ -81,15 +86,159 @@ router.post("/tarjetas", async (req, res) => {
   }
 })
 
+// Obtener tarjetas de un usuario específico
+router.get("/usuario/:userId/tarjetas", async (req, res) => {
+  try {
+    const { userId } = req.params
+    const cards = await Card.find({ usuario_id: userId, activa: true })
+      .populate("usuario_id", "nombre tipo_tarjeta")
+
+    const formattedCards = cards.map(card => ({
+      id: card._id,
+      uid: card.uid,
+      saldo_actual: card.saldo_actual,
+      fecha_creacion: card.createdAt,
+      usuario: card.usuario_id ? {
+        nombre: card.usuario_id.nombre,
+        tipo_tarjeta: card.usuario_id.tipo_tarjeta
+      } : undefined
+    }))
+    res.json({
+      success: true,
+      data: formattedCards
+    })
+  } catch (error) {
+    console.error("Error al obtener tarjetas del usuario:", error)
+    res.status(500).json({
+      success: false,
+      error: "Error al obtener las tarjetas del usuario",
+    })
+  }
+})
+
+// Agregar tarjeta a usuario existente
+router.post('/usuario/:userId/tarjetas', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { uid, alias = '', tipo_tarjeta, saldo_inicial = 0 } = req.body;
+
+    // Validar que la tarjeta no exista
+    const existingCard = await Card.findByUid(uid);
+    if (existingCard) {
+      return res.status(400).json({
+        success: false,
+        error: 'La tarjeta ya está registrada',
+      });
+    }
+
+    // Buscar usuario existente
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado',
+      });
+    }
+
+    // Crear tarjeta
+    const card = await Card.create({
+      uid,
+      usuario_id: user._id,
+      alias,
+      saldo_actual: saldo_inicial,
+    });
+
+    // (Opcional) Actualizar tipo_tarjeta del usuario si se provee
+    if (tipo_tarjeta) {
+      user.tipo_tarjeta = tipo_tarjeta;
+      await user.save();
+    }
+
+    res.status(201).json({
+      success: true,
+      data: card,
+    });
+  } catch (error) {
+    console.error('Error al agregar tarjeta a usuario:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al agregar la tarjeta',
+    });
+  }
+});
+
+// Eliminar (desactivar) tarjeta
+router.delete('/tarjetas/:uid', async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const card = await Card.deactivate(uid);
+    res.json({
+      success: true,
+      data: card,
+    });
+  } catch (error) {
+    console.error('Error al eliminar tarjeta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar la tarjeta',
+    });
+  }
+});
+
+// Actualizar alias de tarjeta
+router.patch('/tarjetas/:uid', async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const { alias } = req.body;
+    if (typeof alias !== 'string' || alias.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error: 'Alias inválido',
+      });
+    }
+    const card = await Card.findOneAndUpdate(
+      { uid },
+      { alias },
+      { new: true, runValidators: true }
+    );
+    if (!card) {
+      return res.status(404).json({
+        success: false,
+        error: 'Tarjeta no encontrada',
+      });
+    }
+    res.json({
+      success: true,
+      data: card,
+    });
+  } catch (error) {
+    console.error('Error al actualizar alias de tarjeta:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al actualizar el alias',
+    });
+  }
+});
+
 // Listar todas las tarjetas (admin)
 router.get("/tarjetas", async (req, res) => {
   try {
     const { limit = 50, offset = 0 } = req.query
     const cards = await Card.getAllCards(Number.parseInt(limit), Number.parseInt(offset))
 
+    const formattedCards = cards.map(card => ({
+      id: card._id,
+      uid: card.uid,
+      saldo_actual: card.saldo_actual,
+      fecha_creacion: card.createdAt,
+      usuario: card.usuario_id ? {
+        nombre: card.usuario_id.nombre,
+        tipo_tarjeta: card.usuario_id.tipo_tarjeta
+      } : undefined
+    }))
     res.json({
       success: true,
-      data: cards,
+      data: formattedCards,
       pagination: {
         limit: Number.parseInt(limit),
         offset: Number.parseInt(offset),
