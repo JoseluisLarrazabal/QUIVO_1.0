@@ -15,6 +15,10 @@ import {
   Divider,
   IconButton,
   FAB,
+  Modal,
+  Portal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
@@ -23,6 +27,11 @@ import CenteredLoader from '../components/CenteredLoader';
 const CardsScreen = ({ navigation }) => {
   const { user, refreshUserCards, selectCard, loading } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [editingCard, setEditingCard] = useState(null);
+  const [editingAlias, setEditingAlias] = useState('');
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (user && user.authMode === 'card_uid') {
@@ -55,6 +64,70 @@ const CardsScreen = ({ navigation }) => {
     }
   };
 
+  const handleEditAlias = (card) => {
+    setEditingCard(card);
+    setEditingAlias(card.alias || '');
+  };
+
+  const handleSaveAlias = async () => {
+    if (!editingCard || !editingAlias.trim()) {
+      Alert.alert('Error', 'El alias no puede estar vacío');
+      return;
+    }
+
+    if (editingAlias.trim().length > 50) {
+      Alert.alert('Error', 'El alias no puede tener más de 50 caracteres');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const response = await apiService.updateCardAlias(editingCard.uid, editingAlias.trim());
+      
+      if (response.success) {
+        await refreshUserCards();
+        Alert.alert('Éxito', 'Alias actualizado correctamente');
+        setEditingCard(null);
+        setEditingAlias('');
+      } else {
+        Alert.alert('Error', response.error || 'No se pudo actualizar el alias');
+      }
+    } catch (error) {
+      console.error('Error updating alias:', error);
+      Alert.alert('Error', 'No se pudo conectar con el servidor');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteCard = (card) => {
+    setCardToDelete(card);
+    setDeleteModalVisible(true);
+  };
+
+  const confirmDeleteCard = async () => {
+    if (!cardToDelete) return;
+
+    setActionLoading(true);
+    try {
+      const response = await apiService.deleteCard(cardToDelete.uid);
+      
+      if (response.success) {
+        await refreshUserCards();
+        Alert.alert('Éxito', 'Tarjeta eliminada correctamente');
+        setDeleteModalVisible(false);
+        setCardToDelete(null);
+      } else {
+        Alert.alert('Error', response.error || 'No se pudo eliminar la tarjeta');
+      }
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      Alert.alert('Error', 'No se pudo conectar con el servidor');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleCardAction = (action, card) => {
     switch (action) {
       case 'recharge':
@@ -63,8 +136,11 @@ const CardsScreen = ({ navigation }) => {
       case 'history':
         navigation.navigate('History', { selectedCard: card });
         break;
-      case 'details':
-        navigation.navigate('CardDetails', { card });
+      case 'edit':
+        handleEditAlias(card);
+        break;
+      case 'delete':
+        handleDeleteCard(card);
         break;
       default:
         break;
@@ -137,6 +213,9 @@ const CardsScreen = ({ navigation }) => {
                     <View key={card.uid} style={styles.activeCardContent}>
                       <View style={styles.cardInfo}>
                         <Title style={styles.cardUid}>{card.uid}</Title>
+                        {card.alias && (
+                          <Paragraph style={styles.cardAlias}>{card.alias}</Paragraph>
+                        )}
                         <Chip 
                           mode="outlined" 
                           style={[styles.typeChip, { borderColor: getCardColor(user.tipo_tarjeta) }]}
@@ -177,6 +256,9 @@ const CardsScreen = ({ navigation }) => {
                     <View style={styles.cardHeader}>
                       <View style={styles.cardInfo}>
                         <Title style={styles.cardUid}>{card.uid}</Title>
+                        {card.alias && (
+                          <Paragraph style={styles.cardAlias}>{card.alias}</Paragraph>
+                        )}
                         <Chip 
                           mode="outlined" 
                           style={[styles.typeChip, { borderColor: getCardColor(user.tipo_tarjeta) }]}
@@ -244,12 +326,22 @@ const CardsScreen = ({ navigation }) => {
                       </Button>
                       <Button
                         mode="outlined"
-                        icon="information"
-                        onPress={() => handleCardAction('details', card)}
+                        icon="pencil"
+                        onPress={() => handleCardAction('edit', card)}
                         style={styles.actionButton}
                         compact
                       >
-                        Detalles
+                        Editar
+                      </Button>
+                      <Button
+                        mode="outlined"
+                        icon="delete"
+                        onPress={() => handleCardAction('delete', card)}
+                        style={[styles.actionButton, { borderColor: '#F44336' }]}
+                        textColor="#F44336"
+                        compact
+                      >
+                        Eliminar
                       </Button>
                     </View>
                   </Card.Content>
@@ -279,6 +371,120 @@ const CardsScreen = ({ navigation }) => {
         onPress={() => navigation.navigate('RegisterCard')}
         label="Nueva Tarjeta"
       />
+
+      {/* Modal de Edición de Alias */}
+      <Portal>
+        <Modal
+          visible={editingCard !== null}
+          onDismiss={() => {
+            setEditingCard(null);
+            setEditingAlias('');
+          }}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Card>
+            <Card.Content>
+              <Title style={styles.modalTitle}>Editar Alias</Title>
+              <Paragraph style={styles.modalSubtitle}>
+                Tarjeta: {editingCard?.uid}
+              </Paragraph>
+              
+              <TextInput
+                label="Alias de la Tarjeta"
+                value={editingAlias}
+                onChangeText={setEditingAlias}
+                mode="outlined"
+                placeholder="Ej: Mi Tarjeta Principal"
+                style={styles.modalInput}
+                maxLength={50}
+              />
+              
+              <View style={styles.modalButtons}>
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setEditingCard(null);
+                    setEditingAlias('');
+                  }}
+                  style={styles.modalButton}
+                  disabled={actionLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleSaveAlias}
+                  loading={actionLoading}
+                  disabled={actionLoading || !editingAlias.trim()}
+                  style={styles.modalButton}
+                >
+                  Guardar
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        </Modal>
+      </Portal>
+
+      {/* Modal de Confirmación de Eliminación */}
+      <Portal>
+        <Modal
+          visible={deleteModalVisible}
+          onDismiss={() => {
+            setDeleteModalVisible(false);
+            setCardToDelete(null);
+          }}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Card>
+            <Card.Content>
+              <Title style={styles.modalTitle}>Confirmar Eliminación</Title>
+              <Paragraph style={styles.modalSubtitle}>
+                ¿Estás seguro de que quieres eliminar la tarjeta?
+              </Paragraph>
+              
+              {cardToDelete && (
+                <View style={styles.deleteCardInfo}>
+                  <Paragraph style={styles.deleteCardUid}>UID: {cardToDelete.uid}</Paragraph>
+                  {cardToDelete.alias && (
+                    <Paragraph style={styles.deleteCardAlias}>Alias: {cardToDelete.alias}</Paragraph>
+                  )}
+                  <Paragraph style={styles.deleteCardBalance}>
+                    Saldo: {cardToDelete.saldo_actual.toFixed(2)} Bs
+                  </Paragraph>
+                </View>
+              )}
+              
+              <Paragraph style={styles.deleteWarning}>
+                ⚠️ Esta acción desactivará la tarjeta. No se eliminará físicamente.
+              </Paragraph>
+              
+              <View style={styles.modalButtons}>
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setDeleteModalVisible(false);
+                    setCardToDelete(null);
+                  }}
+                  style={styles.modalButton}
+                  disabled={actionLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={confirmDeleteCard}
+                  loading={actionLoading}
+                  disabled={actionLoading}
+                  style={[styles.modalButton, { backgroundColor: '#F44336' }]}
+                >
+                  Eliminar
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        </Modal>
+      </Portal>
     </View>
   );
 };
@@ -351,6 +557,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 5,
   },
+  cardAlias: {
+    color: '#666',
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginBottom: 5,
+  },
   typeChip: {
     alignSelf: 'flex-start',
   },
@@ -392,10 +604,12 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   actionButton: {
     flex: 1,
+    minWidth: '45%',
   },
   noCardsContainer: {
     alignItems: 'center',
@@ -416,6 +630,56 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: '#2196F3',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    margin: 20,
+    borderRadius: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    marginBottom: 5,
+  },
+  modalSubtitle: {
+    color: '#666',
+    marginBottom: 20,
+  },
+  modalInput: {
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+  },
+  deleteCardInfo: {
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  deleteCardUid: {
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  deleteCardAlias: {
+    color: '#666',
+    marginBottom: 5,
+  },
+  deleteCardBalance: {
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  deleteWarning: {
+    color: '#F44336',
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });
 

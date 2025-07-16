@@ -14,6 +14,7 @@ import HistoryScreen from './src/screens/HistoryScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RechargeScreen from './src/screens/RechargeScreen';
 import CardsScreen from './src/screens/CardsScreen';
+import RegisterCardScreen from './src/screens/RegisterCardScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -63,6 +64,7 @@ const DrawerNavigator = () => {
     <Drawer.Navigator initialRouteName="MainTabs">
       <Drawer.Screen name="Inicio" component={TabNavigator} options={{ title: 'Inicio' }} />
       <Drawer.Screen name="Cards" component={CardsScreen} options={{ title: 'Mis Tarjetas' }} />
+      <Drawer.Screen name="RegisterCard" component={RegisterCardScreen} options={{ title: 'Registrar Tarjeta' }} />
     </Drawer.Navigator>
   );
 };

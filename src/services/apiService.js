@@ -95,6 +95,50 @@ class ApiService {
     return this.makeRequest(`/usuario/${userId}/tarjetas`);
   }
 
+  async addCardToUser(userId, cardData) {
+    if (!userId) {
+      throw new Error('ID de usuario es requerido');
+    }
+    
+    if (!cardData || !cardData.uid) {
+      throw new Error('UID de tarjeta es requerido');
+    }
+
+    return this.makeRequest(`/usuario/${userId}/tarjetas`, {
+      method: 'POST',
+      body: JSON.stringify(cardData),
+    });
+  }
+
+  async updateCardAlias(uid, alias) {
+    if (!uid || uid.trim().length === 0) {
+      throw new Error('UID de tarjeta es requerido');
+    }
+    
+    if (!alias || alias.trim().length === 0) {
+      throw new Error('Alias es requerido');
+    }
+
+    if (alias.trim().length > 50) {
+      throw new Error('Alias no puede tener más de 50 caracteres');
+    }
+
+    return this.makeRequest(`/tarjetas/${uid.trim()}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ alias: alias.trim() }),
+    });
+  }
+
+  async deleteCard(uid) {
+    if (!uid || uid.trim().length === 0) {
+      throw new Error('UID de tarjeta es requerido');
+    }
+
+    return this.makeRequest(`/tarjetas/${uid.trim()}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getCardInfo(uid) {
     if (!uid || uid.trim().length === 0) {
       throw new Error('UID de tarjeta es requerido');
