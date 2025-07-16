@@ -3,10 +3,25 @@
 
 import Constants from 'expo-constants';
 
+// Opción automática: obtiene la IP del host de Metro Bundler
+const getExpoHost = () => {
+  // Para proyectos managed (Expo Go)
+  if (Constants.manifest?.debuggerHost) {
+    return Constants.manifest.debuggerHost.split(':').shift();
+  }
+  // Para EAS Build y nuevas versiones de Expo
+  if (Constants.expoConfig?.hostUri) {
+    return Constants.expoConfig.hostUri.split(':').shift();
+  }
+  return null;
+};
+
+const host = getExpoHost();
 const API_BASE_URL =
+  (host ? `http://${host}:3000/api` : null) ||
   Constants.expoConfig?.extra?.API_BASE_URL ||
   process.env.API_BASE_URL ||
-  'http://172.20.10.2:3000/api'; // Fallback: IP de tu PC
+  'http://localhost:3000/api';
 
 class ApiService {
   async makeRequest(endpoint, options = {}) {
