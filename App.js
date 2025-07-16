@@ -6,15 +6,18 @@ import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import DashboardScreen from './src/screens/DashboardScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RechargeScreen from './src/screens/RechargeScreen';
+import CardsScreen from './src/screens/CardsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 
 const TabNavigator = () => {
   return (
@@ -55,6 +58,15 @@ const TabNavigator = () => {
   );
 };
 
+const DrawerNavigator = () => {
+  return (
+    <Drawer.Navigator initialRouteName="MainTabs">
+      <Drawer.Screen name="Inicio" component={TabNavigator} options={{ title: 'Inicio' }} />
+      <Drawer.Screen name="Cards" component={CardsScreen} options={{ title: 'Mis Tarjetas' }} />
+    </Drawer.Navigator>
+  );
+};
+
 const AppNavigator = () => {
   const { user, loading } = useAuth();
 
@@ -71,7 +83,7 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Main" component={TabNavigator} />
+          <Stack.Screen name="Main" component={DrawerNavigator} />
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
