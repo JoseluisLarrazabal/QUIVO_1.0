@@ -1,3 +1,4 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
@@ -24,6 +25,59 @@ afterEach(async () => {
     await collections[key].deleteMany({});
   }
 });
+
+// Configuración específica para tests de tarjetas
+// Mock temporal del middleware de verificación de propiedad para tests
+const originalVerifyCardOwnership = require('../middleware/auth').verifyCardOwnership;
+
+// Función para habilitar/deshabilitar el mock del middleware
+global.setupCardTests = (user) => {
+  const authMiddleware = require('../middleware/auth');
+  
+  // Mock temporal del middleware de verificación de propiedad
+  authMiddleware.verifyCardOwnership = async (req, res, next) => {
+    try {
+      const { uid } = req.params;
+      const userId = user._id;
+
+      // Buscar tarjeta y verificar propiedad
+      const Card = require('../models/Card');
+      const card = await Card.findOne({ uid, activa: true });
+
+      if (!card) {
+        return res.status(404).json({
+          success: false,
+          error: 'Tarjeta no encontrada',
+          code: 'CARD_NOT_FOUND'
+        });
+      }
+
+      if (card.usuario_id.toString() !== userId.toString()) {
+        return res.status(403).json({
+          success: false,
+          error: 'Acceso denegado. La tarjeta no pertenece al usuario',
+          code: 'CARD_OWNERSHIP_DENIED'
+        });
+      }
+
+      req.card = card;
+      next();
+    } catch (error) {
+      console.error('Error en verificación de propiedad:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        code: 'INTERNAL_ERROR'
+      });
+    }
+  };
+};
+
+// Función para restaurar el middleware original
+global.restoreCardTests = () => {
+  const authMiddleware = require('../middleware/auth');
+  authMiddleware.verifyCardOwnership = originalVerifyCardOwnership;
+};
 
 // Funciones helper globales para las pruebas
 global.generateUniqueId = (prefix = '') => {

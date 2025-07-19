@@ -1,5 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
+const express = require('express');
 const app = require('../../server');
 
 describe('App Integration Tests', () => {
@@ -68,9 +69,15 @@ describe('App Integration Tests', () => {
       const originalConsoleError = console.error;
       console.error = jest.fn(); // Mock console.error
 
-      // Crear una ruta que cause un error
+      // Crear una ruta que cause un error real
       const testApp = require('express')();
-      testApp.use(require('../../routes/auth'));
+      testApp.use(express.json());
+      
+      // Agregar una ruta que cause un error interno
+      testApp.get('/test-error', (req, res, next) => {
+        next(new Error('Error interno de prueba'));
+      });
+      
       testApp.use((err, req, res, next) => {
         res.status(err.status || 500).json({
           error: process.env.NODE_ENV === 'production' ? 'Error interno del servidor' : err.message,
@@ -78,10 +85,10 @@ describe('App Integration Tests', () => {
       });
 
       const response = await request(testApp)
-        .post('/login')
-        .send({ invalid: 'data' });
+        .get('/test-error');
 
       expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Error interno de prueba');
 
       console.error = originalConsoleError; // Restaurar console.error
     });

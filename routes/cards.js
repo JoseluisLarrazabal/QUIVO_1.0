@@ -3,6 +3,7 @@ const router = express.Router()
 const Card = require("../models/Card")
 const User = require("../models/User")
 const { validateUid } = require("../middleware/validation")
+const { authenticateToken, verifyCardOwnership } = require("../middleware/auth")
 
 // Obtener información de tarjeta por UID
 router.get("/saldo/:uid", validateUid, async (req, res) => {
@@ -44,7 +45,7 @@ router.get("/saldo/:uid", validateUid, async (req, res) => {
 // Crear nueva tarjeta
 router.post("/tarjetas", async (req, res) => {
   try {
-    const { uid, nombre, tipo_tarjeta, telefono, email, saldo_inicial = 0 } = req.body
+    const { uid, username, password, nombre, tipo_tarjeta, telefono, email, saldo_inicial = 0 } = req.body;
 
     // Validar que la tarjeta no exista
     const existingCard = await Card.findByUid(uid)
@@ -55,8 +56,18 @@ router.post("/tarjetas", async (req, res) => {
       })
     }
 
+    // Validar que username y password estén presentes
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Username y password son requeridos para crear el usuario asociado",
+      })
+    }
+
     // Crear usuario
     const user = await User.create({
+      username,
+      password,
       nombre,
       tipo_tarjeta,
       telefono,
@@ -86,8 +97,8 @@ router.post("/tarjetas", async (req, res) => {
   }
 })
 
-// Obtener tarjetas de un usuario específico
-router.get("/usuario/:userId/tarjetas", async (req, res) => {
+// Obtener tarjetas de un usuario específico (requiere autenticación)
+router.get("/usuario/:userId/tarjetas", authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params
     const cards = await Card.find({ usuario_id: userId, activa: true })
@@ -116,8 +127,8 @@ router.get("/usuario/:userId/tarjetas", async (req, res) => {
   }
 })
 
-// Agregar tarjeta a usuario existente
-router.post('/usuario/:userId/tarjetas', async (req, res) => {
+// Agregar tarjeta a usuario existente (requiere autenticación)
+router.post('/usuario/:userId/tarjetas', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
     const { uid, alias = '', tipo_tarjeta, saldo_inicial = 0 } = req.body;
@@ -167,8 +178,8 @@ router.post('/usuario/:userId/tarjetas', async (req, res) => {
   }
 });
 
-// Eliminar (desactivar) tarjeta
-router.delete('/tarjetas/:uid', async (req, res) => {
+// Eliminar (desactivar) tarjeta (requiere autenticación y propiedad)
+router.delete('/tarjetas/:uid', authenticateToken, verifyCardOwnership, async (req, res) => {
   try {
     const { uid } = req.params;
     const card = await Card.deactivate(uid);
@@ -185,8 +196,8 @@ router.delete('/tarjetas/:uid', async (req, res) => {
   }
 });
 
-// Actualizar alias de tarjeta
-router.patch('/tarjetas/:uid', async (req, res) => {
+// Actualizar alias de tarjeta (requiere autenticación y propiedad)
+router.patch('/tarjetas/:uid', authenticateToken, verifyCardOwnership, async (req, res) => {
   try {
     const { uid } = req.params;
     const { alias } = req.body;

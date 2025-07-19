@@ -50,6 +50,9 @@ describe('Auth Routes', () => {
       expect(response.body.data.cards).toBeDefined();
       expect(response.body.data.cards).toHaveLength(1);
       expect(response.body.data.cards[0].uid).toBe('A1B2C3D4');
+      expect(response.body.data.tokens).toBeDefined();
+      expect(response.body.data.tokens.accessToken).toBeDefined();
+      expect(response.body.data.tokens.refreshToken).toBeDefined();
     });
 
     test('debería fallar con contraseña incorrecta', async () => {
@@ -62,7 +65,8 @@ describe('Auth Routes', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Usuario o contraseña incorrectos');
+      expect(response.body.error).toBe('Error de autenticación: Contraseña incorrecta');
+      expect(response.body.code).toBe('AUTHENTICATION_FAILED');
     });
 
     test('debería fallar con usuario inexistente', async () => {
@@ -75,7 +79,8 @@ describe('Auth Routes', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Usuario o contraseña incorrectos');
+      expect(response.body.error).toBe('Error de autenticación: Usuario no encontrado');
+      expect(response.body.code).toBe('AUTHENTICATION_FAILED');
     });
 
     test('debería fallar sin username', async () => {
@@ -88,6 +93,7 @@ describe('Auth Routes', () => {
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Usuario y contraseña son requeridos');
+      expect(response.body.code).toBe('MISSING_CREDENTIALS');
     });
 
     test('debería fallar sin password', async () => {
@@ -100,6 +106,7 @@ describe('Auth Routes', () => {
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Usuario y contraseña son requeridos');
+      expect(response.body.code).toBe('MISSING_CREDENTIALS');
     });
 
     test('debería fallar con datos vacíos', async () => {
@@ -110,6 +117,7 @@ describe('Auth Routes', () => {
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Usuario y contraseña son requeridos');
+      expect(response.body.code).toBe('MISSING_CREDENTIALS');
     });
 
     test('debería incluir todas las tarjetas del usuario', async () => {
@@ -132,6 +140,7 @@ describe('Auth Routes', () => {
       expect(response.body.data.cards).toHaveLength(2);
       expect(response.body.data.cards.map(c => c.uid)).toContain('A1B2C3D4');
       expect(response.body.data.cards.map(c => c.uid)).toContain('E5F6G7H8');
+      expect(response.body.data.tokens).toBeDefined();
     });
 
     test('debería excluir tarjetas inactivas', async () => {
@@ -154,6 +163,7 @@ describe('Auth Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body.data.cards).toHaveLength(1);
       expect(response.body.data.cards[0].uid).toBe('A1B2C3D4');
+      expect(response.body.data.tokens).toBeDefined();
     });
   });
 
@@ -181,6 +191,9 @@ describe('Auth Routes', () => {
       expect(response.body.data.user.email).toBe('newuser@example.com');
       expect(response.body.data.user.telefono).toBe('59172345678');
       expect(response.body.data.user.password).toBeUndefined(); // No debe incluir password
+      expect(response.body.data.tokens).toBeDefined();
+      expect(response.body.data.tokens.accessToken).toBeDefined();
+      expect(response.body.data.tokens.refreshToken).toBeDefined();
     });
 
     test('debería fallar con username duplicado', async () => {
@@ -197,7 +210,8 @@ describe('Auth Routes', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('El nombre de usuario ya está en uso');
+      expect(response.body.error).toBe('Error en registro: El nombre de usuario ya está en uso');
+      expect(response.body.code).toBe('REGISTRATION_FAILED');
     });
 
     test('debería fallar sin campos obligatorios', async () => {
@@ -339,6 +353,9 @@ describe('Auth Routes', () => {
       expect(response.body.data.card.saldo_actual).toBe(50.0);
       expect(response.body.data.card.usuario.nombre).toBe('Test User');
       expect(response.body.data.card.usuario.tipo_tarjeta).toBe('adulto');
+      expect(response.body.data.tokens).toBeDefined();
+      expect(response.body.data.tokens.accessToken).toBeDefined();
+      expect(response.body.data.tokens.refreshToken).toBeDefined();
     });
 
     it('should fail with missing UID', async () => {
@@ -349,16 +366,18 @@ describe('Auth Routes', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('UID de tarjeta es requerido');
+      expect(response.body.code).toBe('MISSING_CARD_UID');
     });
 
     it('should fail with non-existent card', async () => {
       const response = await request(app)
         .post('/auth/login-card')
         .send({ uid: 'NONEXISTENT' })
-        .expect(404);
+        .expect(401);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Tarjeta no encontrada o inactiva');
+      expect(response.body.error).toBe('Error de autenticación por tarjeta: Tarjeta no encontrada o inactiva');
+      expect(response.body.code).toBe('CARD_AUTHENTICATION_FAILED');
     });
 
     it('should fail with inactive card', async () => {
@@ -373,10 +392,11 @@ describe('Auth Routes', () => {
       const response = await request(app)
         .post('/auth/login-card')
         .send({ uid: 'INACTIVE' })
-        .expect(404);
+        .expect(401);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Tarjeta no encontrada o inactiva');
+      expect(response.body.error).toBe('Error de autenticación por tarjeta: Tarjeta no encontrada o inactiva');
+      expect(response.body.code).toBe('CARD_AUTHENTICATION_FAILED');
     });
   });
 }); 
