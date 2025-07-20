@@ -6,12 +6,17 @@ const morgan = require("morgan")
 require("dotenv").config()
 const os = require('os');
 
+// Importar sistema de logs y métricas
+const { logger, requestLogger } = require('./config/logger');
+const { metricsMiddleware, metricsEndpoint, recordRateLimitMetric } = require('./config/metrics');
+
 const { connectDB } = require("./config/database")
 const authRoutes = require("./routes/auth")
 const cardRoutes = require("./routes/cards")
 const transactionRoutes = require("./routes/transactions")
 const validatorRoutes = require("./routes/validators")
 const adminRoutes = require("./routes/admin")
+const monitoringRoutes = require("./routes/monitoring")
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -43,6 +48,9 @@ const rateLimitConfig = {
   standardHeaders: true, // Incluir headers X-RateLimit-*
   legacyHeaders: false,  // No incluir headers legacy
   handler: (req, res) => {
+    // Registrar métrica de rate limiting
+    recordRateLimitMetric(req.ip, req.path);
+    
     res.status(429).json({
       success: false,
       error: "Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.",
@@ -54,11 +62,17 @@ const rateLimitConfig = {
 const limiter = rateLimit(rateLimitConfig)
 app.use("/api/", limiter)
 
+// Middleware de métricas (debe ir antes de las rutas)
+app.use(metricsMiddleware);
+
 // Middleware de parsing
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true }))
 
-// Logging
+// Logging estructurado con Winston
+app.use(requestLogger);
+
+// Logging básico con Morgan (mantener para compatibilidad)
 app.use(morgan("combined"))
 
 // Health check
@@ -76,10 +90,22 @@ app.use("/api", cardRoutes)
 app.use("/api", transactionRoutes)
 app.use("/api", validatorRoutes)
 app.use("/api/admin", adminRoutes)
+app.use("/api/monitoring", monitoringRoutes)
+
+// Endpoint de métricas Prometheus
+app.get("/metrics", metricsEndpoint)
 
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
-  console.error("Error:", err)
+  // Log estructurado del error
+  logger.error('Error no manejado', {
+    error: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    userId: req.user?.id || 'anonymous'
+  });
 
   if (err.type === "entity.parse.failed") {
     return res.status(400).json({ error: "JSON inválido" })
@@ -114,11 +140,25 @@ const startServer = async () => {
           }
         }
       }
+      
+      // Log estructurado del inicio del servidor
+      logger.info('Servidor iniciado exitosamente', {
+        port: PORT,
+        environment: process.env.NODE_ENV || 'development',
+        localIp
+      });
+      
       console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
       console.log(`📱 API disponible en http://${localIp}:${PORT}/api`);
       console.log(`🏥 Health check en http://${localIp}:${PORT}/health`);
+      console.log(`📊 Métricas en http://${localIp}:${PORT}/metrics`);
+      console.log(`📈 Dashboard en http://${localIp}:${PORT}/api/monitoring/dashboard`);
     })
   } catch (error) {
+    logger.error('Error al iniciar el servidor', {
+      error: error.message,
+      stack: error.stack
+    });
     console.error("❌ Error al iniciar el servidor:", error)
     process.exit(1)
   }

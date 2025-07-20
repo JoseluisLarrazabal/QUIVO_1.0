@@ -2,6 +2,8 @@ const express = require("express")
 const router = express.Router()
 const authService = require("../services/authService")
 const { authenticateToken } = require("../middleware/auth")
+const { authLogger } = require("../config/logger")
+const { recordAuthMetric, recordJwtMetric } = require("../config/metrics")
 
 // Login con usuario y contraseña
 router.post("/login", async (req, res) => {
@@ -9,6 +11,11 @@ router.post("/login", async (req, res) => {
     const { username, password } = req.body;
     
     if (!username || !password) {
+      authLogger.warn('Intento de login sin credenciales', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       return res.status(400).json({ 
         success: false, 
         error: "Usuario y contraseña son requeridos",
@@ -18,12 +25,32 @@ router.post("/login", async (req, res) => {
 
     const result = await authService.authenticateUser(username, password);
     
+    // Registrar métrica de autenticación exitosa
+    recordAuthMetric('credentials', true);
+    recordJwtMetric('access', 'generated');
+    recordJwtMetric('refresh', 'generated');
+    
+    authLogger.info('Login exitoso', {
+      username,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+    
     res.status(200).json({ 
       success: true, 
       data: result 
     });
   } catch (error) {
-    console.error("Error en login:", error);
+    // Registrar métrica de autenticación fallida
+    recordAuthMetric('credentials', false, error.message);
+    
+    authLogger.warn('Login fallido', {
+      username: req.body.username,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      error: error.message
+    });
+    
     res.status(401).json({ 
       success: false, 
       error: error.message,
@@ -38,6 +65,11 @@ router.post("/login-card", async (req, res) => {
     const { uid } = req.body;
     
     if (!uid) {
+      authLogger.warn('Intento de login por tarjeta sin UID', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       return res.status(400).json({ 
         success: false, 
         error: "UID de tarjeta es requerido",
@@ -47,12 +79,32 @@ router.post("/login-card", async (req, res) => {
     
     const result = await authService.authenticateWithCard(uid);
     
+    // Registrar métrica de autenticación exitosa
+    recordAuthMetric('card', true);
+    recordJwtMetric('access', 'generated');
+    recordJwtMetric('refresh', 'generated');
+    
+    authLogger.info('Login por tarjeta exitoso', {
+      cardUid: uid,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+    
     res.status(200).json({ 
       success: true, 
       data: result 
     });
   } catch (error) {
-    console.error("Error en login por tarjeta:", error);
+    // Registrar métrica de autenticación fallida
+    recordAuthMetric('card', false, error.message);
+    
+    authLogger.warn('Login por tarjeta fallido', {
+      cardUid: req.body.uid,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      error: error.message
+    });
+    
     res.status(401).json({ 
       success: false, 
       error: error.message,
@@ -98,6 +150,11 @@ router.post("/refresh", async (req, res) => {
     const { refreshToken } = req.body;
     
     if (!refreshToken) {
+      authLogger.warn('Intento de refresh sin token', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       return res.status(400).json({ 
         success: false, 
         error: "Refresh token es requerido",
@@ -107,12 +164,30 @@ router.post("/refresh", async (req, res) => {
     
     const tokens = await authService.refreshAccessToken(refreshToken);
     
+    // Registrar métrica de refresh exitoso
+    recordJwtMetric('access', 'generated');
+    recordJwtMetric('refresh', 'generated');
+    recordJwtMetric('refresh', 'refresh_success');
+    
+    authLogger.info('Refresh token exitoso', {
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+    
     res.status(200).json({ 
       success: true, 
       data: tokens 
     });
   } catch (error) {
-    console.error("Error al refrescar token:", error);
+    // Registrar métrica de refresh fallido
+    recordJwtMetric('refresh', 'refresh_failed');
+    
+    authLogger.warn('Refresh token fallido', {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      error: error.message
+    });
+    
     res.status(401).json({ 
       success: false, 
       error: error.message,
