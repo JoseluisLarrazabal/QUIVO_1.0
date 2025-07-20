@@ -37,24 +37,43 @@ describe('App Integration Tests', () => {
   });
 
   describe('Rate Limiting', () => {
-    test.skip('debería aplicar rate limiting en endpoints de API', async () => {
-      // Hacer múltiples requests rápidos
+    test('debería aplicar rate limiting en endpoints de API', async () => {
+      // Para este test específico, vamos a hacer muchas requests para asegurar que se active el rate limiting
+      // El límite actual es 100, así que haremos 105 requests
       const requests = Array(105).fill().map(() => 
-        request(app).get('/health')
+        request(app).get('/api/saldo/TEST123') // Usar un endpoint GET que tenga rate limiting
       );
 
       const responses = await Promise.all(requests);
       const rateLimitedResponses = responses.filter(r => r.status === 429);
 
-      // Debería haber al menos algunas respuestas con rate limiting
-      expect(rateLimitedResponses.length).toBeGreaterThan(0);
+      // Debería haber al menos algunas respuestas con rate limiting (105 - 100 = 5)
+      expect(rateLimitedResponses.length).toBeGreaterThanOrEqual(1);
+      
+      // Verificar que las primeras 100 requests fueron exitosas (404 porque la tarjeta no existe)
+      const successfulResponses = responses.filter(r => r.status === 404);
+      expect(successfulResponses.length).toBe(100);
+    });
+
+    test('debería incluir headers de rate limiting en respuestas', async () => {
+      const response = await request(app).get('/api/saldo/TEST123'); // Usar endpoint con rate limiting
+      
+      // Verificar que se incluyen headers de rate limiting (versión 7.x usa 'ratelimit-*')
+      expect(response.headers['ratelimit-limit']).toBeDefined();
+      expect(response.headers['ratelimit-remaining']).toBeDefined();
+      expect(response.headers['ratelimit-reset']).toBeDefined();
+      
+      // Verificar valores específicos para test
+      expect(response.headers['ratelimit-limit']).toBe('100'); // Límite configurado para test
+      expect(parseInt(response.headers['ratelimit-remaining'])).toBeLessThanOrEqual(100);
     });
   });
 
   describe('JSON Parsing', () => {
     test('debería manejar JSON inválido', async () => {
+      // Usar un endpoint que no tenga rate limiting para evitar conflictos
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/health') // Usar health check que no tiene rate limiting
         .set('Content-Type', 'application/json')
         .send('{"invalid": json}');
 

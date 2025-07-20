@@ -10,7 +10,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "seed": "node scripts/seed-data.js"
+    "seed": "node scripts/seed-data.js",
+    "setup-env": "node scripts/setup-env.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

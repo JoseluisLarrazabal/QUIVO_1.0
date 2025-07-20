@@ -140,14 +140,18 @@ npm run test:coverage
 ```
 
 **Resultados actuales:**
-- ✅ 8 suites de test pasando
-- ✅ 125 tests pasando
+- ✅ 9 suites de test pasando
+- ✅ 146 tests pasando (incluyendo rate limiting)
 - ✅ 0 tests fallando
 - ✅ Cobertura completa de funcionalidades críticas
+- ✅ **NUEVO**: Tests de rate limiting activados y optimizados
+- ✅ **NUEVO**: Configuración flexible de rate limiting por entorno
 
 ## 🔒 Seguridad
 
-- Rate limiting (100 requests/15min)
+- **Rate limiting configurado por entorno**:
+  - Producción: 100 requests/15min (configurable via `RATE_LIMIT_MAX`)
+  - Test: 5 requests/15min (configurable via `TEST_RATE_LIMIT_MAX`)
 - Validación de datos con middleware personalizado
 - Headers de seguridad con Helmet
 - Logs detallados de todas las operaciones

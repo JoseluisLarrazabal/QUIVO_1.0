@@ -2,6 +2,12 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
+// Configurar variables de entorno para tests
+process.env.NODE_ENV = 'test';
+process.env.TEST_RATE_LIMIT_MAX = '100'; // Aumentar límite para tests
+process.env.RATE_LIMIT_MAX = '100';
+process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
+
 let mongoServer;
 
 beforeAll(async () => {

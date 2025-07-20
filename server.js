@@ -31,12 +31,27 @@ app.use(
   }),
 )
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requests por ventana de tiempo
+// Rate limiting configurado por entorno
+const rateLimitConfig = {
+  windowMs: process.env.NODE_ENV === 'test' 
+    ? 1 * 60 * 1000  // 1 minuto en test para que se resetee más rápido
+    : 15 * 60 * 1000, // 15 minutos en producción
+  max: process.env.NODE_ENV === 'test' 
+    ? parseInt(process.env.TEST_RATE_LIMIT_MAX) || 100  // 100 requests en test por defecto
+    : parseInt(process.env.RATE_LIMIT_MAX) || 100,      // 100 requests en producción por defecto
   message: "Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.",
-})
+  standardHeaders: true, // Incluir headers X-RateLimit-*
+  legacyHeaders: false,  // No incluir headers legacy
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      error: "Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.",
+      code: "RATE_LIMIT_EXCEEDED"
+    });
+  }
+}
+
+const limiter = rateLimit(rateLimitConfig)
 app.use("/api/", limiter)
 
 // Middleware de parsing
