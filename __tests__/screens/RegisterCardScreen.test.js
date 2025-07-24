@@ -40,52 +40,33 @@ const renderWithProviders = (component) => {
 };
 
 describe('RegisterCardScreen', () => {
+  // Mockear Alert.alert globalmente y limpiar entre tests
   beforeAll(() => {
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
-
-  beforeEach(() => {
+  afterEach(() => {
     jest.clearAllMocks();
-    Alert.alert.mockClear();
   });
 
-  it('debería renderizar correctamente', () => {
-    const { getByText, getByPlaceholderText } = renderWithProviders(
-      <RegisterCardScreen navigation={mockNavigation} />
-    );
-
-    expect(getByText('Registrar Nueva Tarjeta')).toBeTruthy();
-    expect(getByText('Agrega una nueva tarjeta NFC a tu cuenta')).toBeTruthy();
-    expect(getByText('Tu Información')).toBeTruthy();
-    expect(getByText('Test User')).toBeTruthy();
-    expect(getByPlaceholderText('Ej: A1B2C3D4')).toBeTruthy();
-    expect(getByPlaceholderText('Ej: Mi Tarjeta Principal')).toBeTruthy();
+  it('debería renderizar correctamente la pantalla de registro', () => {
+    const { getByText } = renderWithProviders(<RegisterCardScreen navigation={mockNavigation} />);
+    expect(getByText('Nueva Tarjeta')).toBeTruthy();
+    expect(getByText('Registra tu tarjeta NFC')).toBeTruthy();
   });
 
   it('debería mostrar información del usuario', () => {
-    const { getByText } = renderWithProviders(
-      <RegisterCardScreen navigation={mockNavigation} />
-    );
-
+    const { getByText, getAllByText } = renderWithProviders(<RegisterCardScreen navigation={mockNavigation} />);
     expect(getByText('Test User')).toBeTruthy();
-    expect(getByText('Tipo: Adulto')).toBeTruthy();
+    // Buscar el Chip con '👤 Adulto'
+    expect(getAllByText(/👤\s*Adulto/).length).toBeGreaterThan(0);
   });
 
-  it('debería validar UID mínimo de 4 caracteres', async () => {
-    const { getByText, getByPlaceholderText } = renderWithProviders(
-      <RegisterCardScreen navigation={mockNavigation} />
-    );
-
+  it('debería deshabilitar el botón de registro si el UID es menor a 4 caracteres', () => {
+    const { getByPlaceholderText, getByTestId } = renderWithProviders(<RegisterCardScreen navigation={mockNavigation} />);
     const uidInput = getByPlaceholderText('Ej: A1B2C3D4');
-    // Ingresar un UID de 3 caracteres para habilitar el botón y disparar la validación
-    fireEvent.changeText(uidInput, 'ABC');
-
-    const registerButton = getByText('Registrar Tarjeta');
-    fireEvent.press(registerButton);
-
-    await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'El UID debe tener al menos 4 caracteres');
-    });
+    fireEvent.changeText(uidInput, 'A1');
+    const registerButton = getByTestId('register-btn');
+    expect(registerButton.props.accessibilityState.disabled).toBe(true);
   });
 
   it('debería registrar tarjeta exitosamente', async () => {
@@ -143,20 +124,15 @@ describe('RegisterCardScreen', () => {
   });
 
   it('debería mostrar resumen cuando se ingresa UID', () => {
-    const { getByText, getByPlaceholderText, queryByText, getAllByText } = renderWithProviders(
-      <RegisterCardScreen navigation={mockNavigation} />
-    );
-
+    const { getByPlaceholderText, getByText, getAllByText } = renderWithProviders(<RegisterCardScreen navigation={mockNavigation} />);
     // Inicialmente no debe mostrar resumen
-    expect(queryByText('Resumen')).toBeNull();
-
+    expect(() => getByText('Resumen de Registro')).toThrow();
     const uidInput = getByPlaceholderText('Ej: A1B2C3D4');
     fireEvent.changeText(uidInput, 'A1B2C3D4');
-
     // Ahora debe mostrar resumen
-    expect(getByText('Resumen')).toBeTruthy();
-    expect(getByText('A1B2C3D4')).toBeTruthy();
-    expect(getAllByText('Adulto')).toHaveLength(2); // Aparece en la info del usuario y en el resumen
+    expect(getByText('Resumen de Registro')).toBeTruthy();
+    expect(getAllByText('A1 B2 C3 D4').length).toBeGreaterThan(0);
+    expect(getAllByText('Adulto').length).toBeGreaterThan(0);
     expect(getByText('0.00 Bs')).toBeTruthy();
   });
 

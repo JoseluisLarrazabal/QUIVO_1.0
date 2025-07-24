@@ -25,18 +25,18 @@ describe('LoginScreen', () => {
   });
 
   it('renderiza campos de usuario y contraseña por defecto', () => {
-    const { getByPlaceholderText, getByText } = renderWithAuth();
+    const { getByPlaceholderText, getByText, getAllByText } = renderWithAuth();
     expect(getByPlaceholderText('Ej: juan.perez')).toBeTruthy();
     expect(getByPlaceholderText('Ingresa tu contraseña')).toBeTruthy();
     expect(getByText('Ingresar')).toBeTruthy();
-    expect(getByText('Credenciales')).toBeTruthy();
+    expect(getAllByText('Usuario').length).toBeGreaterThan(0);
     expect(getByText('Tarjeta NFC')).toBeTruthy();
   });
 
   it('cambia a modo tarjeta y limpia campos', () => {
     const { getByText, getByPlaceholderText, queryByPlaceholderText } = renderWithAuth();
     fireEvent.press(getByText('Tarjeta NFC'));
-    expect(getByPlaceholderText('Ej: A1B2C3D4')).toBeTruthy();
+    expect(getByPlaceholderText('Ej: A1B2C3D4E5F6G7H8')).toBeTruthy();
     expect(queryByPlaceholderText('Ej: juan.perez')).toBeNull();
     expect(queryByPlaceholderText('Ingresa tu contraseña')).toBeNull();
   });
@@ -44,10 +44,10 @@ describe('LoginScreen', () => {
   it('cambia a modo credenciales y limpia campos', () => {
     const { getByText, getByPlaceholderText, queryByPlaceholderText } = renderWithAuth();
     fireEvent.press(getByText('Tarjeta NFC'));
-    fireEvent.press(getByText('Credenciales'));
+    fireEvent.press(getByText('Usuario'));
     expect(getByPlaceholderText('Ej: juan.perez')).toBeTruthy();
     expect(getByPlaceholderText('Ingresa tu contraseña')).toBeTruthy();
-    expect(queryByPlaceholderText('Ej: A1B2C3D4')).toBeNull();
+    expect(queryByPlaceholderText('Ej: A1B2C3D4E5F6G7H8')).toBeNull();
   });
 
   it('valida campos vacíos en modo credenciales', async () => {
@@ -80,11 +80,11 @@ describe('LoginScreen', () => {
     mockLoginWithCard.mockResolvedValue({ success: true });
     const { getByText, getByPlaceholderText } = renderWithAuth();
     fireEvent.press(getByText('Tarjeta NFC'));
-    fireEvent.changeText(getByPlaceholderText('Ej: A1B2C3D4'), 'A1B2C3D4');
+    fireEvent.changeText(getByPlaceholderText('Ej: A1B2C3D4E5F6G7H8'), 'A1B2C3D4E5F6G7H8');
     await act(async () => {
       fireEvent.press(getByText('Ingresar'));
     });
-    expect(mockLoginWithCard).toHaveBeenCalledWith('A1B2C3D4');
+    expect(mockLoginWithCard).toHaveBeenCalledWith('A1B2C3D4E5F6G7H8');
   });
 
   it('muestra Alert si login falla', async () => {
@@ -112,8 +112,8 @@ describe('LoginScreen', () => {
 
   it('muestra el texto de ayuda correcto según el modo', () => {
     const { getByText } = renderWithAuth();
-    expect(getByText('¿No tienes cuenta? Contacta al administrador del sistema.')).toBeTruthy();
+    expect(getByText('¿No tienes cuenta? Contacta al administrador del sistema para obtener acceso.')).toBeTruthy();
     fireEvent.press(getByText('Tarjeta NFC'));
-    expect(getByText('Coloca tu tarjeta cerca del dispositivo para leer el UID automáticamente.')).toBeTruthy();
+    expect(getByText('Si no puedes leer el NFC automáticamente, ingresa el UID manualmente desde la configuración de tu tarjeta.')).toBeTruthy();
   });
 }); 

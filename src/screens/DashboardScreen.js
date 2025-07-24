@@ -104,6 +104,8 @@ const DashboardScreen = ({ navigation }) => {
 
   const handleQuickAction = (action) => {
     const currentCard = getCurrentCard();
+    // eslint-disable-next-line no-console
+    console.log('[handleQuickAction]', { action, currentCard, navigation });
     if (!currentCard) {
       Alert.alert('Error', 'No hay tarjeta seleccionada');
       return;
@@ -111,13 +113,19 @@ const DashboardScreen = ({ navigation }) => {
 
     switch (action) {
       case 'recharge':
+        // eslint-disable-next-line no-console
+        console.log('Llamando navigation.navigate: Recharge');
         navigation.navigate('Recharge', { selectedCard: currentCard });
         break;
       case 'history':
+        // eslint-disable-next-line no-console
+        console.log('Llamando navigation.navigate: History');
         navigation.navigate('History', { selectedCard: currentCard });
         break;
       case 'cards':
         if (user.authMode === 'credentials' && user.isMultiCard) {
+          // eslint-disable-next-line no-console
+          console.log('Llamando navigation.navigate: Cards');
           navigation.navigate('Cards');
         } else {
           Alert.alert('Información', 'Modo tarjeta única - no hay más tarjetas disponibles');

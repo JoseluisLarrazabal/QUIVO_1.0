@@ -123,8 +123,9 @@ const DrawerNavigator = () => {
           borderBottomRightRadius: 24,
           width: 260,
         },
-        headerShown: false,
+        headerShown: false, // Oculta el header y el botón hamburguesa
         gestureEnabled: true,
+        edgeWidth: 80, // Mantiene el área de gesto ampliada
         drawerType: 'slide',
       }}
     >

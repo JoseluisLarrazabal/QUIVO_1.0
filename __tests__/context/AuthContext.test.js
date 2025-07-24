@@ -8,6 +8,7 @@ jest.mock('../../src/services/apiService', () => ({
   apiService: {
     login: jest.fn(),
     register: jest.fn(),
+    logout: jest.fn(), // Agregar mock de logout
   }
 }));
 

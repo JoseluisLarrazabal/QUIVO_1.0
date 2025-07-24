@@ -4,28 +4,56 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Animated,
+  Pressable,
 } from 'react-native';
-import { TextInput, Button, Card, Divider, SegmentedButtons, ActivityIndicator, Chip, RadioButton, Text } from 'react-native-paper';
+import { TextInput, Button, Card, Divider, RadioButton, Text, Surface, IconButton } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
-import { colors, typography } from '../theme';
+import { colors, typography, spacing, borderRadius, shadows, appTheme } from '../theme';
 
 const RechargeScreen = ({ navigation, route }) => {
   const { user, refreshUserCards, loading } = useAuth();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [loadingLocal, setLoadingLocal] = useState(false);
+  const [selectedAmountAnimation] = useState(new Animated.Value(1));
 
   // Obtener tarjeta seleccionada del contexto o de los parámetros de navegación
   const selectedCard = route.params?.selectedCard || 
     (user?.cards && user.selectedCard ? 
       user.cards.find(card => card.uid === user.selectedCard) : null);
 
-  const predefinedAmounts = [10, 20, 50, 100];
+  const predefinedAmounts = [
+    { value: 10, label: '10 Bs', popular: false },
+    { value: 20, label: '20 Bs', popular: true },
+    { value: 50, label: '50 Bs', popular: false },
+    { value: 100, label: '100 Bs', popular: false },
+  ];
+
+  const paymentMethods = [
+    {
+      id: 'efectivo',
+      title: 'Efectivo',
+      description: 'Recarga en puntos físicos autorizados',
+      icon: '💵',
+    },
+    {
+      id: 'qr',
+      title: 'QR Bancario',
+      description: 'Pago mediante código QR de tu banco',
+      icon: '📱',
+    },
+    {
+      id: 'tigo_money',
+      title: 'Tigo Money',
+      description: 'Pago con billetera móvil Tigo Money',
+      icon: '💳',
+    },
+  ];
 
   const handleRecharge = async () => {
-    console.log('HANDLE RECHARGE', amount);
     if (!selectedCard) {
       Alert.alert('Error', 'No hay tarjeta seleccionada');
       return;
@@ -83,16 +111,26 @@ const RechargeScreen = ({ navigation, route }) => {
   };
 
   const getPaymentMethodLabel = (method) => {
-    switch (method) {
-      case 'efectivo': return 'Efectivo';
-      case 'qr': return 'QR Bancario';
-      case 'tigo_money': return 'Tigo Money';
-      default: return 'Desconocido';
-    }
+    const paymentMethod = paymentMethods.find(pm => pm.id === method);
+    return paymentMethod ? paymentMethod.title : 'Desconocido';
   };
 
   const selectPredefinedAmount = (value) => {
     setAmount(value.toString());
+    
+    // Animación de selección
+    Animated.sequence([
+      Animated.timing(selectedAmountAnimation, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(selectedAmountAnimation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   // Retorno temprano DESPUÉS de todos los hooks
@@ -117,331 +155,591 @@ const RechargeScreen = ({ navigation, route }) => {
     );
   }
 
+  const currentAmount = parseFloat(amount) || 0;
+  const newBalance = selectedCard.saldo_actual + currentAmount;
+
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={styles.header}>
-        <Text variant="titleLarge" style={[typography.title, styles.title]}>Recargar Tarjeta</Text>
-        <Text variant="bodySmall" style={[typography.subtitle, styles.subtitle]}>
-          Tarjeta: {selectedCard.uid}
-        </Text>
-      </View>
-      {/* Información de la Tarjeta */}
-      <Card style={[styles.cardMinimal, { backgroundColor: colors.backgroundAlt }]}> 
-        <Card.Content>
-          <Text variant="titleSmall" style={[typography.titleSmall]}>Tarjeta Seleccionada</Text>
-          <View style={styles.cardInfo}>
-            <View style={styles.cardDetail}>
-              <Text style={typography.body}>UID:</Text>
-              <Chip mode="outlined" style={[styles.chip, { borderColor: colors.primary, color: colors.primary }]}> 
-                {selectedCard.uid}
-              </Chip>
+    <View style={styles.container}>
+      {/* Header mejorado con gradiente visual */}
+      <Surface style={styles.header} elevation={0}>
+        <View style={styles.headerContent}>
+          <IconButton
+            icon="arrow-left"
+            iconColor={colors.textInverse}
+            size={24}
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          />
+          <View style={styles.headerTextContainer}>
+            <Text variant="headlineSmall" style={styles.headerTitle}>
+              Recargar Tarjeta
+            </Text>
+            <Text variant="bodySmall" style={styles.headerSubtitle}>
+              {selectedCard.uid}
+            </Text>
+          </View>
+        </View>
+      </Surface>
+
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Información de la Tarjeta con diseño de card mejorado */}
+        <Surface style={styles.cardInfo} elevation={2}>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardIconContainer}>
+              <Text style={styles.cardIcon}>💳</Text>
             </View>
-            <View style={styles.cardDetail}>
-              <Text style={typography.body}>Saldo Actual:</Text>
-              <Text variant="titleLarge" style={[typography.titleLarge, { color: colors.primary, fontSize: 22 }]}>
-                {selectedCard.saldo_actual.toFixed(2)} Bs
+            <View style={styles.cardDetails}>
+              <Text variant="titleMedium" style={styles.cardTitle}>
+                Tarjeta Actual
+              </Text>
+              <Text variant="bodySmall" style={styles.cardSubtitle}>
+                UID: {selectedCard.uid}
               </Text>
             </View>
           </View>
-        </Card.Content>
-      </Card>
-      {/* Montos Predefinidos */}
-      <Card style={[styles.cardMinimal, { backgroundColor: colors.backgroundAlt }]}> 
-        <Card.Content>
-          <Text variant="titleSmall" style={[typography.titleSmall]}>Montos Rápidos</Text>
-          <View style={styles.predefinedAmounts}>
-            {predefinedAmounts.map((value) => (
-              <Button
-                key={value}
-                mode={amount === value.toString() ? 'contained' : 'outlined'}
-                onPress={() => selectPredefinedAmount(value)}
-                style={[styles.amountButton, { minWidth: 90 }]}
-                labelStyle={{ color: amount === value.toString() ? colors.accent : colors.primary, fontFamily: 'Montserrat_400Regular' }}
-                contentStyle={{ backgroundColor: amount === value.toString() ? colors.primary : colors.backgroundAlt, borderRadius: 10 }}
+          
+          <View style={styles.balanceContainer}>
+            <Text variant="bodyMedium" style={styles.balanceLabel}>
+              Saldo Actual
+            </Text>
+            <Text variant="displaySmall" style={styles.currentBalance}>
+              {selectedCard.saldo_actual.toFixed(2)} Bs
+            </Text>
+          </View>
+        </Surface>
+
+        {/* Montos Predefinidos con diseño mejorado */}
+        <Surface style={styles.section} elevation={1}>
+          <View style={styles.sectionHeader}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Montos Rápidos
+            </Text>
+            <Text variant="bodySmall" style={styles.sectionSubtitle}>
+              Selecciona un monto común
+            </Text>
+          </View>
+          
+          <View style={styles.amountGrid}>
+            {predefinedAmounts.map((item) => (
+              <Pressable
+                key={item.value}
+                onPress={() => selectPredefinedAmount(item.value)}
+                style={[
+                  styles.amountButton,
+                  amount === item.value.toString() && styles.amountButtonSelected
+                ]}
               >
-                {value} Bs
-              </Button>
+                <Animated.View
+                  style={[
+                    styles.amountButtonContent,
+                    { transform: [{ scale: selectedAmountAnimation }] }
+                  ]}
+                >
+                  {item.popular && (
+                    <View style={styles.popularBadge}>
+                      <Text style={styles.popularText}>Popular</Text>
+                    </View>
+                  )}
+                  <Text 
+                    variant="titleMedium" 
+                    style={[
+                      styles.amountButtonText,
+                      amount === item.value.toString() && styles.amountButtonTextSelected
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </Animated.View>
+              </Pressable>
             ))}
           </View>
-        </Card.Content>
-      </Card>
-      {/* Monto Personalizado */}
-      <Card style={[styles.cardMinimal, { backgroundColor: colors.backgroundAlt }]}> 
-        <Card.Content>
-          <Text variant="titleSmall" style={[typography.titleSmall]}>Monto Personalizado</Text>
-          <TextInput
-            label="Monto a recargar (Bs)"
-            value={amount}
-            onChangeText={setAmount}
-            mode="outlined"
-            keyboardType="numeric"
-            placeholder="0.00"
-            style={[styles.input, { backgroundColor: colors.backgroundInput, color: colors.text }]}
-            theme={{ colors: { primary: colors.primary, text: colors.text, placeholder: colors.secondaryText } }}
-            underlineColor={colors.primary}
-          />
-          <Text style={[typography.body, styles.helpText]}>
-            Monto mínimo: 5 Bs
+        </Surface>
+
+        {/* Monto Personalizado mejorado */}
+        <Surface style={styles.section} elevation={1}>
+          <View style={styles.sectionHeader}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Monto Personalizado
+            </Text>
+            <Text variant="bodySmall" style={styles.sectionSubtitle}>
+              Ingresa cualquier monto desde 5 Bs
+            </Text>
+          </View>
+          
+          <View style={styles.inputContainer}>
+            <TextInput
+              label="Monto a recargar"
+              value={amount}
+              onChangeText={setAmount}
+              mode="outlined"
+              keyboardType="numeric"
+              placeholder="0.00"
+              style={styles.input}
+              contentStyle={styles.inputContent}
+              right={<TextInput.Affix text="Bs" />}
+              theme={{
+                colors: {
+                  primary: colors.primary,
+                  onSurfaceVariant: colors.textSecondary,
+                }
+              }}
+            />
+            
+            {currentAmount > 0 && currentAmount < 5 && (
+              <View style={styles.warningContainer}>
+                <Text style={styles.warningText}>
+                  ⚠️ El monto mínimo es 5 Bs
+                </Text>
+              </View>
+            )}
+          </View>
+        </Surface>
+
+        {/* Método de Pago rediseñado */}
+        <Surface style={styles.section} elevation={1}>
+          <View style={styles.sectionHeader}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Método de Pago
+            </Text>
+            <Text variant="bodySmall" style={styles.sectionSubtitle}>
+              Elige cómo quieres pagar
+            </Text>
+          </View>
+          
+          <View style={styles.paymentMethods}>
+            {paymentMethods.map((method, index) => (
+              <Pressable
+                key={method.id}
+                onPress={() => setPaymentMethod(method.id)}
+                style={[
+                  styles.paymentMethod,
+                  paymentMethod === method.id && styles.paymentMethodSelected,
+                  index < paymentMethods.length - 1 && styles.paymentMethodBorder
+                ]}
+              >
+                <View style={styles.paymentMethodContent}>
+                  <View style={styles.paymentMethodLeft}>
+                    <View style={styles.paymentMethodIcon}>
+                      <Text style={styles.paymentMethodEmoji}>{method.icon}</Text>
+                    </View>
+                    <View style={styles.paymentMethodInfo}>
+                      <Text variant="titleSmall" style={styles.paymentMethodTitle}>
+                        {method.title}
+                      </Text>
+                      <Text variant="bodySmall" style={styles.paymentMethodDescription}>
+                        {method.description}
+                      </Text>
+                    </View>
+                  </View>
+                  <RadioButton
+                    value={method.id}
+                    status={paymentMethod === method.id ? 'checked' : 'unchecked'}
+                    onPress={() => setPaymentMethod(method.id)}
+                    color={colors.primary}
+                  />
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </Surface>
+
+        {/* Resumen mejorado */}
+        {currentAmount > 0 && (
+          <Surface style={styles.summaryCard} elevation={3}>
+            <View style={styles.summaryHeader}>
+              <Text variant="titleMedium" style={styles.summaryTitle}>
+                Resumen de Recarga
+              </Text>
+            </View>
+            
+            <View style={styles.summaryContent}>
+              <View style={styles.summaryRow}>
+                <Text variant="bodyMedium" style={styles.summaryLabel}>Monto a recargar</Text>
+                <Text variant="titleMedium" style={styles.summaryValue}>
+                  {currentAmount.toFixed(2)} Bs
+                </Text>
+              </View>
+              
+              <View style={styles.summaryRow}>
+                <Text variant="bodyMedium" style={styles.summaryLabel}>Saldo actual</Text>
+                <Text variant="bodyMedium" style={styles.summaryCurrentBalance}>
+                  {selectedCard.saldo_actual.toFixed(2)} Bs
+                </Text>
+              </View>
+              
+              <Divider style={styles.summaryDivider} />
+              
+              <View style={styles.summaryRow}>
+                <Text variant="titleMedium" style={styles.summaryTotalLabel}>Nuevo saldo</Text>
+                <Text variant="titleLarge" style={styles.summaryTotal}>
+                  {newBalance.toFixed(2)} Bs
+                </Text>
+              </View>
+            </View>
+          </Surface>
+        )}
+
+        {/* Botón de Recarga mejorado */}
+        <View style={styles.buttonContainer}>
+          <Button
+            mode="contained"
+            onPress={handleRecharge}
+            loading={loadingLocal}
+            disabled={loadingLocal || !amount || currentAmount < 5}
+            style={[
+              styles.rechargeButton,
+              (loadingLocal || !amount || currentAmount < 5) && styles.rechargeButtonDisabled
+            ]}
+            contentStyle={styles.rechargeButtonContent}
+            labelStyle={styles.rechargeButtonLabel}
+            testID="recharge-btn"
+          >
+            {loadingLocal ? 'Procesando Recarga...' : 'Confirmar Recarga'}
+          </Button>
+          
+          <Text style={styles.footerText}>
+            Las recargas pueden tardar hasta 5 minutos en reflejarse
           </Text>
-        </Card.Content>
-      </Card>
-      {/* Método de Pago */}
-      <Card style={[styles.cardMinimal, { backgroundColor: colors.backgroundAlt }]}> 
-        <Card.Content>
-          <Text variant="titleSmall" style={[typography.titleSmall]}>Método de Pago</Text>
-          <View style={styles.paymentOption}>
-            <RadioButton
-              value="efectivo"
-              status={paymentMethod === 'efectivo' ? 'checked' : 'unchecked'}
-              onPress={() => setPaymentMethod('efectivo')}
-              color={colors.primary}
-            />
-            <View style={styles.paymentInfo}>
-              <Text variant="bodySmall" style={[typography.body, styles.paymentTitle]}>Efectivo</Text>
-              <Text variant="bodySmall" style={[typography.body, styles.paymentDescription]}>
-                Recarga en puntos físicos autorizados
-              </Text>
-            </View>
-          </View>
-          <Divider style={styles.divider} />
-          <View style={styles.paymentOption}>
-            <RadioButton
-              value="qr"
-              status={paymentMethod === 'qr' ? 'checked' : 'unchecked'}
-              onPress={() => setPaymentMethod('qr')}
-              color={colors.primary}
-            />
-            <View style={styles.paymentInfo}>
-              <Text variant="bodySmall" style={[typography.body, styles.paymentTitle]}>QR Bancario</Text>
-              <Text variant="bodySmall" style={[typography.body, styles.paymentDescription]}>
-                Pago mediante código QR de tu banco
-              </Text>
-            </View>
-          </View>
-          <Divider style={styles.divider} />
-          <View style={styles.paymentOption}>
-            <RadioButton
-              value="tigo_money"
-              status={paymentMethod === 'tigo_money' ? 'checked' : 'unchecked'}
-              onPress={() => setPaymentMethod('tigo_money')}
-              color={colors.primary}
-            />
-            <View style={styles.paymentInfo}>
-              <Text variant="bodySmall" style={[typography.body, styles.paymentTitle]}>Tigo Money</Text>
-              <Text variant="bodySmall" style={[typography.body, styles.paymentDescription]}>
-                Pago con billetera móvil Tigo Money
-              </Text>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
-      {/* Resumen */}
-      {amount && parseFloat(amount) > 0 && (
-        <Card style={[styles.cardMinimal, { backgroundColor: colors.backgroundAlt }]}> 
-          <Card.Content>
-            <Text variant="titleSmall" style={[typography.titleSmall]}>Resumen</Text>
-            <View style={styles.summaryRow}>
-              <Text style={typography.body}>Tarjeta:</Text>
-              <Text style={typography.body}>{selectedCard.uid}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={typography.body}>Monto a recargar:</Text>
-              <Text style={[typography.body, styles.summaryAmount]}>
-                {parseFloat(amount).toFixed(2)} Bs
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={typography.body}>Saldo actual:</Text>
-              <Text style={typography.body}>{selectedCard.saldo_actual.toFixed(2)} Bs</Text>
-            </View>
-            <Divider style={styles.divider} />
-            <View style={styles.summaryRow}>
-              <Text style={[typography.body, styles.summaryTotal]}>Nuevo saldo:</Text>
-              <Text style={[typography.body, styles.summaryTotal]}>
-                {(selectedCard.saldo_actual + parseFloat(amount)).toFixed(2)} Bs
-              </Text>
-            </View>
-          </Card.Content>
-        </Card>
-      )}
-      {/* Botón de Recarga */}
-      <View style={styles.buttonContainer}>
-        <Button
-          mode="contained"
-          onPress={handleRecharge}
-          loading={loadingLocal}
-          disabled={loadingLocal || !amount || parseFloat(amount) <= 0}
-          style={styles.rechargeButton}
-          contentStyle={styles.rechargeButtonContent}
-          labelStyle={{ color: colors.accent, fontFamily: 'Montserrat_400Regular', fontSize: 18 }}
-          testID="recharge-btn"
-        >
-          {loadingLocal ? 'Procesando...' : 'Recargar Tarjeta'}
-        </Button>
-      </View>
-      <View style={styles.footer}>
-        <Text style={[typography.body, styles.footerText]}>
-          Las recargas pueden tardar hasta 5 minutos en reflejarse
-        </Text>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
-  errorContainer: {
+  
+  // Header mejorado
+  header: {
+    backgroundColor: colors.primary,
+    borderBottomLeftRadius: borderRadius.xl,
+    borderBottomRightRadius: borderRadius.xl,
+    paddingTop: spacing.xl + 20, // Status bar space
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  backButton: {
+    margin: 0,
+  },
+  headerTextContainer: {
     flex: 1,
+    marginLeft: spacing.md,
+  },
+  headerTitle: {
+    color: colors.textInverse,
+    fontFamily: typography.headlineSmall.fontFamily,
+  },
+  headerSubtitle: {
+    color: colors.accent,
+    marginTop: spacing.xs,
+  },
+
+  // Scroll view
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+
+  // Card de información
+  cardInfo: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  cardIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primaryLight + '20',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    marginRight: spacing.md,
   },
-  errorText: {
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 20,
+  cardIcon: {
+    fontSize: 24,
   },
-  errorButton: {
-    backgroundColor: '#2196F3',
+  cardDetails: {
+    flex: 1,
   },
-  header: {
-    padding: 24,
-    backgroundColor: colors.primary,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    marginBottom: 12,
-    elevation: 4,
+  cardTitle: {
+    color: colors.primary,
+    fontFamily: typography.titleMedium.fontFamily,
+  },
+  cardSubtitle: {
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  balanceContainer: {
     alignItems: 'center',
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: borderRadius.md,
   },
-  title: {
-    color: colors.background,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: colors.accent,
-    textAlign: 'center',
-    marginBottom: 0,
-  },
-  card: {
-    margin: 20,
-    marginTop: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    marginBottom: 15,
-  },
-  cardInfo: {
-    gap: 15,
-  },
-  cardDetail: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardLabel: {
-    color: '#666',
-    fontSize: 14,
-  },
-  cardUidChip: {
-    backgroundColor: '#f0f0f0',
+  balanceLabel: {
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   currentBalance: {
-    color: '#4CAF50',
-    fontSize: 18,
+    color: colors.primary,
+    fontWeight: '600',
   },
-  predefinedAmounts: {
+
+  // Secciones
+  section: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    color: colors.primary,
+    fontFamily: typography.titleMedium.fontFamily,
+  },
+  sectionSubtitle: {
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+
+  // Grid de montos
+  amountGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    justifyContent: 'space-between',
+    gap: spacing.md,
   },
   amountButton: {
-    flex: 1,
-    minWidth: '45%',
+    width: '48%',
+    borderRadius: borderRadius.md,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+  },
+  amountButtonSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '10',
+  },
+  amountButtonContent: {
+    padding: spacing.lg,
+    alignItems: 'center',
+    minHeight: 80,
+    justifyContent: 'center',
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.xs,
+  },
+  popularText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.textOnAccent,
+  },
+  amountButtonText: {
+    color: colors.text,
+    fontWeight: '500',
+  },
+  amountButtonTextSelected: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+
+  // Input personalizado
+  inputContainer: {
+    gap: spacing.sm,
   },
   input: {
-    marginBottom: 10,
+    backgroundColor: colors.surface,
   },
-  helpText: {
-    color: '#666',
+  inputContent: {
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  warningContainer: {
+    backgroundColor: colors.warningLight,
+    padding: spacing.md,
+    borderRadius: borderRadius.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.warning,
+  },
+  warningText: {
+    color: colors.warningDark,
     fontSize: 12,
+    fontWeight: '500',
   },
-  paymentOption: {
+
+  // Métodos de pago
+  paymentMethods: {
+    gap: 0,
+  },
+  paymentMethod: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  paymentMethodSelected: {
+    backgroundColor: colors.primary + '08',
+  },
+  paymentMethodBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  paymentMethodContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'space-between',
+    padding: spacing.lg,
   },
-  paymentInfo: {
+  paymentMethodLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    marginLeft: 10,
   },
-  paymentTitle: {
-    fontWeight: 'bold',
-    marginBottom: 2,
+  paymentMethodIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surfaceVariant,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
-  paymentDescription: {
-    color: '#666',
-    fontSize: 12,
+  paymentMethodEmoji: {
+    fontSize: 20,
   },
-  divider: {
-    marginVertical: 5,
-    backgroundColor: '#EEE',
+  paymentMethodInfo: {
+    flex: 1,
+  },
+  paymentMethodTitle: {
+    color: colors.text,
+    fontWeight: '500',
+  },
+  paymentMethodDescription: {
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+
+  // Resumen
+  summaryCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.primary + '20',
+  },
+  summaryHeader: {
+    backgroundColor: colors.primary + '10',
+    padding: spacing.lg,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+  },
+  summaryTitle: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  summaryContent: {
+    padding: spacing.lg,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
-  summaryAmount: {
-    fontWeight: 'bold',
-    color: '#4CAF50',
+  summaryLabel: {
+    color: colors.textSecondary,
+  },
+  summaryValue: {
+    color: colors.success,
+    fontWeight: '600',
+  },
+  summaryCurrentBalance: {
+    color: colors.text,
+  },
+  summaryDivider: {
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
+  },
+  summaryTotalLabel: {
+    color: colors.text,
+    fontWeight: '600',
   },
   summaryTotal: {
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: colors.primary,
+    fontWeight: '700',
   },
+
+  // Botón de recarga
   buttonContainer: {
-    padding: 20,
-    paddingTop: 10,
+    gap: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   rechargeButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    ...shadows.medium,
+  },
+  rechargeButtonDisabled: {
+    backgroundColor: colors.disabled,
   },
   rechargeButtonContent: {
-    paddingVertical: 8,
+    paddingVertical: spacing.md,
   },
-  footer: {
-    padding: 20,
-    paddingTop: 0,
+  rechargeButtonLabel: {
+    color: colors.textInverse,
+    fontFamily: typography.labelLarge.fontFamily,
+    fontSize: 16,
+    fontWeight: '600',
   },
   footerText: {
     textAlign: 'center',
-    color: '#666',
+    color: colors.textSecondary,
     fontSize: 12,
     fontStyle: 'italic',
   },
-  cardMinimal: {
-    backgroundColor: colors.background,
-    borderRadius: 18,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    borderWidth: 1,
-    borderColor: '#F3F0FF',
+
+  // Error states
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+    backgroundColor: colors.surface,
   },
-  chip: {
-    borderRadius: 8,
-    borderWidth: 1.5,
-    paddingHorizontal: 8,
-    fontFamily: 'Montserrat_400Regular',
-    fontSize: 14,
+  errorText: {
+    textAlign: 'center',
+    color: colors.textSecondary,
+    marginBottom: spacing.xl,
+    fontSize: 16,
+  },
+  errorButton: {
+    backgroundColor: colors.primary,
   },
 });
 

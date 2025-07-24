@@ -54,7 +54,6 @@ describe('RechargeScreen aislado', () => {
     await act(async () => {
       fireEvent.press(recargarBtn);
     });
-    expect(console.log).toHaveBeenCalledWith('HANDLE RECHARGE', '20');
     expect(Alert.alert).toHaveBeenCalled();
   });
 }); 
