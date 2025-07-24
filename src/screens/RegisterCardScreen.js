@@ -14,9 +14,11 @@ import {
   SegmentedButtons,
   Divider,
   ActivityIndicator,
+  Text,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
+import { colors, typography } from '../theme';
 
 const RegisterCardScreen = ({ navigation }) => {
   const { user, refreshUserCards } = useAuth();
@@ -115,32 +117,29 @@ const RegisterCardScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.header}>
-        <Title style={styles.title}>Registrar Nueva Tarjeta</Title>
-        <Paragraph style={styles.subtitle}>
+        <Text variant="titleLarge" style={[typography.title, styles.title]}>Registrar Nueva Tarjeta</Text>
+        <Text variant="bodyMedium" style={[typography.subtitle, styles.subtitle]}>
           Agrega una nueva tarjeta NFC a tu cuenta
-        </Paragraph>
+        </Text>
       </View>
-
       {/* Información del Usuario */}
-      <Card style={styles.userCard}>
+      <Card style={[styles.userCard, { backgroundColor: colors.backgroundAlt }]}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Tu Información</Title>
+          <Text variant="titleMedium" style={[typography.subtitle, styles.sectionTitle]}>Tu Información</Text>
           <View style={styles.userInfo}>
-            <Paragraph style={styles.userName}>{user.nombre}</Paragraph>
-            <Paragraph style={styles.userType}>
+            <Text variant="titleMedium" style={[typography.body, styles.userName]}>{user.nombre}</Text>
+            <Text variant="titleSmall" style={[typography.body, styles.userType]}>
               Tipo: {getCardTypeLabel(user.tipo_tarjeta)}
-            </Paragraph>
+            </Text>
           </View>
         </Card.Content>
       </Card>
-
       {/* Formulario de Registro */}
-      <Card style={styles.formCard}>
+      <Card style={[styles.formCard, { backgroundColor: colors.backgroundAlt }]}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Información de la Tarjeta</Title>
-
+          <Text variant="titleMedium" style={[typography.subtitle, styles.sectionTitle]}>Información de la Tarjeta</Text>
           {/* UID de la Tarjeta */}
           <TextInput
             label="UID de la Tarjeta *"
@@ -149,10 +148,11 @@ const RegisterCardScreen = ({ navigation }) => {
             mode="outlined"
             placeholder="Ej: A1B2C3D4"
             autoCapitalize="characters"
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.backgroundInput, color: colors.text }]}
             maxLength={50}
+            theme={{ colors: { primary: colors.primary, text: colors.text, placeholder: colors.secondaryText } }}
+            underlineColor={colors.primary}
           />
-
           {/* Alias de la Tarjeta */}
           <TextInput
             label="Alias (Opcional)"
@@ -160,13 +160,14 @@ const RegisterCardScreen = ({ navigation }) => {
             onChangeText={(value) => handleInputChange('alias', value)}
             mode="outlined"
             placeholder="Ej: Mi Tarjeta Principal"
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.backgroundInput, color: colors.text }]}
             maxLength={50}
+            theme={{ colors: { primary: colors.primary, text: colors.text, placeholder: colors.secondaryText } }}
+            underlineColor={colors.primary}
           />
-
           {/* Tipo de Tarjeta */}
           <View style={styles.typeSection}>
-            <Paragraph style={styles.typeLabel}>Tipo de Tarjeta:</Paragraph>
+            <Text variant="titleSmall" style={[typography.body, styles.typeLabel]}>Tipo de Tarjeta:</Text>
             <SegmentedButtons
               value={formData.tipo_tarjeta}
               onValueChange={(value) => handleInputChange('tipo_tarjeta', value)}
@@ -174,25 +175,23 @@ const RegisterCardScreen = ({ navigation }) => {
                 {
                   value: 'adulto',
                   label: 'Adulto',
-                  style: { backgroundColor: formData.tipo_tarjeta === 'adulto' ? '#2196F3' : undefined }
+                  style: { minWidth: 90, backgroundColor: formData.tipo_tarjeta === 'adulto' ? colors.primary : undefined, color: colors.background }
                 },
                 {
                   value: 'estudiante',
                   label: 'Estudiante',
-                  style: { backgroundColor: formData.tipo_tarjeta === 'estudiante' ? '#4CAF50' : undefined }
+                  style: { minWidth: 110, backgroundColor: formData.tipo_tarjeta === 'estudiante' ? '#4CAF50' : undefined, color: colors.background }
                 },
                 {
                   value: 'adulto_mayor',
                   label: 'Adulto Mayor',
-                  style: { backgroundColor: formData.tipo_tarjeta === 'adulto_mayor' ? '#FF9800' : undefined }
+                  style: { minWidth: 120, backgroundColor: formData.tipo_tarjeta === 'adulto_mayor' ? colors.accent : undefined, color: colors.primary }
                 },
               ]}
               style={styles.segmentedButtons}
             />
           </View>
-
           <Divider style={styles.divider} />
-
           {/* Saldo Inicial */}
           <TextInput
             label="Saldo Inicial (Opcional)"
@@ -202,45 +201,42 @@ const RegisterCardScreen = ({ navigation }) => {
             placeholder="0.00"
             keyboardType="numeric"
             style={styles.input}
+            theme={{ colors: { primary: colors.primary, text: colors.text, placeholder: colors.primary } }}
+            underlineColor={colors.primary}
           />
-
-          <Paragraph style={styles.helpText}>
+          <Text style={[typography.body, styles.helpText]}>
             * El UID es el identificador único de tu tarjeta NFC
-          </Paragraph>
+          </Text>
         </Card.Content>
       </Card>
-
       {/* Resumen */}
       {formData.uid && (
-        <Card style={styles.summaryCard}>
+        <Card style={[styles.summaryCard, { backgroundColor: colors.backgroundAlt }]}>
           <Card.Content>
-            <Title style={styles.sectionTitle}>Resumen</Title>
+            <Text variant="titleMedium" style={[typography.subtitle, styles.sectionTitle]}>Resumen</Text>
             <View style={styles.summaryRow}>
-              <Paragraph>UID:</Paragraph>
-              <Paragraph style={styles.summaryValue}>{formData.uid.toUpperCase()}</Paragraph>
+              <Text style={typography.body}>UID:</Text>
+              <Text style={[typography.body, styles.summaryValue]}>{formData.uid.toUpperCase()}</Text>
             </View>
             {formData.alias && (
               <View style={styles.summaryRow}>
-                <Paragraph>Alias:</Paragraph>
-                <Paragraph style={styles.summaryValue}>{formData.alias}</Paragraph>
+                <Text style={typography.body}>Alias:</Text>
+                <Text style={[typography.body, styles.summaryValue]}>{formData.alias}</Text>
               </View>
             )}
             <View style={styles.summaryRow}>
-              <Paragraph>Tipo:</Paragraph>
-              <Paragraph style={[styles.summaryValue, { color: getCardTypeColor(formData.tipo_tarjeta) }]}>
-                {getCardTypeLabel(formData.tipo_tarjeta)}
-              </Paragraph>
+              <Text style={typography.body}>Tipo:</Text>
+              <Text style={[typography.body, styles.summaryValue, { color: getCardTypeColor(formData.tipo_tarjeta) }]}>{getCardTypeLabel(formData.tipo_tarjeta)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Paragraph>Saldo inicial:</Paragraph>
-              <Paragraph style={styles.summaryValue}>
+              <Text style={typography.body}>Saldo inicial:</Text>
+              <Text style={[typography.body, styles.summaryValue]}>
                 {formData.saldo_inicial ? `${parseFloat(formData.saldo_inicial).toFixed(2)} Bs` : '0.00 Bs'}
-              </Paragraph>
+              </Text>
             </View>
           </Card.Content>
         </Card>
       )}
-
       {/* Botones de Acción */}
       <View style={styles.buttonContainer}>
         <Button
@@ -250,51 +246,58 @@ const RegisterCardScreen = ({ navigation }) => {
           disabled={loading || !formData.uid.trim()}
           style={styles.registerButton}
           contentStyle={styles.buttonContent}
+          labelStyle={{ color: colors.accent, fontFamily: 'Montserrat_400Regular', fontSize: 18 }}
         >
           {loading ? 'Registrando...' : 'Registrar Tarjeta'}
         </Button>
-
         <Button
           mode="outlined"
           onPress={() => navigation.goBack()}
           disabled={loading}
           style={styles.cancelButton}
           contentStyle={styles.buttonContent}
+          labelStyle={{ color: colors.primary, fontFamily: 'Montserrat_400Regular', fontSize: 18 }}
         >
           Cancelar
         </Button>
       </View>
-
       <View style={styles.footer}>
-        <Paragraph style={styles.footerText}>
+        <Text style={[typography.body, styles.footerText]}>
           La tarjeta será registrada en tu cuenta y podrás gestionarla desde "Mis Tarjetas"
-        </Paragraph>
+        </Text>
       </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
   header: {
-    padding: 20,
-    backgroundColor: 'white',
-    elevation: 2,
+    padding: 24,
+    backgroundColor: colors.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    marginBottom: 12,
+    elevation: 4,
+    alignItems: 'center',
   },
   title: {
-    color: '#333',
-    marginBottom: 5,
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   subtitle: {
-    color: '#666',
+    color: colors.accent,
+    textAlign: 'center',
+    marginBottom: 0,
   },
   userCard: {
     margin: 20,
     marginTop: 10,
     elevation: 4,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F3F0FF',
+    backgroundColor: colors.background,
   },
   userInfo: {
     marginTop: 10,
@@ -302,48 +305,64 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.primary,
+    fontFamily: 'Montserrat_400Regular',
   },
   userType: {
-    color: '#666',
+    color: colors.accent,
     marginTop: 5,
+    fontFamily: 'Chicalo-Regular',
   },
   formCard: {
     margin: 20,
     marginTop: 0,
     elevation: 4,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F3F0FF',
+    backgroundColor: colors.background,
   },
   sectionTitle: {
     fontSize: 18,
     marginBottom: 15,
+    color: colors.primary,
+    fontFamily: 'Montserrat_400Regular',
   },
   input: {
     marginBottom: 15,
+    backgroundColor: colors.background,
+    fontFamily: 'Montserrat_400Regular',
   },
   typeSection: {
     marginBottom: 15,
   },
   typeLabel: {
     marginBottom: 10,
-    color: '#666',
+    color: colors.primary,
     fontSize: 14,
+    fontFamily: 'Montserrat_400Regular',
   },
   segmentedButtons: {
     marginBottom: 10,
   },
   divider: {
     marginVertical: 15,
+    backgroundColor: '#EEE',
   },
   helpText: {
-    color: '#666',
+    color: colors.accent,
     fontSize: 12,
     fontStyle: 'italic',
+    fontFamily: 'Montserrat_400Regular',
   },
   summaryCard: {
     margin: 20,
     marginTop: 0,
     elevation: 4,
     backgroundColor: '#f8f9fa',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F3F0FF',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -352,17 +371,23 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontWeight: 'bold',
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.primary,
   },
   buttonContainer: {
     padding: 20,
     paddingTop: 10,
   },
   registerButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.primary,
     marginBottom: 10,
+    borderRadius: 12,
+    elevation: 0,
   },
   cancelButton: {
-    borderColor: '#666',
+    borderColor: colors.primary,
+    borderRadius: 12,
+    elevation: 0,
   },
   buttonContent: {
     paddingVertical: 8,
@@ -373,9 +398,10 @@ const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: 'center',
-    color: '#666',
+    color: colors.accent,
     fontSize: 12,
     fontStyle: 'italic',
+    fontFamily: 'Montserrat_400Regular',
   },
 });
 

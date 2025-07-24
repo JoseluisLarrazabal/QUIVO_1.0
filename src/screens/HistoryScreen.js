@@ -4,21 +4,31 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
+  Animated,
+  Dimensions,
 } from 'react-native';
-import {
-  Card,
-  Title,
-  Paragraph,
-  Chip,
-  Searchbar,
-  ActivityIndicator,
-  Button,
-  Banner,
+import { 
+  TextInput, 
+  Button, 
+  Card, 
+  Divider, 
+  SegmentedButtons, 
+  ActivityIndicator, 
+  Chip, 
+  Banner, 
+  Searchbar, 
+  Text,
+  IconButton,
+  FAB
 } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
-import { appTheme, fonts, colors } from '../theme';
+import { colors, typography, spacing, shadows } from '../theme';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const HistoryScreen = ({ navigation, route }) => {
   const { user, loading } = useAuth();
@@ -90,16 +100,16 @@ const HistoryScreen = ({ navigation, route }) => {
   };
 
   const renderTransaction = ({ item }) => (
-    <Card style={styles.transactionCard}>
+    <Card style={[styles.transactionCard, { backgroundColor: colors.backgroundAlt }]}>
       <Card.Content>
         <View style={styles.transactionHeader}>
           <View style={styles.transactionInfo}>
-            <Title style={styles.transactionTitle}>
+            <Text variant="titleMedium" style={styles.transactionTitle}>
               {item.ubicacion || 'Ubicación no disponible'}
-            </Title>
-            <Paragraph style={styles.transactionDate}>
+            </Text>
+            <Text style={styles.transactionDate}>
               {new Date(item.fecha_hora).toLocaleString('es-BO')}
-            </Paragraph>
+            </Text>
           </View>
           <View style={styles.transactionAmount}>
             <Chip
@@ -112,19 +122,19 @@ const HistoryScreen = ({ navigation, route }) => {
             >
               {getTransactionTypeLabel(item.monto)}
             </Chip>
-            <Title style={[
+            <Text style={[
               styles.amount,
               { color: getTransactionTypeColor(item.monto) }
             ]}>
               {item.monto > 0 ? '+' : ''}{item.monto.toFixed(2)} Bs
-            </Title>
+            </Text>
           </View>
         </View>
         
         {item.resultado && (
-          <Paragraph style={styles.transactionResult}>
+          <Text style={styles.transactionResult}>
             Estado: {item.resultado}
-          </Paragraph>
+          </Text>
         )}
       </Card.Content>
     </Card>
@@ -137,9 +147,9 @@ const HistoryScreen = ({ navigation, route }) => {
   if (!selectedCard) {
     return (
       <View style={styles.errorContainer}>
-        <Paragraph style={styles.errorText}>
+        <Text style={styles.errorText}>
           No hay tarjeta seleccionada para ver el historial
-        </Paragraph>
+        </Text>
         <Button
           mode="contained"
           onPress={() => navigation.goBack()}
@@ -155,11 +165,12 @@ const HistoryScreen = ({ navigation, route }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
-        <Paragraph style={styles.loadingText}>Cargando historial...</Paragraph>
+        <Text style={styles.loadingText}>Cargando historial...</Text>
       </View>
     );
   }
 
+  // Mejoras visuales en el render principal:
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Banner de Modo de Autenticación */}
@@ -177,25 +188,25 @@ const HistoryScreen = ({ navigation, route }) => {
           icon="credit-card"
           style={styles.banner}
         >
-          Modo Tarjeta NFC - Historial de una sola tarjeta
+          <Text style={{ color: colors.primary, fontFamily: 'Montserrat_400Regular', fontSize: 15 }}>Modo Tarjeta NFC - Historial de una sola tarjeta</Text>
         </Banner>
       )}
       <View style={styles.header}>
-        <Title style={[fonts.title, styles.title]}>Historial de Transacciones</Title>
+        <Text variant="titleLarge" style={[typography.title, styles.title]}>Historial de Transacciones</Text>
         {/* Información de la Tarjeta */}
         <View style={styles.cardInfo}>
-          <Paragraph style={fonts.body}>Tarjeta:</Paragraph>
+          <Text style={typography.body}>Tarjeta:</Text>
           <Chip mode="outlined" style={[styles.chip, { borderColor: colors.primary, color: colors.primary }]}> 
             {selectedCard.uid}
           </Chip>
         </View>
-        <Paragraph style={[fonts.body, styles.selectedCardInfo]}>
+        <Text style={[typography.body, styles.selectedCardInfo]}>
           Saldo actual: {selectedCard.saldo_actual.toFixed(2)} Bs
-        </Paragraph>
+        </Text>
         {/* Selector de Tarjeta (solo en modo credenciales con múltiples tarjetas) */}
         {user.authMode === 'credentials' && user.cards && user.cards.length > 1 && (
           <View style={styles.cardSelector}>
-            <Paragraph style={fonts.body}>Cambiar tarjeta:</Paragraph>
+            <Text style={typography.body}>Cambiar tarjeta:</Text>
             <View style={styles.cardButtons}>
               {user.cards.map((card, index) => (
                 <Button
@@ -217,7 +228,7 @@ const HistoryScreen = ({ navigation, route }) => {
           placeholder="Buscar por ubicación o fecha..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          style={[styles.searchbar, { backgroundColor: colors.background, borderColor: colors.primary, borderWidth: 1, borderRadius: 12 }]}
+          style={[styles.searchbar, { backgroundColor: colors.backgroundInput, borderColor: colors.primary, borderWidth: 1, borderRadius: 12 }]}
           inputStyle={{ fontFamily: 'Montserrat_400Regular', color: colors.text }}
           iconColor={colors.primary}
         />
@@ -226,16 +237,16 @@ const HistoryScreen = ({ navigation, route }) => {
         data={filteredTransactions}
         renderItem={renderTransaction}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={{ ...styles.listContainer, backgroundColor: colors.background }}
         testID="flat-list"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Paragraph style={[fonts.body, styles.emptyText]}>
+            <Text style={[typography.body, styles.emptyText]}>
               No se encontraron transacciones
-            </Paragraph>
+            </Text>
           </View>
         }
       />

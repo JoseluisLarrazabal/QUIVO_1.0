@@ -5,6 +5,8 @@ import {
   ScrollView,
   RefreshControl,
   Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import {
   Card,
@@ -19,10 +21,16 @@ import {
   Portal,
   TextInput,
   ActivityIndicator,
+  Text,
 } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
+import { colors, typography, spacing, shadows } from '../theme';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const CardsScreen = ({ navigation }) => {
   const { user, refreshUserCards, selectCard, loading } = useAuth();
@@ -32,13 +40,30 @@ const CardsScreen = ({ navigation }) => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [cardToDelete, setCardToDelete] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [cardAnimations] = useState(() => 
+    user?.cards?.map(() => new Animated.Value(0)) || []
+  );
 
   useEffect(() => {
     if (user && user.authMode === 'card_uid') {
-      // Si está en modo tarjeta, redirigir al dashboard
       navigation.replace('Dashboard');
     }
   }, [user, navigation]);
+
+  useEffect(() => {
+    // Animar entrada de tarjetas
+    if (user?.cards?.length > 0) {
+      const animations = cardAnimations.slice(0, user.cards.length).map((anim, index) =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 300,
+          delay: index * 100,
+          useNativeDriver: true,
+        })
+      );
+      Animated.stagger(100, animations).start();
+    }
+  }, [user?.cards, cardAnimations]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -147,31 +172,211 @@ const CardsScreen = ({ navigation }) => {
     }
   };
 
-  const getCardColor = (tipo) => {
-    switch (tipo) {
-      case 'adulto': return '#2196F3';
-      case 'estudiante': return '#4CAF50';
-      case 'adulto_mayor': return '#FF9800';
-      default: return '#757575';
-    }
+  const getCardGradient = (tipo, isActive = false) => {
+    const gradients = {
+      adulto: isActive ? [colors.info[600], colors.info[700]] : [colors.info[500], colors.info[600]],
+      estudiante: isActive ? [colors.success[600], colors.success[700]] : [colors.success[500], colors.success[600]],
+      adulto_mayor: isActive ? [colors.warning[500], colors.warning[700]] : [colors.warning[400], colors.warning[500]],
+    };
+    return gradients[tipo] || [colors.gray[500], colors.gray[700]];
   };
 
   const getCardTypeLabel = (tipo) => {
-    switch (tipo) {
-      case 'adulto': return 'Adulto';
-      case 'estudiante': return 'Estudiante';
-      case 'adulto_mayor': return 'Adulto Mayor';
-      default: return 'Desconocido';
-    }
+    const labels = {
+      adulto: 'Adulto',
+      estudiante: 'Estudiante',
+      adulto_mayor: 'Adulto Mayor',
+    };
+    return labels[tipo] || 'Desconocido';
   };
 
   const getTarifa = (tipo) => {
-    switch (tipo) {
-      case 'adulto': return '2.50';
-      case 'estudiante': return '1.00';
-      case 'adulto_mayor': return '1.50';
-      default: return '0.00';
-    }
+    const tarifas = {
+      adulto: '2.50',
+      estudiante: '1.00',
+      adulto_mayor: '1.50',
+    };
+    return tarifas[tipo] || '0.00';
+  };
+
+  const renderActiveCard = () => {
+    if (!user.selectedCard || !user.cards) return null;
+
+    const activeCard = user.cards.find(card => card.uid === user.selectedCard);
+    if (!activeCard) return null;
+
+    return (
+      <View style={styles.activeCardContainer}>
+        <LinearGradient
+          colors={getCardGradient(user.tipo_tarjeta, true)}
+          style={styles.activeCardGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <BlurView intensity={20} style={styles.activeCardBlur}>
+            <View style={styles.activeCardHeader}>
+              <View style={styles.activeCardHeaderLeft}>
+                <Text style={styles.activeCardTitle}>Mi Tarjeta Activa</Text>
+                <Chip 
+                  mode="flat" 
+                  style={styles.activeChip}
+                  textStyle={styles.activeChipText}
+                >
+                  ✨ Activa
+                </Chip>
+              </View>
+              <View style={styles.cardTypeContainer}>
+                <Text style={styles.cardTypeText}>
+                  {getCardTypeLabel(user.tipo_tarjeta)}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.activeCardContent}>
+              <View style={styles.cardNumberContainer}>
+                <Text style={styles.cardNumber}>{activeCard.uid}</Text>
+                {activeCard.alias && (
+                  <Text style={styles.cardNickname}>{activeCard.alias}</Text>
+                )}
+              </View>
+              
+              <View style={styles.balanceContainer}>
+                <Text style={styles.balanceAmount}>
+                  {activeCard.saldo_actual.toFixed(2)} Bs
+                </Text>
+                <Text style={styles.balanceLabel}>Saldo Disponible</Text>
+              </View>
+              
+              <View style={styles.cardStats}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>
+                    {Math.floor(activeCard.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
+                  </Text>
+                  <Text style={styles.statLabel}>Viajes</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{getTarifa(user.tipo_tarjeta)} Bs</Text>
+                  <Text style={styles.statLabel}>Tarifa</Text>
+                </View>
+              </View>
+            </View>
+          </BlurView>
+        </LinearGradient>
+      </View>
+    );
+  };
+
+  const renderCardItem = (card, index) => {
+    const isSelected = card.uid === user.selectedCard;
+    const animatedStyle = {
+      opacity: cardAnimations[index] || 1,
+      transform: [{
+        translateY: cardAnimations[index]?.interpolate({
+          inputRange: [0, 1],
+          outputRange: [50, 0],
+        }) || 0
+      }]
+    };
+
+    return (
+      <Animated.View key={card.uid} style={[styles.cardItemContainer, animatedStyle]}>
+        <Card style={[styles.cardItem, isSelected && styles.selectedCardItem]}>
+          <LinearGradient
+            colors={getCardGradient(user.tipo_tarjeta, isSelected)}
+            style={styles.cardGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0.8 }}
+          >
+            <Card.Content style={styles.cardContent}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardInfo}>
+                  <Text style={styles.cardUid}>{card.uid}</Text>
+                  {card.alias && (
+                    <Text style={styles.cardAlias}>{card.alias}</Text>
+                  )}
+                  <Chip 
+                    mode="flat" 
+                    style={styles.typeChip}
+                    textStyle={styles.typeChipText}
+                  >
+                    {getCardTypeLabel(user.tipo_tarjeta)}
+                  </Chip>
+                </View>
+                
+                <View style={styles.cardActions}>
+                  {isSelected ? (
+                    <Chip 
+                      mode="flat" 
+                      style={styles.selectedChip}
+                      textStyle={styles.selectedChipText}
+                    >
+                      ✓ Seleccionada
+                    </Chip>
+                  ) : (
+                    <Button
+                      mode="contained"
+                      onPress={() => handleCardSelect(card.uid)}
+                      style={styles.selectButton}
+                      labelStyle={styles.selectButtonText}
+                      compact
+                    >
+                      Seleccionar
+                    </Button>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.cardBalance}>
+                <Text style={styles.balance}>
+                  {card.saldo_actual.toFixed(2)} Bs
+                </Text>
+                <Text style={styles.balanceSubtitle}>
+                  {Math.floor(card.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))} viajes disponibles
+                </Text>
+              </View>
+
+              <View style={styles.actionButtons}>
+                <Button
+                  mode="contained"
+                  icon="credit-card-plus"
+                  onPress={() => handleCardAction('recharge', card)}
+                  style={styles.primaryAction}
+                  labelStyle={styles.primaryActionText}
+                  compact
+                >
+                  Recargar
+                </Button>
+                <Button
+                  mode="outlined"
+                  icon="history"
+                  onPress={() => handleCardAction('history', card)}
+                  style={styles.secondaryAction}
+                  labelStyle={styles.secondaryActionText}
+                  compact
+                >
+                  Historial
+                </Button>
+                <IconButton
+                  icon="pencil"
+                  mode="contained-tonal"
+                  onPress={() => handleCardAction('edit', card)}
+                  style={styles.iconAction}
+                  iconColor={colors.white}
+                />
+                <IconButton
+                  icon="delete"
+                  mode="contained-tonal"
+                  onPress={() => handleCardAction('delete', card)}
+                  style={[styles.iconAction, styles.deleteAction]}
+                  iconColor={colors.white}
+                />
+              </View>
+            </Card.Content>
+          </LinearGradient>
+        </Card>
+      </Animated.View>
+    );
   };
 
   if (loading || !user) {
@@ -184,197 +389,69 @@ const CardsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Header con gradiente */}
+      <LinearGradient
+        colors={[colors.primary, colors.primaryDark]}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Text style={styles.headerTitle}>Mis Tarjetas</Text>
+        <Text style={styles.headerSubtitle}>
+          Gestiona todas tus tarjetas de transporte
+        </Text>
+      </LinearGradient>
+
       <ScrollView
         style={styles.scrollView}
-        testID="scroll-view"
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Title style={styles.title}>Mis Tarjetas</Title>
-          <Paragraph style={styles.subtitle}>
-            Gestiona todas tus tarjetas de transporte
-          </Paragraph>
-        </View>
-
         {/* Tarjeta Activa */}
-        {user.selectedCard && (
-          <Card style={styles.activeCard}>
-            <Card.Content>
-              <View style={styles.activeCardHeader}>
-                <Title style={styles.activeCardTitle}>Tarjeta Activa</Title>
-                <Chip mode="flat" style={styles.activeChip}>
-                  Activa
-                </Chip>
-              </View>
-              {user.cards && user.cards.map((card) => {
-                if (card.uid === user.selectedCard) {
-                  return (
-                    <View key={card.uid} style={styles.activeCardContent}>
-                      <View style={styles.cardInfo}>
-                        <Title style={styles.cardUid}>{card.uid}</Title>
-                        {card.alias && (
-                          <Paragraph style={styles.cardAlias}>{card.alias}</Paragraph>
-                        )}
-                        <Chip 
-                          mode="outlined" 
-                          style={[styles.typeChip, { borderColor: getCardColor(user.tipo_tarjeta) }]}
-                        >
-                          {getCardTypeLabel(user.tipo_tarjeta)}
-                        </Chip>
-                      </View>
-                      <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
-                        {card.saldo_actual.toFixed(2)} Bs
-                      </Title>
-                      <Paragraph style={styles.balanceLabel}>Saldo Actual</Paragraph>
-                    </View>
-                  );
-                }
-                return null;
-              })}
-            </Card.Content>
-          </Card>
-        )}
+        {renderActiveCard()}
 
         {/* Lista de Tarjetas */}
-        <Card style={styles.cardsListCard}>
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Todas las Tarjetas</Title>
-            {user.cards && user.cards.length > 0 ? (
-              user.cards.map((card, index) => (
-                <Card 
-                  key={index} 
-                  style={[
-                    styles.cardItem, 
-                    { 
-                      borderLeftColor: getCardColor(user.tipo_tarjeta),
-                      backgroundColor: card.uid === user.selectedCard ? '#f0f8ff' : 'white'
-                    }
-                  ]}
-                >
-                  <Card.Content>
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardInfo}>
-                        <Title style={styles.cardUid}>{card.uid}</Title>
-                        {card.alias && (
-                          <Paragraph style={styles.cardAlias}>{card.alias}</Paragraph>
-                        )}
-                        <Chip 
-                          mode="outlined" 
-                          style={[styles.typeChip, { borderColor: getCardColor(user.tipo_tarjeta) }]}
-                        >
-                          {getCardTypeLabel(user.tipo_tarjeta)}
-                        </Chip>
-                      </View>
-                      <View style={styles.cardActions}>
-                        {card.uid === user.selectedCard ? (
-                          <Chip mode="flat" style={styles.selectedChip}>
-                            Seleccionada
-                          </Chip>
-                        ) : (
-                          <Button
-                            mode="outlined"
-                            onPress={() => handleCardSelect(card.uid)}
-                            style={styles.selectButton}
-                          >
-                            Seleccionar
-                          </Button>
-                        )}
-                      </View>
-                    </View>
-                    
-                    <Divider style={styles.divider} />
-                    
-                    <View style={styles.cardDetails}>
-                      <View style={styles.balanceInfo}>
-                        <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
-                          {card.saldo_actual.toFixed(2)} Bs
-                        </Title>
-                        <Paragraph style={styles.balanceLabel}>Saldo</Paragraph>
-                      </View>
-                      
-                      <View style={styles.cardStats}>
-                        <Paragraph style={styles.statText}>
-                          Tarifa: {getTarifa(user.tipo_tarjeta)} Bs
-                        </Paragraph>
-                        <Paragraph style={styles.statText}>
-                          Viajes: {Math.floor(card.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
-                        </Paragraph>
-                      </View>
-                    </View>
-
-                    <Divider style={styles.divider} />
-
-                    <View style={styles.actionButtons}>
-                      <Button
-                        mode="contained"
-                        icon="credit-card-plus"
-                        onPress={() => handleCardAction('recharge', card)}
-                        style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
-                        compact
-                      >
-                        Recargar
-                      </Button>
-                      <Button
-                        mode="outlined"
-                        icon="history"
-                        onPress={() => handleCardAction('history', card)}
-                        style={styles.actionButton}
-                        compact
-                      >
-                        Historial
-                      </Button>
-                      <Button
-                        mode="outlined"
-                        icon="pencil"
-                        onPress={() => handleCardAction('edit', card)}
-                        style={styles.actionButton}
-                        compact
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        mode="outlined"
-                        icon="delete"
-                        onPress={() => handleCardAction('delete', card)}
-                        style={[styles.actionButton, { borderColor: '#F44336' }]}
-                        textColor="#F44336"
-                        compact
-                      >
-                        Eliminar
-                      </Button>
-                    </View>
-                  </Card.Content>
-                </Card>
-              ))
-            ) : (
-              <View style={styles.noCardsContainer}>
-                <Paragraph style={styles.noCards}>
-                  No tienes tarjetas registradas
-                </Paragraph>
-                <Button
-                  mode="contained"
-                  onPress={() => navigation.navigate('RegisterCard')}
-                  style={styles.addCardButton}
-                >
-                  Registrar Nueva Tarjeta
-                </Button>
+        <View style={styles.cardsSection}>
+          <Text style={styles.sectionTitle}>Todas las Tarjetas</Text>
+          
+          {user.cards && user.cards.length > 0 ? (
+            user.cards.map((card, index) => renderCardItem(card, index))
+          ) : (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyStateIcon}>
+                <Text style={styles.emptyStateEmoji}>💳</Text>
               </View>
-            )}
-          </Card.Content>
-        </Card>
+              <Text style={styles.emptyStateTitle}>No tienes tarjetas</Text>
+              <Text style={styles.emptyStateSubtitle}>
+                Registra tu primera tarjeta para comenzar
+              </Text>
+              <Button
+                mode="contained"
+                onPress={() => navigation.navigate('RegisterCard')}
+                style={styles.emptyStateButton}
+                labelStyle={styles.emptyStateButtonText}
+              >
+                Registrar Nueva Tarjeta
+              </Button>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
+      {/* FAB mejorado */}
       <FAB
         icon="plus"
         style={styles.fab}
-        testID="fab"
         onPress={() => navigation.navigate('RegisterCard')}
-        label="Nueva Tarjeta"
+        label="Nueva"
+        mode="elevated"
+        variant="primary"
       />
 
-      {/* Modal de Edición de Alias */}
+      {/* Modal de Edición - Mejorado */}
       <Portal>
         <Modal
           visible={editingCard !== null}
@@ -384,51 +461,51 @@ const CardsScreen = ({ navigation }) => {
           }}
           contentContainerStyle={styles.modalContainer}
         >
-          <Card>
-            <Card.Content>
-              <Title style={styles.modalTitle}>Editar Alias</Title>
-              <Paragraph style={styles.modalSubtitle}>
-                Tarjeta: {editingCard?.uid}
-              </Paragraph>
-              
-              <TextInput
-                label="Alias de la Tarjeta"
-                value={editingAlias}
-                onChangeText={setEditingAlias}
-                mode="outlined"
-                placeholder="Ej: Mi Tarjeta Principal"
-                style={styles.modalInput}
-                maxLength={50}
-              />
-              
-              <View style={styles.modalButtons}>
-                <Button
+          <BlurView intensity={100} style={styles.modalBlur}>
+            <Card style={styles.modalCard}>
+              <Card.Content>
+                <Text style={styles.modalTitle}>Editar Alias</Text>
+                <Text style={styles.modalSubtitle}>
+                  Tarjeta: {editingCard?.uid}
+                </Text>
+                <TextInput
+                  label="Alias de la Tarjeta"
+                  value={editingAlias}
+                  onChangeText={setEditingAlias}
                   mode="outlined"
-                  onPress={() => {
-                    setEditingCard(null);
-                    setEditingAlias('');
-                  }}
-                  style={styles.modalButton}
-                  disabled={actionLoading}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={handleSaveAlias}
-                  loading={actionLoading}
-                  disabled={actionLoading || !editingAlias.trim()}
-                  style={styles.modalButton}
-                >
-                  Guardar
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
+                  placeholder="Ej: Mi Tarjeta Principal"
+                  style={styles.modalInput}
+                  maxLength={50}
+                />
+                <View style={styles.modalButtons}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      setEditingCard(null);
+                      setEditingAlias('');
+                    }}
+                    style={styles.modalCancelButton}
+                    disabled={actionLoading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={handleSaveAlias}
+                    loading={actionLoading}
+                    disabled={actionLoading || !editingAlias.trim()}
+                    style={styles.modalSaveButton}
+                  >
+                    Guardar
+                  </Button>
+                </View>
+              </Card.Content>
+            </Card>
+          </BlurView>
         </Modal>
       </Portal>
 
-      {/* Modal de Confirmación de Eliminación */}
+      {/* Modal de Eliminación - Mejorado */}
       <Portal>
         <Modal
           visible={deleteModalVisible}
@@ -438,53 +515,52 @@ const CardsScreen = ({ navigation }) => {
           }}
           contentContainerStyle={styles.modalContainer}
         >
-          <Card>
-            <Card.Content>
-              <Title style={styles.modalTitle}>Confirmar Eliminación</Title>
-              <Paragraph style={styles.modalSubtitle}>
-                ¿Estás seguro de que quieres eliminar la tarjeta?
-              </Paragraph>
-              
-              {cardToDelete && (
-                <View style={styles.deleteCardInfo}>
-                  <Paragraph style={styles.deleteCardUid}>UID: {cardToDelete.uid}</Paragraph>
-                  {cardToDelete.alias && (
-                    <Paragraph style={styles.deleteCardAlias}>Alias: {cardToDelete.alias}</Paragraph>
-                  )}
-                  <Paragraph style={styles.deleteCardBalance}>
-                    Saldo: {cardToDelete.saldo_actual.toFixed(2)} Bs
-                  </Paragraph>
+          <BlurView intensity={100} style={styles.modalBlur}>
+            <Card style={styles.modalCard}>
+              <Card.Content>
+                <Text style={styles.modalTitle}>⚠️ Confirmar Eliminación</Text>
+                <Text style={styles.modalSubtitle}>
+                  ¿Estás seguro de que quieres eliminar esta tarjeta?
+                </Text>
+                {cardToDelete && (
+                  <View style={styles.deleteCardInfo}>
+                    <Text style={styles.deleteCardUid}>UID: {cardToDelete.uid}</Text>
+                    {cardToDelete.alias && (
+                      <Text style={styles.deleteCardAlias}>Alias: {cardToDelete.alias}</Text>
+                    )}
+                    <Text style={styles.deleteCardBalance}>
+                      Saldo: {cardToDelete.saldo_actual.toFixed(2)} Bs
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.deleteWarning}>
+                  Esta acción desactivará la tarjeta. No se eliminará físicamente.
+                </Text>
+                <View style={styles.modalButtons}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      setDeleteModalVisible(false);
+                      setCardToDelete(null);
+                    }}
+                    style={styles.modalCancelButton}
+                    disabled={actionLoading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={confirmDeleteCard}
+                    loading={actionLoading}
+                    disabled={actionLoading}
+                    style={styles.modalDeleteButton}
+                  >
+                    Eliminar
+                  </Button>
                 </View>
-              )}
-              
-              <Paragraph style={styles.deleteWarning}>
-                ⚠️ Esta acción desactivará la tarjeta. No se eliminará físicamente.
-              </Paragraph>
-              
-              <View style={styles.modalButtons}>
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    setDeleteModalVisible(false);
-                    setCardToDelete(null);
-                  }}
-                  style={styles.modalButton}
-                  disabled={actionLoading}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={confirmDeleteCard}
-                  loading={actionLoading}
-                  disabled={actionLoading}
-                  style={[styles.modalButton, { backgroundColor: '#F44336' }]}
-                >
-                  Eliminar
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
+              </Card.Content>
+            </Card>
+          </BlurView>
         </Modal>
       </Portal>
     </View>
@@ -494,63 +570,198 @@ const CardsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.gray[50],
+  },
+  header: {
+    padding: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    marginBottom: 12,
+    elevation: 4,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 4,
+    fontSize: 24,
+    fontFamily: 'Montserrat_400Regular',
+  },
+  headerSubtitle: {
+    color: colors.accent,
+    textAlign: 'center',
+    marginBottom: 0,
+    fontSize: 16,
+    fontFamily: 'Montserrat_400Regular',
   },
   scrollView: {
     flex: 1,
   },
-  header: {
-    padding: 20,
-    backgroundColor: 'white',
-    elevation: 2,
+  scrollContent: {
+    paddingBottom: 80, // Add padding to the bottom for the FAB
   },
-  title: {
-    color: '#333',
-    marginBottom: 5,
-  },
-  subtitle: {
-    color: '#666',
-  },
-  activeCard: {
+  activeCardContainer: {
     margin: 20,
     marginTop: 10,
     elevation: 4,
-    backgroundColor: '#e3f2fd',
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  activeCardGradient: {
+    flex: 1,
+    borderRadius: 18,
+  },
+  activeCardBlur: {
+    flex: 1,
+    borderRadius: 18,
+    backgroundColor: 'transparent',
   },
   activeCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
+    paddingHorizontal: 15,
+  },
+  activeCardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   activeCardTitle: {
     fontSize: 18,
-    color: '#1976d2',
+    color: colors.background,
+    fontFamily: 'Montserrat_400Regular',
   },
   activeChip: {
-    backgroundColor: '#4caf50',
+    backgroundColor: colors.accent,
+    color: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    marginLeft: 10,
+  },
+  activeChipText: {
+    fontSize: 14,
+    fontFamily: 'Montserrat_400Regular',
+  },
+  cardTypeContainer: {
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginLeft: 10,
+  },
+  cardTypeText: {
+    fontSize: 14,
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.primary,
   },
   activeCardContent: {
+    padding: 15,
+    backgroundColor: colors.background,
+    borderRadius: 18,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  },
+  cardNumberContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cardNumber: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.background,
+  },
+  cardNickname: {
+    fontSize: 16,
+    color: colors.background,
+    fontStyle: 'italic',
+    fontFamily: 'Chicalo-Regular',
+  },
+  balanceContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  balanceAmount: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.background,
+  },
+  balanceLabel: {
+    color: colors.background,
+    fontSize: 14,
+    fontFamily: 'Montserrat_400Regular',
+  },
+  cardStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  statItem: {
     alignItems: 'center',
   },
-  cardsListCard: {
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.background,
+  },
+  statLabel: {
+    color: colors.background,
+    fontSize: 12,
+    fontFamily: 'Montserrat_400Regular',
+  },
+  statDivider: {
+    width: 1,
+    height: '100%',
+    backgroundColor: colors.background,
+    marginHorizontal: 10,
+  },
+  cardsSection: {
     margin: 20,
     marginTop: 0,
     elevation: 4,
+    borderRadius: 18,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: '#F3F0FF',
   },
   sectionTitle: {
     fontSize: 18,
+    marginBottom: 15,
+    color: colors.primary,
+    fontFamily: 'Montserrat_400Regular',
+    paddingHorizontal: 15,
+  },
+  cardItemContainer: {
     marginBottom: 15,
   },
   cardItem: {
     marginBottom: 15,
     borderLeftWidth: 6,
     elevation: 2,
+    borderRadius: 14,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: '#F3F0FF',
+  },
+  selectedCardItem: {
+    borderLeftColor: colors.primary,
+    borderWidth: 2,
+  },
+  cardGradient: {
+    flex: 1,
+    borderRadius: 14,
+  },
+  cardContent: {
+    padding: 15,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 10,
   },
   cardInfo: {
     flex: 1,
@@ -558,60 +769,118 @@ const styles = StyleSheet.create({
   cardUid: {
     fontSize: 18,
     marginBottom: 5,
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.primary,
   },
   cardAlias: {
-    color: '#666',
+    color: colors.accent,
     fontSize: 14,
     fontStyle: 'italic',
     marginBottom: 5,
+    fontFamily: 'Chicalo-Regular',
   },
   typeChip: {
     alignSelf: 'flex-start',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    paddingHorizontal: 8,
+    fontFamily: 'Montserrat_400Regular',
+    fontSize: 14,
+    color: colors.primary,
+  },
+  typeChipText: {
+    fontSize: 14,
+    fontFamily: 'Montserrat_400Regular',
   },
   cardActions: {
     alignItems: 'flex-end',
   },
   selectedChip: {
-    backgroundColor: '#4caf50',
+    backgroundColor: colors.accent,
+    color: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+  },
+  selectedChipText: {
+    fontSize: 14,
+    fontFamily: 'Montserrat_400Regular',
   },
   selectButton: {
     marginTop: 5,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    elevation: 0,
+    marginHorizontal: 2,
+  },
+  selectButtonText: {
+    color: colors.primary,
+    fontFamily: 'Montserrat_400Regular',
   },
   divider: {
     marginVertical: 15,
+    backgroundColor: '#EEE',
   },
-  cardDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  cardBalance: {
     alignItems: 'center',
-  },
-  balanceInfo: {
-    alignItems: 'center',
+    marginBottom: 10,
   },
   balance: {
     fontSize: 24,
     fontWeight: 'bold',
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.primary,
   },
-  balanceLabel: {
-    color: '#666',
+  balanceSubtitle: {
+    color: colors.primary,
     fontSize: 12,
-  },
-  cardStats: {
-    alignItems: 'flex-end',
-  },
-  statText: {
-    color: '#666',
-    fontSize: 12,
-    marginBottom: 2,
+    fontFamily: 'Montserrat_400Regular',
   },
   actionButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    justifyContent: 'space-between',
   },
-  actionButton: {
+  primaryAction: {
     flex: 1,
     minWidth: '45%',
+    borderRadius: 10,
+    marginHorizontal: 2,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    elevation: 0,
+    backgroundColor: colors.primary,
+  },
+  primaryActionText: {
+    color: colors.accent,
+    fontFamily: 'Montserrat_400Regular',
+  },
+  secondaryAction: {
+    flex: 1,
+    minWidth: '45%',
+    borderRadius: 10,
+    marginHorizontal: 2,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    elevation: 0,
+  },
+  secondaryActionText: {
+    color: colors.primary,
+    fontFamily: 'Montserrat_400Regular',
+  },
+  iconAction: {
+    flex: 1,
+    minWidth: '45%',
+    borderRadius: 10,
+    marginHorizontal: 2,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    elevation: 0,
+    backgroundColor: colors.primary,
+  },
+  deleteAction: {
+    backgroundColor: '#F44336',
   },
   noCardsContainer: {
     alignItems: 'center',
@@ -619,44 +888,78 @@ const styles = StyleSheet.create({
   },
   noCards: {
     textAlign: 'center',
-    color: '#666',
+    color: colors.accent,
     fontStyle: 'italic',
     marginBottom: 15,
+    fontFamily: 'Montserrat_400Regular',
   },
   addCardButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    marginTop: 8,
+    elevation: 0,
   },
   fab: {
     position: 'absolute',
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#2196F3',
+    backgroundColor: colors.primary,
+    color: colors.primary,
   },
   modalContainer: {
-    backgroundColor: 'white',
+    backgroundColor: colors.background,
     padding: 20,
     margin: 20,
-    borderRadius: 8,
+    borderRadius: 12,
+  },
+  modalBlur: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   modalTitle: {
     fontSize: 20,
     marginBottom: 5,
+    color: colors.primary,
+    fontFamily: 'Montserrat_400Regular',
   },
   modalSubtitle: {
-    color: '#666',
+    color: colors.accent,
     marginBottom: 20,
+    fontFamily: 'Montserrat_400Regular',
   },
   modalInput: {
     marginBottom: 20,
+    backgroundColor: colors.background,
+    fontFamily: 'Montserrat_400Regular',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 10,
   },
-  modalButton: {
+  modalCancelButton: {
     flex: 1,
+    borderRadius: 10,
+    marginHorizontal: 2,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    elevation: 0,
+  },
+  modalSaveButton: {
+    flex: 1,
+    borderRadius: 10,
+    marginHorizontal: 2,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    elevation: 0,
+    backgroundColor: colors.primary,
   },
   deleteCardInfo: {
     backgroundColor: '#f5f5f5',
@@ -667,14 +970,18 @@ const styles = StyleSheet.create({
   deleteCardUid: {
     fontWeight: 'bold',
     marginBottom: 5,
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.primary,
   },
   deleteCardAlias: {
-    color: '#666',
+    color: colors.accent,
     marginBottom: 5,
+    fontFamily: 'Chicalo-Regular',
   },
   deleteCardBalance: {
-    color: '#4CAF50',
+    color: colors.primary,
     fontWeight: 'bold',
+    fontFamily: 'Montserrat_400Regular',
   },
   deleteWarning: {
     color: '#F44336',
@@ -682,6 +989,41 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 20,
     textAlign: 'center',
+    fontFamily: 'Montserrat_400Regular',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyStateIcon: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  emptyStateEmoji: {
+    fontSize: 60,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    color: colors.accent,
+    fontFamily: 'Montserrat_400Regular',
+    marginBottom: 5,
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: colors.primary,
+    fontFamily: 'Montserrat_400Regular',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  emptyStateButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    marginTop: 8,
+    elevation: 0,
+  },
+  emptyStateButtonText: {
+    color: colors.accent,
+    fontFamily: 'Montserrat_400Regular',
   },
 });
 
