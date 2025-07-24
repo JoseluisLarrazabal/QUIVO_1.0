@@ -45,13 +45,37 @@ jest.mock('expo-network', () => ({
 // Configurar fetch global para tests
 global.fetch = jest.fn();
 
-// Silenciar warnings de console.error en tests
+// Mock global de todos los iconos de @expo/vector-icons y react-native-paper
+jest.mock('@expo/vector-icons', () => ({
+  MaterialIcons: 'Icon',
+  MaterialCommunityIcons: 'Icon',
+  Ionicons: 'Icon',
+  FontAwesome: 'Icon',
+  FontAwesome5: 'Icon',
+  Feather: 'Icon',
+  AntDesign: 'Icon',
+  Entypo: 'Icon',
+  EvilIcons: 'Icon',
+  Foundation: 'Icon',
+  Octicons: 'Icon',
+  SimpleLineIcons: 'Icon',
+  Zocial: 'Icon',
+}));
+jest.mock('react-native-paper/src/components/Icon', () => 'Icon');
+
+// Ajustar el mock de console.error para filtrar advertencias irrelevantes de act() de iconos y AuthProvider
 const originalError = console.error;
 beforeAll(() => {
   console.error = (...args) => {
     if (
       typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is no longer supported')
+      (
+        args[0].includes('Warning: ReactDOM.render is no longer supported') ||
+        args[0].includes('An update to Icon inside a test was not wrapped in act') ||
+        args[0].includes('is not a valid icon name for family') ||
+        args[0].includes('An update to AuthProvider inside a test was not wrapped in act') ||
+        args[0].includes('An update to TestComponent inside a test was not wrapped in act')
+      )
     ) {
       return;
     }

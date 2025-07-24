@@ -127,7 +127,7 @@ const HistoryScreen = ({ navigation, route }) => {
   };
 
   const getTransactionTypeColor = (monto) => {
-    return monto > 0 ? colors.success : colors.error;
+    return monto > 0 ? colors.success[500] : colors.error[500];
   };
 
   const getTransactionIcon = (monto) => {
@@ -222,8 +222,8 @@ const HistoryScreen = ({ navigation, route }) => {
         <Card style={[styles.transactionCard, isRecharge && styles.rechargeCard]}>
           <LinearGradient
             colors={isRecharge 
-              ? [colors.success + '10', colors.success + '05'] 
-              : [colors.error + '10', colors.error + '05']
+              ? [colors.success[500] + '10', colors.success[500] + '05'] 
+              : [colors.error[500] + '10', colors.error[500] + '05']
             }
             style={styles.transactionGradient}
           >
@@ -301,7 +301,7 @@ const HistoryScreen = ({ navigation, route }) => {
     return (
       <View style={styles.errorContainer}>
         <LinearGradient
-          colors={[colors.error + '20', colors.error + '10']}
+          colors={[colors.error[500] + '20', colors.error[500] + '10']}
           style={styles.errorGradient}
         >
           <View style={styles.errorContent}>
@@ -330,7 +330,7 @@ const HistoryScreen = ({ navigation, route }) => {
     return (
       <View style={styles.loadingContainer}>
         <LinearGradient
-          colors={[colors.primary + '20', colors.primary + '10']}
+          colors={[colors.primary[500] + '20', colors.primary[500] + '10']}
           style={styles.loadingGradient}
         >
           <ActivityIndicator size="large" color={colors.primary} />
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
 
   // Banner
   banner: {
-    backgroundColor: colors.warning + '20',
+    backgroundColor: colors.warning[500] + '20',
     borderRadius: 0,
   },
   bannerText: {
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statusChip: {
-    backgroundColor: colors.info + '20',
+    backgroundColor: colors.info[500] + '20',
     alignSelf: 'flex-start',
   },
   statusChipText: {
@@ -799,7 +799,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.error + '20',
+    backgroundColor: colors.error[500] + '20',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,

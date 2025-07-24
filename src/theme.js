@@ -457,10 +457,14 @@ export const paperTheme = {
     scrim: colors.backgroundOverlay,
     backdrop: colors.backgroundOverlay,
     // Añadido para compatibilidad con React Native Paper (PaperProvider)
-    // Estas propiedades son requeridas por algunos componentes internos de Paper
-    level1: colors.surface,
-    level2: colors.surfaceVariant,
-    level3: colors.surfaceVariant,
+    elevation: {
+      level0: colors.surface,
+      level1: colors.surface,
+      level2: colors.surfaceVariant,
+      level3: colors.surfaceVariant,
+      level4: colors.surfaceVariant,
+      level5: colors.surfaceVariant,
+    },
   },
   fonts: {
     displayLarge: typography.displayLarge,

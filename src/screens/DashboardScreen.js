@@ -324,6 +324,7 @@ const DashboardScreen = ({ navigation }) => {
                 iconColor={colors.primary}
                 style={styles.quickActionIcon}
                 onPress={() => handleQuickAction('recharge')}
+                testID="quick-action-recharge"
               />
               <Text variant="titleSmall" style={styles.quickActionTitle}>
                 Recargar
@@ -340,6 +341,7 @@ const DashboardScreen = ({ navigation }) => {
                 iconColor={colors.primary}
                 style={styles.quickActionIcon}
                 onPress={() => handleQuickAction('history')}
+                testID="quick-action-history"
               />
               <Text variant="titleSmall" style={styles.quickActionTitle}>
                 Historial
@@ -357,6 +359,7 @@ const DashboardScreen = ({ navigation }) => {
                   iconColor={colors.primary}
                   style={styles.quickActionIcon}
                   onPress={() => handleQuickAction('cards')}
+                  testID="quick-action-cards"
                 />
                 <Text variant="titleSmall" style={styles.quickActionTitle}>
                   Tarjetas
