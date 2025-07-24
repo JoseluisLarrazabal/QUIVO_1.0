@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
+import { appTheme, fonts, colors } from '../theme';
 
 const DashboardScreen = ({ navigation }) => {
   const { user, logout, refreshUserCards, loading } = useAuth();
@@ -120,7 +121,7 @@ const DashboardScreen = ({ navigation }) => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={{ flex: 1, backgroundColor: colors.background }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -146,80 +147,73 @@ const DashboardScreen = ({ navigation }) => {
         </Banner>
       )}
 
-      <View style={styles.header}>
-        <Title style={styles.welcomeText}>¡Hola, {user.nombre}!</Title>
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <Title style={fonts.title}>¡Hola, {user.nombre}!</Title>
         <IconButton
           icon="logout"
-          size={24}
+          size={28}
           onPress={logout}
           style={styles.logoutButton}
+          color={colors.accent}
           testID="logout-btn"
         />
       </View>
 
       {/* Información del Usuario */}
-      <Card style={styles.userCard}>
+      <Card style={styles.cardMinimal}>
         <Card.Content>
-          <View style={styles.userInfo}>
-            <Title style={styles.userName}>{user.nombre}</Title>
-            <Chip 
-              mode="outlined" 
-              style={[styles.typeChip, { borderColor: getCardColor(user.tipo_tarjeta) }]}
-            >
+          <View style={styles.userInfoRow}>
+            <Title style={fonts.title}>{user.nombre}</Title>
+            <Chip mode="outlined" style={[styles.chip, { borderColor: colors.primary, color: colors.primary }]}> 
               {getCardTypeLabel(user.tipo_tarjeta)}
             </Chip>
           </View>
           {user.email && (
-            <Paragraph style={styles.userEmail}>{user.email}</Paragraph>
+            <Paragraph style={fonts.body}>{user.email}</Paragraph>
           )}
           {user.authMode === 'card_uid' && (
-            <Paragraph style={styles.modeInfo}>
-              Modo: Acceso por Tarjeta NFC
-            </Paragraph>
+            <Paragraph style={styles.modeInfo}>Modo: Acceso por Tarjeta NFC</Paragraph>
           )}
         </Card.Content>
       </Card>
 
       {/* Tarjeta Actual */}
       {currentCard && (
-        <Card style={styles.cardsCard}>
+        <Card style={styles.cardMinimal}>
           <Card.Content>
-            <View style={styles.cardHeader}>
-              <Title style={styles.sectionTitle}>
-                {user.authMode === 'credentials' ? 'Tarjeta Seleccionada' : 'Mi Tarjeta'}
-              </Title>
+            <View style={styles.sectionHeaderRow}>
+              <Title style={fonts.subtitle}>{user.authMode === 'credentials' ? 'Tarjeta Seleccionada' : 'Mi Tarjeta'}</Title>
               {user.authMode === 'credentials' && user.isMultiCard && (
                 <Button
                   mode="text"
                   onPress={() => handleQuickAction('cards')}
-                  style={styles.manageCardsButton}
+                  style={styles.linkButton}
+                  labelStyle={{ color: colors.primary, fontFamily: 'Montserrat_400Regular', fontSize: 16 }}
                 >
                   Gestionar Tarjetas
                 </Button>
               )}
             </View>
-            
-            <Card style={[styles.cardItem, { borderLeftColor: getCardColor(user.tipo_tarjeta) }]}>
+            <Card style={[styles.cardItem, { borderLeftColor: colors.primary }]}> 
               <Card.Content>
-                <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderRow}>
                   <View>
-                    <Title style={styles.balanceTitle}>Saldo</Title>
-                    <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
+                    <Title style={[fonts.title, { fontSize: 22 }]}>Saldo</Title>
+                    <Title style={[fonts.title, { color: colors.primary, fontSize: 28 }]}>
                       {currentCard.saldo_actual.toFixed(2)} Bs
                     </Title>
                   </View>
-                  <Chip mode="outlined" style={styles.uidChip}>
+                  <Chip mode="outlined" style={[styles.chip, { borderColor: colors.accent, color: colors.accent }]}> 
                     {currentCard.uid}
                   </Chip>
                 </View>
-                
                 <Divider style={styles.divider} />
-                
-                <View style={styles.cardInfo}>
-                  <Paragraph style={styles.infoText}>
+                <View style={styles.cardInfoRow}>
+                  <Paragraph style={fonts.body}>
                     Tarifa por viaje: {getTarifa(user.tipo_tarjeta)} Bs
                   </Paragraph>
-                  <Paragraph style={styles.infoText}>
+                  <Paragraph style={fonts.body}>
                     Viajes disponibles: {Math.floor(currentCard.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
                   </Paragraph>
                 </View>
@@ -230,14 +224,15 @@ const DashboardScreen = ({ navigation }) => {
       )}
 
       {/* Acciones Rápidas */}
-      <Card style={styles.actionsCard}>
+      <Card style={styles.cardMinimal}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Acciones Rápidas</Title>
-          <View style={styles.actionButtons}>
+          <Title style={fonts.subtitle}>Acciones Rápidas</Title>
+          <View style={styles.actionButtonsRow}>
             <Button
               mode="contained"
               icon="credit-card-plus"
-              style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
+              labelStyle={{ color: colors.accent, fontFamily: 'Montserrat_400Regular', fontSize: 16 }}
               onPress={() => handleQuickAction('recharge')}
             >
               Recargar
@@ -246,6 +241,7 @@ const DashboardScreen = ({ navigation }) => {
               mode="outlined"
               icon="history"
               style={styles.actionButton}
+              labelStyle={{ color: colors.primary, fontFamily: 'Montserrat_400Regular', fontSize: 16 }}
               onPress={() => handleQuickAction('history')}
             >
               Ver Historial
@@ -256,6 +252,7 @@ const DashboardScreen = ({ navigation }) => {
               mode="outlined"
               icon="credit-card-multiple"
               style={[styles.actionButton, { marginTop: 10 }]}
+              labelStyle={{ color: colors.primary, fontFamily: 'Montserrat_400Regular', fontSize: 16 }}
               onPress={() => handleQuickAction('cards')}
             >
               Gestionar Todas las Tarjetas
@@ -265,32 +262,30 @@ const DashboardScreen = ({ navigation }) => {
       </Card>
 
       {/* Transacciones Recientes */}
-      <Card style={styles.transactionsCard}>
+      <Card style={styles.cardMinimal}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Últimas Transacciones</Title>
+          <Title style={fonts.subtitle}>Últimas Transacciones</Title>
           {recentTransactions.length > 0 ? (
             recentTransactions.map((transaction, index) => (
-              <View key={index} style={styles.transactionItem}>
-                <View style={styles.transactionInfo}>
-                  <Paragraph style={styles.transactionDate}>
+              <View key={index} style={styles.transactionItemRow}>
+                <View style={styles.transactionInfoCol}>
+                  <Paragraph style={[fonts.body, { fontWeight: 'bold' }]}> 
                     {new Date(transaction.fecha_hora).toLocaleDateString('es-BO')}
                   </Paragraph>
-                  <Paragraph style={styles.transactionLocation}>
+                  <Paragraph style={fonts.body}>
                     {transaction.ubicacion || 'Ubicación no disponible'}
                   </Paragraph>
                 </View>
                 <Paragraph style={[
-                  styles.transactionAmount,
-                  { color: transaction.monto < 0 ? '#F44336' : '#4CAF50' }
+                  fonts.body,
+                  { color: transaction.monto < 0 ? '#F44336' : colors.primary, fontWeight: 'bold' }
                 ]}>
                   {transaction.monto > 0 ? '+' : ''}{transaction.monto.toFixed(2)} Bs
                 </Paragraph>
               </View>
             ))
           ) : (
-            <Paragraph style={styles.noTransactions}>
-              No hay transacciones recientes
-            </Paragraph>
+            <Paragraph style={[fonts.body, { fontStyle: 'italic', color: '#888' }]}>No hay transacciones recientes</Paragraph>
           )}
         </Card.Content>
       </Card>
@@ -438,6 +433,107 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     fontStyle: 'italic',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primary,
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    marginBottom: 12,
+    elevation: 4,
+  },
+  logoutButton: {
+    backgroundColor: 'transparent',
+    margin: 0,
+  },
+  cardMinimal: {
+    backgroundColor: colors.background,
+    borderRadius: 18,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: '#F3F0FF',
+  },
+  userInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  chip: {
+    borderRadius: 8,
+    borderWidth: 1.5,
+    paddingHorizontal: 8,
+    fontFamily: 'Montserrat_400Regular',
+    fontSize: 14,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  cardInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  divider: {
+    marginVertical: 10,
+    backgroundColor: '#EEE',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: 12,
+    elevation: 0,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    marginHorizontal: 2,
+  },
+  linkButton: {
+    paddingHorizontal: 0,
+    margin: 0,
+    minWidth: 0,
+  },
+  transactionItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F0FF',
+  },
+  transactionInfoCol: {
+    flex: 1,
+  },
+  modeInfo: {
+    fontFamily: 'Chicalo-Regular',
+    fontSize: 16,
+    color: colors.accent,
+    marginTop: 4,
   },
 });
 

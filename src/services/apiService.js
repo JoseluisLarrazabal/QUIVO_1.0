@@ -2,6 +2,7 @@
 // API_BASE_URL=http://TU_IP_LOCAL:3000/api
 
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Opción automática: obtiene la IP del host de Metro Bundler
 const getExpoHost = () => {
@@ -24,17 +25,44 @@ const API_BASE_URL =
   'http://localhost:3000/api';
 
 class ApiService {
+  constructor() {
+    this.accessToken = null;
+  }
+
+  async setAccessToken(token) {
+    this.accessToken = token;
+    if (token) {
+      await AsyncStorage.setItem('accessToken', token);
+    } else {
+      await AsyncStorage.removeItem('accessToken');
+    }
+  }
+
+  async getAccessToken() {
+    if (this.accessToken) return this.accessToken;
+    const token = await AsyncStorage.getItem('accessToken');
+    this.accessToken = token;
+    return token;
+  }
+
   async makeRequest(endpoint, options = {}) {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
       console.log('Making API request to:', url);
 
+      // Incluir token si está presente
+      const token = await this.getAccessToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(url, {
         method: 'GET', // Método por defecto
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
+        headers,
         ...options,
       });
 
@@ -64,10 +92,15 @@ class ApiService {
     if (!username || !password) {
       throw new Error('Usuario y contraseña son requeridos');
     }
-    return this.makeRequest('/auth/login', {
+    const result = await this.makeRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
+    // Guardar token tras login exitoso
+    if (result?.data?.tokens?.accessToken) {
+      await this.setAccessToken(result.data.tokens.accessToken);
+    }
+    return result;
   }
 
   async loginWithCard(uid) {
@@ -85,6 +118,11 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(userData),
     });
+  }
+
+  async logout() {
+    this.accessToken = null;
+    await AsyncStorage.removeItem('accessToken');
   }
 
   // Tarjetas

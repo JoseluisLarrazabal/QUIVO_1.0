@@ -107,6 +107,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      await apiService.logout(); // Limpia el token en memoria y AsyncStorage
       await setUser(null);
     } catch (error) {
       console.error('Error logging out:', error);

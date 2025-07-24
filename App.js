@@ -7,6 +7,10 @@ import { View, ActivityIndicator } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { useFonts as useMontserrat, Montserrat_400Regular } from '@expo-google-fonts/montserrat';
+import * as Font from 'expo-font';
+import AppLoading from 'expo-app-loading';
+import { appTheme } from './src/theme';
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import DashboardScreen from './src/screens/DashboardScreen';
@@ -95,8 +99,19 @@ const AppNavigator = () => {
 };
 
 export default function App() {
+  // Cargar Montserrat desde Google Fonts
+  const [montserratLoaded] = useMontserrat({
+    Montserrat_400Regular,
+  });
+  // Cargar Chicalo desde assets/fonts
+  const [chicaloLoaded] = Font.useFonts({
+    'Chicalo-Regular': require('./assets/fonts/Chicalo-Regular.otf'),
+  });
+  if (!montserratLoaded || !chicaloLoaded) {
+    return <AppLoading />;
+  }
   return (
-    <PaperProvider>
+    <PaperProvider theme={appTheme}>
       <AuthProvider>
         <AppNavigator />
         <StatusBar style="auto" />
