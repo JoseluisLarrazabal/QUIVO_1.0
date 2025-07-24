@@ -17,6 +17,7 @@ import {
     Divider,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
+import { appTheme, fonts, colors } from '../theme';
 
 const LoginScreen = () => {
   const [authMode, setAuthMode] = useState('credentials');
@@ -68,7 +69,7 @@ const LoginScreen = () => {
 
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
@@ -77,12 +78,10 @@ const LoginScreen = () => {
           style={styles.logo}
           resizeMode="contain"
         />
-        
-        <Title style={styles.title}>Transporte Público Bolivia</Title>
-        <Paragraph style={styles.subtitle}>
+        <Title style={[fonts.title, styles.title]}>Transporte Público Bolivia</Title>
+        <Paragraph style={[fonts.subtitle, styles.subtitle]}>
           Accede a tu cuenta o tarjeta
         </Paragraph>
-
         {/* Selector de Modo de Autenticación */}
         <Card style={styles.modeCard}>
           <Card.Content>
@@ -105,7 +104,6 @@ const LoginScreen = () => {
             />
           </Card.Content>
         </Card>
-
         <Card style={styles.card}>
           <Card.Content>
             {authMode === 'credentials' ? (
@@ -118,8 +116,9 @@ const LoginScreen = () => {
                   placeholder="Ej: juan.perez"
                   autoCapitalize="none"
                   style={styles.input}
+                  theme={{ colors: { primary: colors.primary, text: colors.text, placeholder: colors.primary } }}
+                  underlineColor={colors.primary}
                 />
-
                 <TextInput
                   label="Contraseña"
                   value={password}
@@ -128,9 +127,10 @@ const LoginScreen = () => {
                   placeholder="Ingresa tu contraseña"
                   secureTextEntry
                   style={styles.input}
+                  theme={{ colors: { primary: colors.primary, text: colors.text, placeholder: colors.primary } }}
+                  underlineColor={colors.primary}
                 />
-
-                <Paragraph style={styles.modeDescription}>
+                <Paragraph style={[fonts.body, styles.modeDescription]}>
                   Accede con tu cuenta para gestionar todas tus tarjetas
                 </Paragraph>
               </>
@@ -144,27 +144,28 @@ const LoginScreen = () => {
                   placeholder="Ej: A1B2C3D4"
                   autoCapitalize="characters"
                   style={styles.input}
+                  theme={{ colors: { primary: colors.primary, text: colors.text, placeholder: colors.primary } }}
+                  underlineColor={colors.primary}
                 />
-
-                <Paragraph style={styles.modeDescription}>
+                <Paragraph style={[fonts.body, styles.modeDescription]}>
                   Accede directamente con tu tarjeta NFC para uso rápido
                 </Paragraph>
               </>
             )}
-
             <Button
               mode="contained"
               onPress={handleLogin}
               loading={loading}
               disabled={loading}
               style={styles.button}
+              labelStyle={{ color: colors.accent, fontFamily: 'Montserrat_400Regular', fontSize: 18 }}
+              contentStyle={{ backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 8 }}
             >
               {loading ? 'Verificando...' : 'Ingresar'}
             </Button>
           </Card.Content>
         </Card>
-
-        <Paragraph style={styles.helpText}>
+        <Paragraph style={[fonts.body, styles.helpText]}>
           {authMode === 'credentials' 
             ? '¿No tienes cuenta? Contacta al administrador del sistema.'
             : 'Coloca tu tarjeta cerca del dispositivo para leer el UID automáticamente.'
@@ -176,10 +177,6 @@ const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
   content: {
     flex: 1,
     justifyContent: 'center',
@@ -194,39 +191,48 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     marginBottom: 10,
-    color: '#2196F3',
   },
   subtitle: {
     textAlign: 'center',
     marginBottom: 30,
-    color: '#666',
   },
   modeCard: {
     marginBottom: 20,
+    borderRadius: 16,
+    elevation: 2,
+    backgroundColor: colors.background,
   },
   segmentedButtons: {
     marginBottom: 10,
   },
   card: {
     marginBottom: 20,
+    borderRadius: 16,
+    elevation: 2,
+    backgroundColor: colors.background,
   },
   input: {
     marginBottom: 20,
+    backgroundColor: colors.background,
+    fontFamily: 'Montserrat_400Regular',
   },
   modeDescription: {
     textAlign: 'center',
-    color: '#666',
-    fontSize: 12,
+    color: colors.primary,
+    fontSize: 13,
     marginBottom: 20,
     fontStyle: 'italic',
   },
   button: {
-    paddingVertical: 8,
+    borderRadius: 12,
+    marginTop: 8,
+    elevation: 0,
   },
   helpText: {
     textAlign: 'center',
-    color: '#666',
-    fontSize: 12,
+    color: colors.accent,
+    fontSize: 13,
+    marginTop: 8,
   },
 });
 
