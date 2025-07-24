@@ -128,7 +128,10 @@ const startServer = async () => {
     await connectDB()
     console.log("✅ Conexión a MongoDB Atlas establecida")
 
+    // Logs de depuración
+    console.log("Antes de app.listen");
     app.listen(PORT, '0.0.0.0', () => {
+      console.log("Dentro de callback de app.listen");
       // Detectar IP local para mostrar en el log
       const interfaces = os.networkInterfaces();
       let localIp = 'localhost';
@@ -154,6 +157,7 @@ const startServer = async () => {
       console.log(`📊 Métricas en http://${localIp}:${PORT}/metrics`);
       console.log(`📈 Dashboard en http://${localIp}:${PORT}/api/monitoring/dashboard`);
     })
+    console.log("Después de app.listen");
   } catch (error) {
     logger.error('Error al iniciar el servidor', {
       error: error.message,
