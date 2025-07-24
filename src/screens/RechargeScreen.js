@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
+import { appTheme, fonts, colors } from '../theme';
 
 const RechargeScreen = ({ navigation, route }) => {
   const { user, refreshUserCards, loading } = useAuth();
@@ -127,39 +128,37 @@ const RechargeScreen = ({ navigation, route }) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.header}>
-        <Title style={styles.title}>Recargar Tarjeta</Title>
-        <Paragraph style={styles.subtitle}>
+        <Title style={[fonts.title, styles.title]}>Recargar Tarjeta</Title>
+        <Paragraph style={[fonts.subtitle, styles.subtitle]}>
           Tarjeta: {selectedCard.uid}
         </Paragraph>
       </View>
-
       {/* Información de la Tarjeta */}
-      <Card style={styles.card}>
+      <Card style={styles.cardMinimal}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Tarjeta Seleccionada</Title>
+          <Title style={fonts.subtitle}>Tarjeta Seleccionada</Title>
           <View style={styles.cardInfo}>
             <View style={styles.cardDetail}>
-              <Paragraph style={styles.cardLabel}>UID:</Paragraph>
-              <Chip mode="outlined" style={styles.cardUidChip}>
+              <Paragraph style={fonts.body}>UID:</Paragraph>
+              <Chip mode="outlined" style={[styles.chip, { borderColor: colors.primary, color: colors.primary }]}> 
                 {selectedCard.uid}
               </Chip>
             </View>
             <View style={styles.cardDetail}>
-              <Paragraph style={styles.cardLabel}>Saldo Actual:</Paragraph>
-              <Title style={styles.currentBalance}>
+              <Paragraph style={fonts.body}>Saldo Actual:</Paragraph>
+              <Title style={[fonts.title, { color: colors.primary, fontSize: 22 }]}>
                 {selectedCard.saldo_actual.toFixed(2)} Bs
               </Title>
             </View>
           </View>
         </Card.Content>
       </Card>
-
       {/* Montos Predefinidos */}
-      <Card style={styles.card}>
+      <Card style={styles.cardMinimal}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Montos Rápidos</Title>
+          <Title style={fonts.subtitle}>Montos Rápidos</Title>
           <View style={styles.predefinedAmounts}>
             {predefinedAmounts.map((value) => (
               <Button
@@ -167,6 +166,8 @@ const RechargeScreen = ({ navigation, route }) => {
                 mode={amount === value.toString() ? 'contained' : 'outlined'}
                 onPress={() => selectPredefinedAmount(value)}
                 style={styles.amountButton}
+                labelStyle={{ color: amount === value.toString() ? colors.accent : colors.primary, fontFamily: 'Montserrat_400Regular' }}
+                contentStyle={{ backgroundColor: amount === value.toString() ? colors.primary : colors.background, borderRadius: 10 }}
               >
                 {value} Bs
               </Button>
@@ -174,11 +175,10 @@ const RechargeScreen = ({ navigation, route }) => {
           </View>
         </Card.Content>
       </Card>
-
       {/* Monto Personalizado */}
-      <Card style={styles.card}>
+      <Card style={styles.cardMinimal}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Monto Personalizado</Title>
+          <Title style={fonts.subtitle}>Monto Personalizado</Title>
           <TextInput
             label="Monto a recargar (Bs)"
             value={amount}
@@ -187,96 +187,93 @@ const RechargeScreen = ({ navigation, route }) => {
             keyboardType="numeric"
             placeholder="0.00"
             style={styles.input}
+            theme={{ colors: { primary: colors.primary, text: colors.text, placeholder: colors.primary } }}
+            underlineColor={colors.primary}
           />
-          <Paragraph style={styles.helpText}>
+          <Paragraph style={[fonts.body, styles.helpText]}>
             Monto mínimo: 5 Bs
           </Paragraph>
         </Card.Content>
       </Card>
-
       {/* Método de Pago */}
-      <Card style={styles.card}>
+      <Card style={styles.cardMinimal}>
         <Card.Content>
-          <Title style={styles.sectionTitle}>Método de Pago</Title>
-          
+          <Title style={fonts.subtitle}>Método de Pago</Title>
           <View style={styles.paymentOption}>
             <RadioButton
               value="efectivo"
               status={paymentMethod === 'efectivo' ? 'checked' : 'unchecked'}
               onPress={() => setPaymentMethod('efectivo')}
+              color={colors.primary}
             />
             <View style={styles.paymentInfo}>
-              <Paragraph style={styles.paymentTitle}>Efectivo</Paragraph>
-              <Paragraph style={styles.paymentDescription}>
+              <Paragraph style={[fonts.body, styles.paymentTitle]}>Efectivo</Paragraph>
+              <Paragraph style={[fonts.body, styles.paymentDescription]}>
                 Recarga en puntos físicos autorizados
               </Paragraph>
             </View>
           </View>
-
           <Divider style={styles.divider} />
-
           <View style={styles.paymentOption}>
             <RadioButton
               value="qr"
               status={paymentMethod === 'qr' ? 'checked' : 'unchecked'}
               onPress={() => setPaymentMethod('qr')}
+              color={colors.primary}
             />
             <View style={styles.paymentInfo}>
-              <Paragraph style={styles.paymentTitle}>QR Bancario</Paragraph>
-              <Paragraph style={styles.paymentDescription}>
+              <Paragraph style={[fonts.body, styles.paymentTitle]}>QR Bancario</Paragraph>
+              <Paragraph style={[fonts.body, styles.paymentDescription]}>
                 Pago mediante código QR de tu banco
               </Paragraph>
             </View>
           </View>
-
           <Divider style={styles.divider} />
-
           <View style={styles.paymentOption}>
             <RadioButton
               value="tigo_money"
               status={paymentMethod === 'tigo_money' ? 'checked' : 'unchecked'}
               onPress={() => setPaymentMethod('tigo_money')}
+              color={colors.primary}
             />
             <View style={styles.paymentInfo}>
-              <Paragraph style={styles.paymentTitle}>Tigo Money</Paragraph>
-              <Paragraph style={styles.paymentDescription}>
+              <Paragraph style={[fonts.body, styles.paymentTitle]}>Tigo Money</Paragraph>
+              <Paragraph style={[fonts.body, styles.paymentDescription]}>
                 Pago con billetera móvil Tigo Money
               </Paragraph>
             </View>
           </View>
         </Card.Content>
       </Card>
-
       {/* Resumen */}
       {amount && parseFloat(amount) > 0 && (
-        <Card style={styles.card}>
+        <Card style={styles.cardMinimal}>
           <Card.Content>
-            <Title style={styles.sectionTitle}>Resumen</Title>
+            <Title style={fonts.subtitle}>Resumen</Title>
             <View style={styles.summaryRow}>
-              <Paragraph>Tarjeta:</Paragraph>
-              <Paragraph>{selectedCard.uid}</Paragraph>
+              <Paragraph style={fonts.body}>Tarjeta:</Paragraph>
+              <Paragraph style={fonts.body}>{selectedCard.uid}</Paragraph>
             </View>
             <View style={styles.summaryRow}>
-              <Paragraph>Monto a recargar:</Paragraph>
-              <Paragraph style={styles.summaryAmount}>
+              <Paragraph style={fonts.body}>Monto a recargar:</Paragraph>
+              <Paragraph style={[fonts.body, styles.summaryAmount]}>
                 {parseFloat(amount).toFixed(2)} Bs
               </Paragraph>
             </View>
             <View style={styles.summaryRow}>
-              <Paragraph>Saldo actual:</Paragraph>
-              <Paragraph>{selectedCard.saldo_actual.toFixed(2)} Bs</Paragraph>
+              <Paragraph style={fonts.body}>Saldo actual:</Paragraph>
+              <Paragraph style={fonts.body}>{selectedCard.saldo_actual.toFixed(2)} Bs</Paragraph>
             </View>
             <Divider style={styles.divider} />
             <View style={styles.summaryRow}>
-              <Paragraph style={styles.summaryTotal}>Nuevo saldo:</Paragraph>
-              <Paragraph style={styles.summaryTotal}>
+              <Paragraph style={[fonts.body, styles.summaryTotal]}>Nuevo saldo:</Paragraph>
+              <Paragraph style={[fonts.body, styles.summaryTotal]}>
                 {(selectedCard.saldo_actual + parseFloat(amount)).toFixed(2)} Bs
               </Paragraph>
             </View>
           </Card.Content>
         </Card>
       )}
-
       {/* Botón de Recarga */}
       <View style={styles.buttonContainer}>
         <Button
@@ -286,14 +283,14 @@ const RechargeScreen = ({ navigation, route }) => {
           disabled={loadingLocal || !amount || parseFloat(amount) <= 0}
           style={styles.rechargeButton}
           contentStyle={styles.rechargeButtonContent}
+          labelStyle={{ color: colors.accent, fontFamily: 'Montserrat_400Regular', fontSize: 18 }}
           testID="recharge-btn"
         >
           {loadingLocal ? 'Procesando...' : 'Recargar Tarjeta'}
         </Button>
       </View>
-
       <View style={styles.footer}>
-        <Paragraph style={styles.footerText}>
+        <Paragraph style={[fonts.body, styles.footerText]}>
           Las recargas pueden tardar hasta 5 minutos en reflejarse
         </Paragraph>
       </View>
@@ -321,16 +318,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#2196F3',
   },
   header: {
-    padding: 20,
-    backgroundColor: 'white',
-    elevation: 2,
+    padding: 24,
+    backgroundColor: colors.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    marginBottom: 12,
+    elevation: 4,
+    alignItems: 'center',
   },
   title: {
-    color: '#333',
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   subtitle: {
-    color: '#666',
-    marginTop: 5,
+    color: colors.accent,
+    textAlign: 'center',
+    marginBottom: 0,
   },
   card: {
     margin: 20,
@@ -394,6 +398,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     marginVertical: 5,
+    backgroundColor: '#EEE',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -427,6 +432,26 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     fontStyle: 'italic',
+  },
+  cardMinimal: {
+    backgroundColor: colors.background,
+    borderRadius: 18,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: '#F3F0FF',
+  },
+  chip: {
+    borderRadius: 8,
+    borderWidth: 1.5,
+    paddingHorizontal: 8,
+    fontFamily: 'Montserrat_400Regular',
+    fontSize: 14,
   },
 });
 

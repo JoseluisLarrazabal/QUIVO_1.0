@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
+import { appTheme, fonts, colors } from '../theme';
 
 const HistoryScreen = ({ navigation, route }) => {
   const { user, loading } = useAuth();
@@ -160,7 +161,7 @@ const HistoryScreen = ({ navigation, route }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Banner de Modo de Autenticación */}
       {user.authMode === 'card_uid' && (
         <Banner
@@ -179,26 +180,22 @@ const HistoryScreen = ({ navigation, route }) => {
           Modo Tarjeta NFC - Historial de una sola tarjeta
         </Banner>
       )}
-
       <View style={styles.header}>
-        <Title style={styles.title}>Historial de Transacciones</Title>
-        
+        <Title style={[fonts.title, styles.title]}>Historial de Transacciones</Title>
         {/* Información de la Tarjeta */}
         <View style={styles.cardInfo}>
-          <Paragraph style={styles.cardInfoLabel}>Tarjeta:</Paragraph>
-          <Chip mode="outlined" style={styles.cardUidChip}>
+          <Paragraph style={fonts.body}>Tarjeta:</Paragraph>
+          <Chip mode="outlined" style={[styles.chip, { borderColor: colors.primary, color: colors.primary }]}> 
             {selectedCard.uid}
           </Chip>
         </View>
-        
-        <Paragraph style={styles.selectedCardInfo}>
+        <Paragraph style={[fonts.body, styles.selectedCardInfo]}>
           Saldo actual: {selectedCard.saldo_actual.toFixed(2)} Bs
         </Paragraph>
-        
         {/* Selector de Tarjeta (solo en modo credenciales con múltiples tarjetas) */}
         {user.authMode === 'credentials' && user.cards && user.cards.length > 1 && (
           <View style={styles.cardSelector}>
-            <Paragraph style={styles.cardSelectorLabel}>Cambiar tarjeta:</Paragraph>
+            <Paragraph style={fonts.body}>Cambiar tarjeta:</Paragraph>
             <View style={styles.cardButtons}>
               {user.cards.map((card, index) => (
                 <Button
@@ -207,6 +204,8 @@ const HistoryScreen = ({ navigation, route }) => {
                   onPress={() => setSelectedCard(card)}
                   style={styles.cardButton}
                   compact
+                  labelStyle={{ color: selectedCard?.uid === card.uid ? colors.accent : colors.primary, fontFamily: 'Montserrat_400Regular' }}
+                  contentStyle={{ backgroundColor: selectedCard?.uid === card.uid ? colors.primary : colors.background, borderRadius: 10 }}
                 >
                   {card.uid}
                 </Button>
@@ -214,15 +213,15 @@ const HistoryScreen = ({ navigation, route }) => {
             </View>
           </View>
         )}
-        
         <Searchbar
           placeholder="Buscar por ubicación o fecha..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          style={styles.searchbar}
+          style={[styles.searchbar, { backgroundColor: colors.background, borderColor: colors.primary, borderWidth: 1, borderRadius: 12 }]}
+          inputStyle={{ fontFamily: 'Montserrat_400Regular', color: colors.text }}
+          iconColor={colors.primary}
         />
       </View>
-
       <FlatList
         data={filteredTransactions}
         renderItem={renderTransaction}
@@ -234,7 +233,7 @@ const HistoryScreen = ({ navigation, route }) => {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Paragraph style={styles.emptyText}>
+            <Paragraph style={[fonts.body, styles.emptyText]}>
               No se encontraron transacciones
             </Paragraph>
           </View>
@@ -245,73 +244,64 @@ const HistoryScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
   banner: {
     backgroundColor: '#fff3cd',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 20,
-  },
-  errorButton: {
-    backgroundColor: '#2196F3',
-  },
   header: {
-    padding: 20,
-    backgroundColor: 'white',
-    elevation: 2,
+    padding: 24,
+    backgroundColor: colors.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    marginBottom: 12,
+    elevation: 4,
+    alignItems: 'center',
   },
   title: {
-    marginBottom: 15,
-    color: '#333',
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 8,
   },
   cardInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
   },
-  cardInfoLabel: {
-    marginRight: 10,
-    color: '#666',
+  chip: {
+    borderRadius: 8,
+    borderWidth: 1.5,
+    paddingHorizontal: 8,
+    fontFamily: 'Montserrat_400Regular',
     fontSize: 14,
-  },
-  cardUidChip: {
-    backgroundColor: '#f0f0f0',
+    marginLeft: 8,
   },
   selectedCardInfo: {
     marginBottom: 15,
-    color: '#2196F3',
+    color: colors.accent,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   cardSelector: {
     marginBottom: 15,
-  },
-  cardSelectorLabel: {
-    marginBottom: 10,
-    color: '#666',
-    fontSize: 14,
+    alignItems: 'center',
   },
   cardButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    justifyContent: 'center',
   },
   cardButton: {
     marginBottom: 5,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    elevation: 0,
+    marginHorizontal: 2,
   },
   searchbar: {
     elevation: 0,
-    backgroundColor: '#f5f5f5',
+    marginTop: 8,
+    marginBottom: 0,
   },
   listContainer: {
     padding: 20,
@@ -320,6 +310,10 @@ const styles = StyleSheet.create({
   transactionCard: {
     marginBottom: 10,
     elevation: 2,
+    borderRadius: 14,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: '#F3F0FF',
   },
   transactionHeader: {
     flexDirection: 'row',
@@ -333,26 +327,32 @@ const styles = StyleSheet.create({
   transactionTitle: {
     fontSize: 16,
     marginBottom: 5,
+    fontFamily: 'Montserrat_400Regular',
+    color: colors.primary,
   },
   transactionDate: {
-    color: '#666',
+    color: colors.text,
     fontSize: 12,
+    fontFamily: 'Montserrat_400Regular',
   },
   transactionAmount: {
     alignItems: 'flex-end',
   },
   typeChip: {
     marginBottom: 5,
+    fontFamily: 'Montserrat_400Regular',
   },
   amount: {
     fontSize: 18,
     fontWeight: 'bold',
+    fontFamily: 'Montserrat_400Regular',
   },
   transactionResult: {
     marginTop: 10,
-    color: '#666',
+    color: colors.primary,
     fontSize: 12,
     fontStyle: 'italic',
+    fontFamily: 'Montserrat_400Regular',
   },
   loadingContainer: {
     flex: 1,
@@ -361,7 +361,8 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 10,
-    color: '#666',
+    color: colors.text,
+    fontFamily: 'Montserrat_400Regular',
   },
   emptyContainer: {
     flex: 1,
@@ -370,8 +371,9 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   emptyText: {
-    color: '#666',
+    color: colors.accent,
     textAlign: 'center',
+    fontFamily: 'Montserrat_400Regular',
   },
 });
 
