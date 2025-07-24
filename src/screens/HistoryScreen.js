@@ -228,6 +228,7 @@ const HistoryScreen = ({ navigation, route }) => {
         renderItem={renderTransaction}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
+        testID="flat-list"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }

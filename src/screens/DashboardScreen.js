@@ -124,6 +124,7 @@ const DashboardScreen = ({ navigation }) => {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
+      testID="ScrollView"
     >
       {/* Banner de Modo de Autenticación */}
       {user.authMode === 'card_uid' && (
@@ -152,6 +153,7 @@ const DashboardScreen = ({ navigation }) => {
           size={24}
           onPress={logout}
           style={styles.logoutButton}
+          testID="logout-btn"
         />
       </View>
 

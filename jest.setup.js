@@ -61,4 +61,21 @@ beforeAll(() => {
 
 afterAll(() => {
   console.error = originalError;
+});
+
+// Mock global de Alert.alert para todos los tests
+let globalAlertCallCount = 0;
+beforeEach(() => {
+  globalAlertCallCount = 0;
+  jest.spyOn(require('react-native').Alert, 'alert').mockImplementation((title, message, buttons) => {
+    globalAlertCallCount++;
+    console.log('[MOCK ALERT]', title, message, buttons);
+    // Ejecutar el handler de confirmación solo en la primera llamada (confirmación)
+    if (globalAlertCallCount === 1) {
+      const confirm = buttons && buttons.find(b => b.text === 'Confirmar');
+      if (confirm && typeof confirm.onPress === 'function') {
+        confirm.onPress();
+      }
+    }
+  });
 }); 

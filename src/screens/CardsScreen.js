@@ -186,6 +186,7 @@ const CardsScreen = ({ navigation }) => {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
+        testID="scroll-view"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -368,6 +369,7 @@ const CardsScreen = ({ navigation }) => {
       <FAB
         icon="plus"
         style={styles.fab}
+        testID="fab"
         onPress={() => navigation.navigate('RegisterCard')}
         label="Nueva Tarjeta"
       />

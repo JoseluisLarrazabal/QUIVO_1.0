@@ -34,6 +34,7 @@ const RechargeScreen = ({ navigation, route }) => {
   const predefinedAmounts = [10, 20, 50, 100];
 
   const handleRecharge = async () => {
+    console.log('HANDLE RECHARGE', amount);
     if (!selectedCard) {
       Alert.alert('Error', 'No hay tarjeta seleccionada');
       return;
@@ -285,6 +286,7 @@ const RechargeScreen = ({ navigation, route }) => {
           disabled={loadingLocal || !amount || parseFloat(amount) <= 0}
           style={styles.rechargeButton}
           contentStyle={styles.rechargeButtonContent}
+          testID="recharge-btn"
         >
           {loadingLocal ? 'Procesando...' : 'Recargar Tarjeta'}
         </Button>
