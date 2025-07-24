@@ -16,14 +16,14 @@ function uniqueUsername(base = 'testuser') {
 
 // Función helper para crear usuario de prueba con configuración completa
 async function createTestUser() {
-  const username = uniqueUsername();
+    const username = uniqueUsername();
   return await User.create({
-    username,
-    password: '123456',
-    nombre: 'Test User',
-    tipo_tarjeta: 'adulto',
-    telefono: '123456',
-    email: 'test@example.com',
+      username,
+      password: '123456',
+      nombre: 'Test User',
+      tipo_tarjeta: 'adulto',
+      telefono: '123456',
+      email: 'test@example.com',
     activo: true // Asegurar que el usuario esté activo
   });
 }

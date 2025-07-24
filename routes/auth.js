@@ -89,7 +89,7 @@ router.post("/login-card", async (req, res) => {
       ip: req.ip,
       userAgent: req.get('User-Agent')
     });
-    
+
     res.status(200).json({ 
       success: true, 
       data: result 
