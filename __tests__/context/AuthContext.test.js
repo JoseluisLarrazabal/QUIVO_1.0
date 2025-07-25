@@ -8,12 +8,12 @@ import { AuthProvider, useAuth } from '../../src/context/AuthContext';
 
 jest.mock('../../src/services/apiService', () => ({
   apiService: {
-    login: jest.fn(),
-    loginWithCard: jest.fn(),
-    register: jest.fn(),
-    logout: jest.fn(),
-    getCardInfo: jest.fn(),
-    getUserCards: jest.fn(),
+    login: jest.fn(() => Promise.resolve({ ok: true, data: { user: { id: '1', nombre: 'Test' }, cards: [{ uid: 'A1', saldo_actual: 10 }] } })),
+    loginWithCard: jest.fn(() => Promise.resolve({ ok: true, data: { nombre: 'Tarjeta', tipo_tarjeta: 'adulto', saldo_actual: 20 } })),
+    register: jest.fn(() => Promise.resolve({ ok: true, data: {} })),
+    logout: jest.fn(() => Promise.resolve({ ok: true })),
+    getCardInfo: jest.fn(() => Promise.resolve({ ok: true, data: {} })),
+    getUserCards: jest.fn(() => Promise.resolve({ ok: true, data: [] })),
   }
 }));
 const { apiService } = require('../../src/services/apiService');

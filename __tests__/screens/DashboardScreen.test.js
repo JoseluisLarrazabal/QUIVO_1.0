@@ -5,10 +5,10 @@ import DashboardScreen from '../../src/screens/DashboardScreen';
 
 jest.mock('../../src/services/apiService', () => ({
   apiService: {
-    getUserCards: jest.fn(() => Promise.resolve({ data: [
+    getUserCards: jest.fn(() => Promise.resolve({ ok: true, data: [
       { uid: 'CARD1', saldo_actual: 20, alias: 'Mi Tarjeta' },
     ] })),
-    getTransactionHistory: jest.fn(() => Promise.resolve({ success: true, data: [] })),
+    getTransactionHistory: jest.fn(() => Promise.resolve({ ok: true, success: true, data: [] })),
   }
 }));
 
