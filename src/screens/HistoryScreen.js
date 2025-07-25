@@ -494,7 +494,9 @@ const HistoryScreen = ({ navigation, route }) => {
         onPress={() => navigation.navigate('Recharge', { selectedCard })}
         label="Recargar"
         mode="elevated"
-        variant="primary"
+        color={colors.white}
+        labelStyle={{ color: colors.white, fontWeight: '600' }}
+        accessibilityLabel="Recargar tarjeta"
       />
     </View>
   );
@@ -852,7 +854,9 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: colors.primary,
-    borderRadius: 20,
+    color: colors.white,
+    minWidth: 140, // Asegura espacio para el label
+    // borderRadius: 20, // Eliminado para que Paper maneje el borderRadius
     ...shadows.large,
   },
 });
