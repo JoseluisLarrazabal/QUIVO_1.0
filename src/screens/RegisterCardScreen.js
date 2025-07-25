@@ -512,6 +512,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     color: colors.accent,
     marginTop: spacing.xs,
+    fontFamily: 'Chicalo-Regular',
   },
 
   // ScrollView
@@ -585,6 +586,7 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     color: colors.textSecondary,
     marginTop: spacing.xs,
+    fontFamily: 'Chicalo-Regular',
   },
 
   // Inputs

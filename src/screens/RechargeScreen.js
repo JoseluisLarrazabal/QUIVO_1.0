@@ -443,6 +443,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     color: colors.accent,
     marginTop: spacing.xs,
+    fontFamily: 'Chicalo-Regular',
   },
 
   // Scroll view
@@ -488,6 +489,7 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     color: colors.textSecondary,
     marginTop: spacing.xs,
+    fontFamily: 'Chicalo-Regular',
   },
   balanceContainer: {
     alignItems: 'center',
@@ -521,6 +523,7 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     color: colors.textSecondary,
     marginTop: spacing.xs,
+    fontFamily: 'Chicalo-Regular',
   },
 
   // Grid de montos

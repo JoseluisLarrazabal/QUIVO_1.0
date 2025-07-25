@@ -327,6 +327,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   appSubtitle: {
+    fontFamily: 'Chicalo-Regular',
     ...typography.titleLarge,
     color: colors.accent,
     textAlign: 'center',

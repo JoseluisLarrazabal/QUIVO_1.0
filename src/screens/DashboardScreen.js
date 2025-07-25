@@ -717,6 +717,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   quickActionSubtitle: {
+    fontFamily: 'Chicalo-Regular',
     color: colors.textSecondary,
     textAlign: 'center',
     fontSize: 11,

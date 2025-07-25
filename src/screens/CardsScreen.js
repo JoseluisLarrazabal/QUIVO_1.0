@@ -590,6 +590,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerSubtitle: {
+    fontFamily: 'Chicalo-Regular',
     ...typography.bodyMedium,
     color: colors.accent,
     textAlign: 'center',
@@ -808,6 +809,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   balanceSubtitle: {
+    fontFamily: 'Chicalo-Regular',
     ...typography.bodySmall,
     color: colors.white,
     opacity: 0.8,
@@ -870,6 +872,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   emptyStateSubtitle: {
+    fontFamily: 'Chicalo-Regular',
     ...typography.bodyMedium,
     color: colors.textSecondary,
     textAlign: 'center',
@@ -916,6 +919,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalSubtitle: {
+    fontFamily: 'Chicalo-Regular',
     ...typography.bodyMedium,
     color: colors.textSecondary,
     textAlign: 'center',
