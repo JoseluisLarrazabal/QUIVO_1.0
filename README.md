@@ -260,6 +260,59 @@ npm test
 - **Usar testID y textos claros en los componentes para facilitar el testing.**
 - **Mantener los tests y el código sincronizados ante cambios de lógica o UI.**
 
+## 🧪 Buenas Prácticas y Flujo Profesional para Tests (React Native + Jest)
+
+### 1. Mocks de Servicios y Contextos
+- Mockea todos los métodos de `apiService` para que devuelvan `{ ok: true/false, ... }` según lo que espera el código real.
+- Mockea el contexto de autenticación (`useAuth`) para incluir SIEMPRE todas las propiedades y funciones esperadas por los componentes (`user`, `loading`, `refreshUserCards`, `selectCard`, etc.).
+- Mockea la navegación (`mockNavigation`) con todos los métodos comunes (`navigate`, `replace`, `goBack`, etc.).
+
+### 2. Providers en Tests de Integración
+- Si el componente usa `react-native-paper`, envuelve el render en `<Provider as PaperProvider>`:
+  ```js
+  import { Provider as PaperProvider } from 'react-native-paper';
+  const TestWrapper = ({ children }) => <PaperProvider>{children}</PaperProvider>;
+  render(<MyScreen />, { wrapper: TestWrapper });
+  ```
+
+### 3. Selectores y Aserciones
+- Usa queries asíncronas (`findByText`, `findAllByText`) para esperar elementos que aparecen tras efectos o fetches.
+- Asegúrate de que los textos y selectores coincidan EXACTAMENTE con el UI real.
+- Verifica la cantidad de elementos cuando sea relevante (`findAllByText('Principal').length`).
+
+### 4. Manejo de Warnings y Errores
+- Los warnings de `act()` y de iconos de Paper/Vector Icons están filtrados en `jest.setup.js` y NO afectan el resultado de los tests.
+- Si aparecen nuevos warnings irrelevantes, agrégalos al filtro de `console.error` en `jest.setup.js`.
+
+### 5. Estructura de un Test Profesional
+```js
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Provider as PaperProvider } from 'react-native-paper';
+import MyScreen from '../src/screens/MyScreen';
+
+const TestWrapper = ({ children }) => <PaperProvider>{children}</PaperProvider>;
+
+describe('MyScreen', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('ejemplo de test', async () => {
+    const { findByText } = render(<MyScreen />, { wrapper: TestWrapper });
+    expect(await findByText('Texto esperado')).toBeTruthy();
+  });
+});
+```
+
+### 6. Limpieza y Aislamiento
+- Usa `beforeEach` y `afterEach` para limpiar mocks y restaurar implementaciones.
+- Cada test debe ser independiente y no depender del estado de otros tests.
+
+### 7. Animaciones y Efectos
+- Si un componente usa animaciones, considera agregar un flag de test (`const isTestMode = process.env.NODE_ENV === 'test'`) para saltar animaciones en tests.
+
+---
+
+**Sigue este flujo para mantener una suite de tests robusta, limpia y fácil de mantener.**
+
 ## 🤝 Contribución
 
 1. Fork el proyecto

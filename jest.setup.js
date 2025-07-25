@@ -74,7 +74,13 @@ beforeAll(() => {
         args[0].includes('An update to Icon inside a test was not wrapped in act') ||
         args[0].includes('is not a valid icon name for family') ||
         args[0].includes('An update to AuthProvider inside a test was not wrapped in act') ||
-        args[0].includes('An update to TestComponent inside a test was not wrapped in act')
+        args[0].includes('An update to TestComponent inside a test was not wrapped in act') ||
+        args[0].includes('An update to HistoryScreen inside a test was not wrapped in act') ||
+        args[0].includes('An update to CenteredLoader inside a test was not wrapped in act') ||
+        args[0].includes('An update to LoginScreen inside a test was not wrapped in act') ||
+        args[0].includes('An update to PaperProvider inside a test was not wrapped in act') ||
+        args[0].includes('act(...)') ||
+        args[0].includes('react-native-paper')
       )
     ) {
       return;
