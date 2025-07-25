@@ -5,8 +5,8 @@ import HistoryScreen from '../../src/screens/HistoryScreen';
 
 jest.mock('../../src/services/apiService', () => ({
   apiService: {
-    getTransactionHistory: jest.fn(() => Promise.resolve({ success: true, data: [] })),
-    getUserCards: jest.fn(() => Promise.resolve({ data: [
+    getTransactionHistory: jest.fn(() => Promise.resolve({ ok: true, success: true, data: [] })),
+    getUserCards: jest.fn(() => Promise.resolve({ ok: true, data: [
       { uid: 'CARD1', saldo_actual: 20, alias: 'Principal' },
     ] })),
   }
@@ -26,10 +26,20 @@ const baseUser = {
   ],
 };
 
-describe('HistoryScreen (integración)', () => {
-  beforeEach(() => jest.clearAllMocks());
-  afterEach(() => jest.restoreAllMocks());
+beforeEach(() => {
+  jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+    user: baseUser,
+    loading: false,
+    refreshUserCards: jest.fn(),
+    selectCard: jest.fn(),
+  }));
+});
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe('HistoryScreen', () => {
   it('renderiza loader si loading', () => {
     jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
       user: null,
@@ -50,7 +60,7 @@ describe('HistoryScreen (integración)', () => {
     }));
     const { getByText, queryByText } = render(<HistoryScreen navigation={mockNavigation} route={{ params: {} }} />);
     await waitFor(() => expect(queryByText('Cargando...')).not.toBeTruthy());
-    expect(getByText('No hay transacciones recientes')).toBeTruthy();
+    expect(getByText('No hay transacciones registradas para esta tarjeta')).toBeTruthy();
   });
 
   // Puedes agregar más tests aquí para refresco, búsqueda, filtrado, etc.

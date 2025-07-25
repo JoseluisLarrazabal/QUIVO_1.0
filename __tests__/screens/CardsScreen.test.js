@@ -5,7 +5,7 @@ import CardsScreen from '../../src/screens/CardsScreen';
 
 jest.mock('../../src/services/apiService', () => ({
   apiService: {
-    getUserCards: jest.fn(() => Promise.resolve({ data: [
+    getUserCards: jest.fn(() => Promise.resolve({ ok: true, data: [
       { uid: 'CARD1', saldo_actual: 20, alias: 'Principal' },
       { uid: 'CARD2', saldo_actual: 10, alias: 'Secundaria' },
     ] })),
@@ -14,8 +14,6 @@ jest.mock('../../src/services/apiService', () => ({
     deleteCard: jest.fn(() => Promise.resolve({ success: true })),
   }
 }));
-
-const mockNavigation = { navigate: jest.fn() };
 
 const baseUser = {
   nombre: 'Test User',
@@ -29,27 +27,30 @@ const baseUser = {
     { uid: 'CARD2', saldo_actual: 10, alias: 'Secundaria' },
   ],
 };
-
-jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+const baseAuth = {
   user: baseUser,
   loading: false,
   refreshUserCards: jest.fn(),
   selectCard: jest.fn(),
+};
+const mockNavigation = { navigate: jest.fn(), replace: jest.fn() };
+
+jest.mock('../../src/services/apiService', () => ({
+  apiService: {
+    getUserCards: jest.fn(() => Promise.resolve({ ok: true, data: baseUser.cards })),
+  },
 }));
 
 describe('CardsScreen (integración)', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({ ...baseAuth }));
+  });
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
   it('renderiza correctamente con tarjetas', async () => {
-    jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
-      user: baseUser,
-      loading: false,
-      refreshUserCards: jest.fn(),
-      selectCard: jest.fn(),
-    }));
     let utils;
     await act(async () => {
       utils = render(<CardsScreen navigation={mockNavigation} />);
@@ -63,61 +64,47 @@ describe('CardsScreen (integración)', () => {
 
   it('muestra estado vacío si no hay tarjetas', async () => {
     jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+      ...baseAuth,
       user: { ...baseUser, cards: [] },
-      loading: false,
-      refreshUserCards: jest.fn(),
-      selectCard: jest.fn(),
     }));
-    require('../../src/services/apiService').apiService.getUserCards.mockResolvedValueOnce({ data: [] });
+    require('../../src/services/apiService').apiService.getUserCards.mockResolvedValueOnce({ ok: true, data: [] });
     let utils;
     await act(async () => {
       utils = render(<CardsScreen navigation={mockNavigation} />);
     });
     const { getByText, queryByText } = utils;
     await waitFor(() => expect(queryByText('Cargando...')).not.toBeTruthy());
-    expect(getByText('No tienes tarjetas')).toBeTruthy();
-    expect(getByText('Registrar Nueva Tarjeta')).toBeTruthy();
+    expect(getByText('No tienes tarjetas registradas')).toBeTruthy();
   });
 
   it('navega a registrar tarjeta desde estado vacío', async () => {
     jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+      ...baseAuth,
       user: { ...baseUser, cards: [] },
-      loading: false,
-      refreshUserCards: jest.fn(),
-      selectCard: jest.fn(),
     }));
-    require('../../src/services/apiService').apiService.getUserCards.mockResolvedValueOnce({ data: [] });
+    require('../../src/services/apiService').apiService.getUserCards.mockResolvedValueOnce({ ok: true, data: [] });
     let utils;
     await act(async () => {
       utils = render(<CardsScreen navigation={mockNavigation} />);
     });
     const { getByText, queryByText } = utils;
     await waitFor(() => expect(queryByText('Cargando...')).not.toBeTruthy());
-    fireEvent.press(getByText('Registrar Nueva Tarjeta'));
+    fireEvent.press(getByText('Registrar Tarjeta'));
     expect(mockNavigation.navigate).toHaveBeenCalledWith('RegisterCard');
   });
 
   it('permite seleccionar una tarjeta', async () => {
-    jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
-      user: baseUser,
-      loading: false,
-      refreshUserCards: jest.fn(),
-      selectCard: jest.fn(),
-    }));
     let utils;
     await act(async () => {
       utils = render(<CardsScreen navigation={mockNavigation} />);
     });
     const { getAllByText, queryByText } = utils;
     await waitFor(() => expect(queryByText('Cargando...')).not.toBeTruthy());
-    await act(async () => {
-      fireEvent.press(getAllByText('Seleccionar')[0]);
-    });
-    expect(getAllByText('Seleccionar').length).toBeGreaterThan(0);
+    fireEvent.press(getAllByText('Principal')[0]);
+    expect(baseAuth.selectCard).toHaveBeenCalledWith('CARD1');
   });
 
   it('muestra loader si loading', async () => {
-    const mockNav = { ...mockNavigation, replace: jest.fn() };
     jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
       user: null,
       loading: true,
@@ -126,7 +113,7 @@ describe('CardsScreen (integración)', () => {
     }));
     let utils;
     await act(async () => {
-      utils = render(<CardsScreen navigation={mockNav} />);
+      utils = render(<CardsScreen navigation={mockNavigation} />);
     });
     const { getByTestId } = utils;
     expect(getByTestId('centered-loader')).toBeTruthy();

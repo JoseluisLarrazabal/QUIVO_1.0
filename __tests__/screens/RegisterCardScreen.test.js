@@ -5,8 +5,10 @@ import RegisterCardScreen from '../../src/screens/RegisterCardScreen';
 
 jest.mock('../../src/services/apiService', () => ({
   apiService: {
-    addCardToUser: jest.fn(() => Promise.resolve({ success: true })),
-    getUserCards: jest.fn(() => Promise.resolve({ data: [] })),
+    registerCard: jest.fn(() => Promise.resolve({ ok: true, success: true })),
+    getUserCards: jest.fn(() => Promise.resolve({ ok: true, data: [
+      { uid: 'CARD1', saldo_actual: 20, alias: 'Principal' },
+    ] })),
   }
 }));
 
@@ -19,18 +21,47 @@ const baseUser = {
   authMode: 'credentials',
   selectedCard: 'CARD1',
   isMultiCard: true,
-  cards: [],
+  cards: [
+    { uid: 'CARD1', saldo_actual: 20, alias: 'Principal' },
+  ],
 };
 
-jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
-  user: baseUser,
-  loading: false,
-  refreshUserCards: jest.fn(),
-  selectCard: jest.fn(),
-}));
+beforeEach(() => {
+  jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+    user: baseUser,
+    loading: false,
+    refreshUserCards: jest.fn(),
+    selectCard: jest.fn(),
+  }));
+});
 
-describe('RegisterCardScreen (integración)', () => {
-  beforeEach(() => jest.clearAllMocks());
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe('RegisterCardScreen', () => {
+  const mockUser = {
+    nombre: 'Test User',
+    email: 'test@example.com',
+    tipo_tarjeta: 'adulto',
+    authMode: 'credentials',
+    selectedCard: 'CARD1',
+    isMultiCard: true,
+    cards: [
+      { uid: 'CARD1', saldo_actual: 20, alias: 'Principal' },
+    ],
+  };
+  beforeEach(() => {
+    jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+      user: mockUser,
+      loading: false,
+      refreshUserCards: jest.fn(),
+      selectCard: jest.fn(),
+    }));
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   it('renderiza campos de registro', async () => {
     const { getByPlaceholderText, getByText, queryByText } = render(<RegisterCardScreen navigation={mockNavigation} route={{ params: {} }} />);

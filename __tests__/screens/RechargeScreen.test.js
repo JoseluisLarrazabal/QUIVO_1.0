@@ -5,8 +5,8 @@ import RechargeScreen from '../../src/screens/RechargeScreen';
 
 jest.mock('../../src/services/apiService', () => ({
   apiService: {
-    rechargeCard: jest.fn(() => Promise.resolve({ success: true })),
-    getUserCards: jest.fn(() => Promise.resolve({ data: [
+    rechargeCard: jest.fn(() => Promise.resolve({ ok: true, success: true })),
+    getUserCards: jest.fn(() => Promise.resolve({ ok: true, data: [
       { uid: 'CARD1', saldo_actual: 20, alias: 'Principal' },
     ] })),
   }
@@ -26,15 +26,42 @@ const baseUser = {
   ],
 };
 
-jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
-  user: baseUser,
-  loading: false,
-  refreshUserCards: jest.fn(),
-  selectCard: jest.fn(),
-}));
+beforeEach(() => {
+  jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+    user: baseUser,
+    loading: false,
+    refreshUserCards: jest.fn(),
+    selectCard: jest.fn(),
+  }));
+});
 
-describe('RechargeScreen (integración)', () => {
-  beforeEach(() => jest.clearAllMocks());
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe('RechargeScreen', () => {
+  const baseUser = {
+    nombre: 'Test User',
+    email: 'test@example.com',
+    tipo_tarjeta: 'adulto',
+    authMode: 'credentials',
+    selectedCard: 'CARD1',
+    isMultiCard: true,
+    cards: [
+      { uid: 'CARD1', saldo_actual: 20, alias: 'Principal' },
+    ],
+  };
+  beforeEach(() => {
+    jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+      user: baseUser,
+      loading: false,
+      refreshUserCards: jest.fn(),
+      selectCard: jest.fn(),
+    }));
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   it('renderiza campos de recarga', async () => {
     const { getByPlaceholderText, getByText, queryByText } = render(<RechargeScreen navigation={mockNavigation} route={{ params: {} }} />);
