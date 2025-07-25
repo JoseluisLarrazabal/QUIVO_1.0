@@ -9,7 +9,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { useFonts as useMontserrat, Montserrat_400Regular } from '@expo-google-fonts/montserrat';
 import * as Font from 'expo-font';
-import AppLoading from 'expo-app-loading';
+import * as SplashScreen from 'expo-splash-screen';
 import { appTheme } from './src/theme';
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -162,16 +162,26 @@ const AppNavigator = () => {
 };
 
 export default function App() {
-  // Cargar Montserrat desde Google Fonts
+  // Mantener splash hasta que las fuentes estén listas
+  React.useEffect(() => {
+    SplashScreen.preventAutoHideAsync();
+  }, []);
+
   const [montserratLoaded] = useMontserrat({
     Montserrat_400Regular,
   });
-  // Cargar Chicalo desde assets/fonts
   const [chicaloLoaded] = Font.useFonts({
     'Chicalo-Regular': require('./assets/fonts/Chicalo-Regular.otf'),
   });
+
+  React.useEffect(() => {
+    if (montserratLoaded && chicaloLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [montserratLoaded, chicaloLoaded]);
+
   if (!montserratLoaded || !chicaloLoaded) {
-    return <AppLoading />;
+    return null; // SplashScreen se mantiene visible
   }
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

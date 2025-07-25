@@ -439,7 +439,7 @@ const DashboardScreen = ({ navigation }) => {
             ) : (
               <View style={styles.emptyState}>
                 <IconButton
-                  icon="receipt-text-outline"
+                  icon="history"
                   size={40}
                   iconColor={colors.textSecondary}
                   style={{ margin: 0, marginBottom: 8 }}

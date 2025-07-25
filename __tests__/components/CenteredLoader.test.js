@@ -7,4 +7,9 @@ describe('CenteredLoader', () => {
     const { getByTestId } = render(<CenteredLoader />);
     expect(getByTestId('centered-loader')).toBeTruthy();
   });
+
+  test('debería mostrar el mensaje personalizado', () => {
+    const { getByText } = render(<CenteredLoader message="Cargando datos..." />);
+    expect(getByText('Cargando datos...')).toBeTruthy();
+  });
 });

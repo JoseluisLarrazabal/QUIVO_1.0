@@ -229,6 +229,37 @@ La app detecta automáticamente la IP del host Metro Bundler:
 - **Feedback Inmediato**: Confirmaciones y errores claros
 - **Diseño Responsivo**: Adaptable a diferentes tamaños de pantalla
 
+## 🧪 Buenas Prácticas y Flujo de Testing
+
+### Estructura de Tests
+- **Tests de UI (pantallas y componentes):**
+  - Usan mocks locales de `apiService` para aislar la lógica de red.
+  - Son rápidos, estables y no dependen de un backend real.
+  - Ubicados en `__tests__/screens/` y `__tests__/components/`.
+
+- **Tests de servicios (`apiService`):**
+  - Mockean `fetch` globalmente dentro del archivo de test.
+  - Validan la lógica de integración y manejo de errores de la API.
+  - No dependen de un backend real, pero simulan respuestas y errores de red.
+  - Ubicados en `__tests__/services/`.
+
+### Ejecución de Tests
+
+```bash
+cd Frontend
+npm test
+```
+
+- Todos los tests pueden ejecutarse sin levantar el backend.
+- Los tests de UI y servicios están completamente aislados y son independientes.
+
+### Buenas Prácticas
+- **No mockear servicios globalmente:** Solo mockear en los archivos de test que lo requieran.
+- **Separar tests unitarios y de integración:** Mantener los tests de UI y lógica separados de los de servicios.
+- **Actualizar los mocks si cambian los métodos de la API.**
+- **Usar testID y textos claros en los componentes para facilitar el testing.**
+- **Mantener los tests y el código sincronizados ante cambios de lógica o UI.**
+
 ## 🤝 Contribución
 
 1. Fork el proyecto
