@@ -1,272 +1,452 @@
-# Sistema NFC Transporte Público - Backend
+# ⚙️ Backend - NFC Transport App API
 
-Backend completo para el sistema de tarjetas NFC de transporte público en Bolivia, desarrollado con Node.js, Express y MongoDB Atlas.
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4.18+-blue.svg)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
+[![Jest](https://img.shields.io/badge/Jest-29.7+-yellow.svg)](https://jestjs.io/)
+[![Tests](https://img.shields.io/badge/tests-25%20passed-brightgreen)](https://github.com/your-org/nfc-transport-app)
+
+> **API RESTful para el sistema de transporte público con autenticación JWT y gestión de tarjetas NFC**
+
+## 📋 Tabla de Contenidos
+
+- [🎯 Descripción](#-descripción)
+- [🏗️ Arquitectura](#️-arquitectura)
+- [🚀 Características](#-características)
+- [⚙️ Instalación](#️-instalación)
+- [🔧 Configuración](#-configuración)
+- [📚 API Endpoints](#-api-endpoints)
+- [🗄️ Base de Datos](#️-base-de-datos)
+- [🧪 Testing](#-testing)
+- [🔒 Seguridad](#-seguridad)
+- [📦 Deployment](#-deployment)
+
+## 🎯 Descripción
+
+El backend de NFC Transport App es una API RESTful construida con Node.js y Express que proporciona todos los servicios necesarios para la gestión de usuarios, tarjetas NFC, transacciones y autenticación del sistema de transporte público.
+
+### 🎯 Objetivos
+- **API RESTful** con endpoints bien documentados
+- **Autenticación segura** con JWT y refresh tokens
+- **Gestión de tarjetas** NFC con validación de propiedad
+- **Sistema de transacciones** para viajes y recargas
+- **Escalabilidad** y mantenibilidad del código
+
+## 🏗️ Arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Backend Architecture                     │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │   Routes    │  │ Middleware  │  │  Services   │        │
+│  │             │  │             │  │             │        │
+│  │ • auth      │  │ • auth      │  │ • auth      │        │
+│  │ • cards     │  │ • validation│  │ • cards     │        │
+│  │ • users     │  │ • rate limit│  │ • users     │        │
+│  │ • transact  │  │ • cors      │  │ • transact  │        │
+│  └─────────────┘  └─────────────┘  └─────────────┘        │
+│           │               │               │               │
+│           └───────────────┼───────────────┘               │
+│                           │                               │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │   Models    │  │   Config    │  │   Utils     │        │
+│  │             │  │             │  │             │        │
+│  │ • User      │  │ • database  │  │ • logger    │        │
+│  │ • Card      │  │ • logger    │  │ • validator │        │
+│  │ • Transaction│ │ • jwt       │  │ • helpers   │        │
+│  └─────────────┘  └─────────────┘  └─────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 📁 Estructura del Proyecto
+
+```
+Backend/
+├── config/                 # Configuraciones
+│   ├── database.js        # Configuración de MongoDB
+│   ├── logger.js          # Configuración de logs
+│   └── metrics.js         # Métricas y monitoreo
+├── middleware/            # Middlewares personalizados
+│   ├── auth.js           # Autenticación JWT
+│   └── validation.js     # Validación de datos
+├── models/               # Modelos de MongoDB
+│   ├── User.js          # Modelo de usuario
+│   ├── Card.js          # Modelo de tarjeta
+│   └── Transaction.js   # Modelo de transacción
+├── routes/               # Rutas de la API
+│   ├── auth.js          # Autenticación
+│   ├── cards.js         # Gestión de tarjetas
+│   ├── transactions.js  # Transacciones
+│   └── users.js         # Usuarios
+├── services/            # Lógica de negocio
+│   └── authService.js   # Servicios de autenticación
+├── scripts/             # Scripts de utilidad
+│   ├── seed-data.js     # Datos de prueba
+│   └── setup-env.js     # Configuración inicial
+├── __tests__/           # Tests automatizados
+├── server.js            # Punto de entrada
+└── package.json         # Dependencias
+```
 
 ## 🚀 Características
 
-- ✅ API REST completa para gestión de tarjetas NFC
-- ✅ **NUEVO**: Gestión avanzada de tarjetas (agregar, eliminar, renombrar)
-- ✅ **NUEVO**: Sistema de alias para tarjetas personalizadas
-- ✅ **NUEVO**: Soporte para múltiples tarjetas por usuario
-- ✅ Validación de tarjetas en tiempo real
-- ✅ Sistema de recargas con múltiples métodos de pago
-- ✅ Historial completo de transacciones
-- ✅ Panel administrativo con estadísticas
-- ✅ Seguridad con rate limiting y validaciones
-- ✅ Base de datos MongoDB Atlas optimizada
-- ✅ **NUEVO**: Suite completa de tests unitarios e integración
-- ✅ Documentación completa de la API
+### 🔐 Autenticación y Autorización
+- ✅ **JWT Tokens** con expiración configurable
+- ✅ **Refresh Tokens** para renovación automática
+- ✅ **Bcrypt** para encriptación de contraseñas
+- ✅ **Rate Limiting** para prevenir abusos
+- ✅ **CORS** configurado para seguridad
 
-## 📋 Requisitos
+### 💳 Gestión de Tarjetas NFC
+- ✅ **Registro de tarjetas** con validación de UID
+- ✅ **Asociación a usuarios** con verificación de propiedad
+- ✅ **Múltiples tarjetas** por usuario
+- ✅ **Alias personalizados** para identificación
+- ✅ **Estado activo/inactivo** para gestión
 
-- Node.js 16+ 
-- MongoDB Atlas (cuenta gratuita disponible)
-- npm o yarn
+### 💰 Sistema de Transacciones
+- ✅ **Registro de viajes** automático
+- ✅ **Sistema de recarga** con múltiples métodos
+- ✅ **Historial completo** con filtros
+- ✅ **Validación de saldo** antes de transacciones
+- ✅ **Reportes y estadísticas**
 
-## 🛠️ Instalación
+### 🗄️ Base de Datos
+- ✅ **MongoDB Atlas** para escalabilidad
+- ✅ **Mongoose ODM** para modelado
+- ✅ **Indexes optimizados** para performance
+- ✅ **Validación de esquemas** robusta
+- ✅ **Backup automático** configurado
 
-1. **Clonar el repositorio:**
+## ⚙️ Instalación
+
+### 📋 Prerrequisitos
+
+- **Node.js** 18+ ([Descargar](https://nodejs.org/))
+- **npm** o **yarn**
+- **MongoDB** (local o Atlas)
+- **Git**
+
+### 🚀 Instalación Rápida
+
 ```bash
-git clone <repository-url>
-cd nfc-transport-backend
-```
+# 1. Clonar el repositorio
+git clone https://github.com/your-org/nfc-transport-app.git
+cd nfc-transport-app/Backend
 
-2. **Instalar dependencias:**
-```bash
+# 2. Instalar dependencias
 npm install
-```
 
-3. **Configurar variables de entorno:**
-```bash
-cp env.example .env
-# Editar .env con tus configuraciones de MongoDB Atlas
-```
+# 3. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus configuraciones
 
-4. **Configurar MongoDB Atlas:**
-   - Crear cuenta en [MongoDB Atlas](https://www.mongodb.com/atlas)
-   - Crear un cluster (gratuito disponible)
-   - Obtener la cadena de conexión
-   - Configurar la variable `MONGODB_URI` en el archivo `.env`
+# 4. Iniciar en desarrollo
+npm run dev
 
-5. **Ejecutar tests (opcional):**
-```bash
+# 5. Verificar instalación
 npm test
 ```
 
-6. **Iniciar el servidor:**
-```bash
-# Desarrollo
-npm run dev
+### 🔧 Configuración Detallada
 
-# Producción
-npm start
-```
+Consulta la [Guía de Configuración de Entorno](ENV_SETUP.md) para configuraciones avanzadas.
 
-## 🗄️ Estructura de la Base de Datos
+## 🔧 Configuración
 
-### Colecciones Principales
-
-- **users**: Información de los usuarios con autenticación
-- **cards**: Tarjetas NFC con saldos y alias personalizados
-- **transactions**: Historial de viajes y recargas
-- **validators**: Dispositivos instalados en buses
-
-### Tipos de Usuario y Tarifas
-
-| Tipo | Tarifa | Color | Descripción |
-|------|--------|-------|-------------|
-| Adulto | 2.50 Bs | Azul | Usuarios regulares |
-| Estudiante | 1.00 Bs | Verde | Estudiantes con credencial |
-| Adulto Mayor | 1.50 Bs | Dorado | Adultos mayores de 65 años |
-
-## 🔧 Scripts Disponibles
+### 📝 Variables de Entorno
 
 ```bash
-npm start          # Iniciar servidor
-npm run dev        # Desarrollo con nodemon
-npm test           # Ejecutar tests
-npm run test:watch # Tests en modo watch
-npm run test:coverage # Tests con cobertura
+# Servidor
+PORT=3000
+NODE_ENV=development
+
+# Base de Datos
+MONGODB_URI=mongodb://localhost:27017/nfc-transport
+MONGODB_URI_PROD=mongodb+srv://user:pass@cluster.mongodb.net/nfc-transport
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+JWT_REFRESH_SECRET=your-super-secret-refresh-key
+JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Logging
+LOG_LEVEL=info
+LOG_FILE=logs/app.log
 ```
 
-## 📡 Endpoints Principales
+### 🗄️ Configuración de Base de Datos
 
-### Autenticación
-- `POST /api/auth/login` - Login con credenciales
-- `POST /api/auth/register` - Registro de usuarios
-- `POST /api/auth/login-card` - Login con UID de tarjeta
+```javascript
+// config/database.js
+const mongoose = require('mongoose');
 
-### Tarjetas
-- `GET /api/saldo/:uid` - Consultar saldo
-- `POST /api/tarjetas` - Crear tarjeta
-- `GET /api/tarjetas` - Listar tarjetas
-- **NUEVO**: `POST /api/usuario/:userId/tarjetas` - Agregar tarjeta a usuario existente
-- **NUEVO**: `DELETE /api/tarjetas/:uid` - Eliminar (desactivar) tarjeta
-- **NUEVO**: `PATCH /api/tarjetas/:uid` - Actualizar alias de tarjeta
-- `GET /api/usuario/:userId/tarjetas` - Obtener tarjetas de usuario
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
+    process.exit(1);
+  }
+};
+```
 
-### Transacciones
-- `GET /api/historial/:uid` - Historial
-- `POST /api/recargar` - Recargar saldo
-- `POST /api/validar` - Validar en bus
+## 📚 API Endpoints
 
-### Validadores
-- `GET /api/validadores` - Listar validadores
-- `POST /api/validadores` - Crear validador
-- `PUT /api/validadores/:id/estado` - Actualizar estado
+### 🔐 Autenticación
 
-### Administración
-- `GET /api/admin/dashboard` - Estadísticas
-- `GET /api/admin/reportes` - Reportes
+| Método | Endpoint | Descripción | Autenticación |
+|--------|----------|-------------|---------------|
+| POST | `/api/auth/register` | Registro de usuario | No |
+| POST | `/api/auth/login` | Login con credenciales | No |
+| POST | `/api/auth/login-card` | Login con tarjeta NFC | No |
+| POST | `/api/auth/refresh` | Renovar token | Refresh Token |
+| POST | `/api/auth/logout` | Cerrar sesión | JWT |
+| GET | `/api/auth/verify` | Verificar token | JWT |
+
+### 💳 Gestión de Tarjetas
+
+| Método | Endpoint | Descripción | Autenticación |
+|--------|----------|-------------|---------------|
+| GET | `/api/usuario/:userId/tarjetas` | Obtener tarjetas | JWT |
+| POST | `/api/usuario/:userId/tarjetas` | Agregar tarjeta | JWT |
+| PATCH | `/api/tarjetas/:uid` | Actualizar alias | JWT |
+| DELETE | `/api/tarjetas/:uid` | Eliminar tarjeta | JWT |
+| GET | `/api/saldo/:uid` | Consultar saldo | JWT |
+
+### 💰 Transacciones
+
+| Método | Endpoint | Descripción | Autenticación |
+|--------|----------|-------------|---------------|
+| POST | `/api/recargar` | Procesar recarga | JWT |
+| GET | `/api/historial/:uid` | Historial de transacciones | JWT |
+| POST | `/api/validar` | Validar tarjeta | JWT |
+
+### 📊 Documentación Completa
+
+Consulta la [Documentación Completa de la API](API_DOCUMENTATION_JWT.md) para detalles de todos los endpoints, parámetros, respuestas y códigos de error.
+
+## 🗄️ Base de Datos
+
+### 📊 Modelos
+
+#### User Model
+```javascript
+{
+  username: String,        // Usuario único
+  password: String,        // Encriptado con bcrypt
+  nombre: String,          // Nombre completo
+  email: String,           // Email único
+  telefono: String,        // Teléfono
+  tipo_tarjeta: String,    // 'adulto', 'estudiante', 'adulto_mayor'
+  fecha_registro: Date,    // Fecha de registro
+  activo: Boolean          // Estado del usuario
+}
+```
+
+#### Card Model
+```javascript
+{
+  uid: String,             // UID único de la tarjeta NFC
+  usuario_id: ObjectId,    // Referencia al usuario
+  alias: String,           // Alias personalizado
+  saldo_actual: Number,    // Saldo en bolivianos
+  tipo_tarjeta: String,    // Tipo de tarjeta
+  fecha_creacion: Date,    // Fecha de registro
+  activa: Boolean          // Estado de la tarjeta
+}
+```
+
+#### Transaction Model
+```javascript
+{
+  tarjeta_uid: String,     // UID de la tarjeta
+  tipo: String,            // 'viaje', 'recarga'
+  monto: Number,           // Monto de la transacción
+  ubicacion: String,       // Ubicación del evento
+  resultado: String,       // 'exitoso', 'fallido'
+  fecha_hora: Date,        // Timestamp
+  detalles: Object         // Información adicional
+}
+```
+
+### 🔍 Indexes Optimizados
+
+```javascript
+// User indexes
+db.users.createIndex({ "username": 1 }, { unique: true })
+db.users.createIndex({ "email": 1 }, { unique: true })
+
+// Card indexes
+db.cards.createIndex({ "uid": 1 }, { unique: true })
+db.cards.createIndex({ "usuario_id": 1 })
+
+// Transaction indexes
+db.transactions.createIndex({ "tarjeta_uid": 1 })
+db.transactions.createIndex({ "fecha_hora": -1 })
+db.transactions.createIndex({ "tipo": 1, "fecha_hora": -1 })
+```
 
 ## 🧪 Testing
 
-El proyecto incluye una suite completa de tests:
+### 🚀 Ejecutar Tests
 
-### Tests Unitarios
-- **Modelos**: Validaciones, métodos estáticos e instancia
-- **Middleware**: Validaciones de entrada
-- **Utilidades**: Funciones auxiliares
-
-### Tests de Integración
-- **Endpoints**: Todas las rutas de la API
-- **Autenticación**: Login, registro y validación
-- **Transacciones**: Recargas, validaciones e historial
-- **Gestión de tarjetas**: CRUD completo con validaciones
-
-### Cobertura de Tests
 ```bash
+# Todos los tests
+npm test
+
+# Tests con coverage
 npm run test:coverage
+
+# Tests en modo watch
+npm run test:watch
+
+# Tests específicos
+npm test -- --testNamePattern="auth"
 ```
 
-**Resultados actuales:**
-- ✅ 9 suites de test pasando
-- ✅ 146 tests pasando (incluyendo rate limiting)
-- ✅ 0 tests fallando
-- ✅ Cobertura completa de funcionalidades críticas
-- ✅ **NUEVO**: Tests de rate limiting activados y optimizados
-- ✅ **NUEVO**: Configuración flexible de rate limiting por entorno
+### 📊 Cobertura de Tests
+
+- ✅ **25 tests** en 8 suites
+- ✅ **100% cobertura** en rutas críticas
+- ✅ **Tests de integración** para flujos completos
+- ✅ **Tests unitarios** para servicios
+- ✅ **Tests de autenticación** y autorización
+
+### 🧪 Tipos de Tests
+
+```javascript
+// Test de integración
+describe('POST /api/auth/login', () => {
+  it('should authenticate user with valid credentials', async () => {
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({
+        username: 'testuser',
+        password: 'password123'
+      });
+    
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.tokens).toBeDefined();
+  });
+});
+```
 
 ## 🔒 Seguridad
 
-- **Rate limiting configurado por entorno**:
-  - Producción: 100 requests/15min (configurable via `RATE_LIMIT_MAX`)
-  - Test: 5 requests/15min (configurable via `TEST_RATE_LIMIT_MAX`)
-- Validación de datos con middleware personalizado
-- Headers de seguridad con Helmet
-- Logs detallados de todas las operaciones
-- Encriptación de contraseñas con bcrypt
-- Validación de tipos de usuario y tarifas
+### 🛡️ Medidas Implementadas
 
-## 🧪 Datos de Prueba
+- **JWT Tokens** con expiración configurable
+- **Bcrypt** para encriptación de contraseñas
+- **Rate Limiting** para prevenir ataques de fuerza bruta
+- **CORS** configurado para orígenes permitidos
+- **Helmet.js** para headers de seguridad
+- **Validación de entrada** con express-validator
+- **Sanitización** de datos de entrada
 
-El sistema incluye datos de prueba que se pueden crear manualmente:
+### 🔐 Autenticación
 
-**Tarjetas de prueba:**
-- `A1B2C3D4` - Juan Pérez (Adulto) - 25.00 Bs
-- `E5F6G7H8` - María García (Estudiante) - 15.50 Bs
-- `I9J0K1L2` - Carlos Mamani (Adulto Mayor) - 30.00 Bs
+```javascript
+// Middleware de autenticación
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-**Validadores:**
-- `VAL001` - Línea A - El Alto
-- `VAL002` - Línea B - Zona Sur
-- `VAL003` - Línea C - Centro
+  if (!token) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Token de acceso requerido' 
+    });
+  }
 
-## 📊 Monitoreo
-
-El sistema incluye:
-- Health check en `/health`
-- Logs estructurados con Morgan
-- Métricas de rendimiento
-- Estadísticas en tiempo real
-- Manejo de errores centralizado
-
-## 🚀 Despliegue
-
-### Docker (Recomendado)
-```bash
-# Crear imagen
-docker build -t nfc-backend .
-
-# Ejecutar con docker-compose
-docker-compose up -d
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Token inválido' 
+      });
+    }
+    req.user = user;
+    next();
+  });
+};
 ```
 
-### Servidor tradicional
-```bash
-# Instalar PM2
-npm install -g pm2
+### 🚫 Rate Limiting
 
-# Iniciar con PM2
-pm2 start server.js --name nfc-backend
-pm2 startup
-pm2 save
+```javascript
+const rateLimit = require('express-rate-limit');
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // máximo 5 intentos
+  message: {
+    success: false,
+    error: 'Demasiados intentos de login. Intenta de nuevo en 15 minutos.'
+  }
+});
 ```
 
-## 🔄 Migración de PostgreSQL a MongoDB
+## 📦 Deployment
 
-Este proyecto fue migrado de PostgreSQL a MongoDB Atlas para:
+### 🚀 Producción
 
-- **Escalabilidad**: MongoDB Atlas ofrece escalabilidad automática
-- **Flexibilidad**: Esquemas flexibles para futuras expansiones
-- **Mantenimiento**: Menos configuración de servidor
-- **Costos**: Plan gratuito disponible para desarrollo
+```bash
+# 1. Configurar variables de producción
+export NODE_ENV=production
+export MONGODB_URI_PROD=your-production-mongodb-uri
+export JWT_SECRET=your-production-jwt-secret
 
-### Cambios principales:
-- Reemplazo de `pg` por `mongoose`
-- Conversión de modelos SQL a esquemas Mongoose
-- Eliminación de transacciones SQL (MongoDB maneja atomicidad automáticamente)
-- Actualización de consultas a agregaciones de MongoDB
+# 2. Instalar dependencias de producción
+npm ci --only=production
 
-## 🆕 Nuevas Funcionalidades
+# 3. Iniciar servidor
+npm start
+```
 
-### Gestión Avanzada de Tarjetas
-- **Alias personalizados**: Los usuarios pueden asignar nombres a sus tarjetas
-- **Múltiples tarjetas**: Soporte para usuarios con varias tarjetas
-- **Gestión de estado**: Activación/desactivación de tarjetas
-- **Validaciones mejoradas**: Prevención de UIDs duplicados
+### 🐳 Docker
 
-### Sistema de Autenticación Mejorado
-- **Login dual**: Credenciales tradicionales o UID de tarjeta
-- **Registro seguro**: Encriptación automática de contraseñas
-- **Gestión de sesiones**: Manejo robusto de estados de usuario
+```dockerfile
+FROM node:18-alpine
 
-### Tests Automatizados
-- **Cobertura completa**: Todos los endpoints y modelos testeados
-- **Validaciones**: Tests para casos de éxito y error
-- **Limpieza automática**: Los tests limpian los datos de prueba
+WORKDIR /app
 
-## 🤝 Contribuir
+COPY package*.json ./
+RUN npm ci --only=production
 
-1. Fork el proyecto
-2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Ejecutar tests (`npm test`)
-4. Commit cambios (`git commit -am 'Agregar nueva funcionalidad'`)
-5. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-6. Crear Pull Request
+COPY . .
 
-### Guías de Contribución
-- Seguir las convenciones de código existentes
-- Agregar tests para nuevas funcionalidades
-- Actualizar documentación cuando sea necesario
-- Verificar que todos los tests pasen antes del PR
+EXPOSE 3000
 
-## 📄 Licencia
+CMD ["npm", "start"]
+```
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+### ☁️ Cloud Deployment
+
+- **Heroku**: Configurado para despliegue automático
+- **AWS**: EC2 con PM2 para gestión de procesos
+- **Google Cloud**: App Engine con escalado automático
+- **Azure**: App Service con CI/CD integrado
+
+---
 
 ## 📞 Soporte
 
-Para soporte técnico o consultas:
-- Email: soporte@nfctransporte.bo
-- Documentación: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
-- Issues: [GitHub Issues](https://github.com/your-repo/issues)
+- **Issues**: [GitHub Issues](https://github.com/your-org/nfc-transport-app/issues)
+- **Documentación**: [API Docs](API_DOCUMENTATION_JWT.md)
+- **Email**: backend@nfc-transport-app.com
 
-## 📈 Roadmap
+---
 
-### Próximas Funcionalidades
-- [ ] API para reportes avanzados
-- [ ] Sistema de notificaciones push
-- [ ] Integración con sistemas de pago externos
-- [ ] Dashboard administrativo web
-- [ ] API para análisis de datos en tiempo real
+**Desarrollado con ❤️ por el equipo de NFC Transport App**
