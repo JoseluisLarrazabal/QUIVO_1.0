@@ -90,6 +90,11 @@ const RegisterCardScreen = ({ navigation }) => {
 
   const handleRegisterCard = async () => {
     if (!validateForm()) return;
+    
+    if (!user || !user.id) {
+      Alert.alert('Error', 'No se pudo identificar al usuario. Por favor, inicia sesión nuevamente.');
+      return;
+    }
 
     // Animación del botón
     Animated.sequence([
@@ -181,35 +186,37 @@ const RegisterCardScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         {/* Información del Usuario */}
-        <Surface style={styles.userInfoCard} elevation={2}>
-          <View style={styles.userInfoHeader}>
-            <View style={styles.userAvatar}>
-              <Text style={styles.userAvatarText}>
-                {user.nombre.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <View style={styles.userDetails}>
-              <Text variant="titleMedium" style={styles.userName}>
-                {user.nombre}
-              </Text>
-              <View style={styles.userTypeContainer}>
-                <Chip 
-                  mode="outlined" 
-                  style={[
-                    styles.userTypeChip,
-                    { borderColor: getCardTypeData(user.tipo_tarjeta).color }
-                  ]}
-                  textStyle={[
-                    styles.userTypeText,
-                    { color: getCardTypeData(user.tipo_tarjeta).color }
-                  ]}
-                >
-                  {getCardTypeData(user.tipo_tarjeta).icon} {getCardTypeData(user.tipo_tarjeta).label}
-                </Chip>
+        {user && (
+          <Surface style={styles.userInfoCard} elevation={2}>
+            <View style={styles.userInfoHeader}>
+              <View style={styles.userAvatar}>
+                <Text style={styles.userAvatarText}>
+                  {user.nombre?.charAt(0).toUpperCase() || 'U'}
+                </Text>
+              </View>
+              <View style={styles.userDetails}>
+                <Text variant="titleMedium" style={styles.userName}>
+                  {user.nombre || 'Usuario'}
+                </Text>
+                <View style={styles.userTypeContainer}>
+                  <Chip 
+                    mode="outlined" 
+                    style={[
+                      styles.userTypeChip,
+                      { borderColor: getCardTypeData(user.tipo_tarjeta || 'adulto').color }
+                    ]}
+                    textStyle={[
+                      styles.userTypeText,
+                      { color: getCardTypeData(user.tipo_tarjeta || 'adulto').color }
+                    ]}
+                  >
+                    {getCardTypeData(user.tipo_tarjeta || 'adulto').icon} {getCardTypeData(user.tipo_tarjeta || 'adulto').label}
+                  </Chip>
+                </View>
               </View>
             </View>
-          </View>
-        </Surface>
+          </Surface>
+        )}
 
         {/* Formulario de UID */}
         <Surface style={styles.section} elevation={1}>

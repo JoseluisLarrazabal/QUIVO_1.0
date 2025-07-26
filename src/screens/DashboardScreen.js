@@ -209,7 +209,7 @@ const DashboardScreen = ({ navigation }) => {
               />
               <View style={styles.userInfo}>
                 <Text variant="headlineSmall" style={styles.welcomeText}>
-                  ¡Hola, {user.nombre}!
+                  ¡Hola, {user?.nombre || 'Usuario'}!
                 </Text>
                 <View style={styles.userDetails}>
                   {user.email && (
