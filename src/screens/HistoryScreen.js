@@ -18,8 +18,7 @@ import {
   Banner,
   Searchbar,
   Text,
-  IconButton,
-  FAB
+  IconButton
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -487,29 +486,7 @@ const HistoryScreen = ({ navigation, route }) => {
         }
       />
 
-      {/* FAB para nueva recarga */}
-      <FAB
-        icon="credit-card-plus"
-        style={styles.fab}
-        onPress={() => navigation.navigate('Recharge', { selectedCard })}
-        label="Recargar"
-        mode="elevated"
-        customSize={56}
-        contentStyle={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: 56,
-          paddingHorizontal: 16,
-        }}
-        labelStyle={{ 
-          color: colors.white, 
-          fontWeight: '600',
-          fontSize: 14,
-          marginLeft: 8,
-        }}
-        accessibilityLabel="Recargar tarjeta"
-      />
+
     </View>
   );
 };
@@ -857,20 +834,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // FAB
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.primary,
-    minWidth: 120,
-    height: 56,
-    borderRadius: 28,
-    ...shadows.large,
-    zIndex: 1000,
-    elevation: 8,
-  },
+
 });
 
 export default HistoryScreen;
