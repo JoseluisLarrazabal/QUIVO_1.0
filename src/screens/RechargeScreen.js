@@ -528,9 +528,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: spacing.sm,
+    marginHorizontal: -spacing.xs, // Compensar el gap
   },
   amountButton: {
-    width: '49%',
+    width: '48%',
     borderRadius: borderRadius.md,
     borderWidth: 2,
     borderColor: colors.border,
