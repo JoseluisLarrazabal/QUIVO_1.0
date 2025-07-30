@@ -7,16 +7,16 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { 
-  TextInput, 
-  Button, 
-  Card, 
-  Divider, 
-  SegmentedButtons, 
-  ActivityIndicator, 
-  Chip, 
-  Banner, 
-  Searchbar, 
+import {
+  TextInput,
+  Button,
+  Card,
+  Divider,
+  SegmentedButtons,
+  ActivityIndicator,
+  Chip,
+  Banner,
+  Searchbar,
   Text,
   IconButton,
   FAB
@@ -26,7 +26,7 @@ import { BlurView } from 'expo-blur';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
-import { colors, typography, spacing, shadows } from '../theme';
+import { colors, typography, spacing, shadows, chicaloStyles } from '../theme';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -44,9 +44,9 @@ const HistoryScreen = ({ navigation, route }) => {
   useEffect(() => {
     // Obtener tarjeta seleccionada del contexto o de los parámetros de navegación
     const cardFromRoute = route.params?.selectedCard;
-    const cardFromContext = user?.cards && user.selectedCard ? 
+    const cardFromContext = user?.cards && user.selectedCard ?
       user.cards.find(card => card.uid === user.selectedCard) : null;
-    
+
     setSelectedCard(cardFromRoute || cardFromContext);
   }, [user, route.params]);
 
@@ -62,7 +62,7 @@ const HistoryScreen = ({ navigation, route }) => {
 
   const loadTransactions = async () => {
     if (!selectedCard) return;
-    
+
     try {
       setLoadingLocal(true);
       const response = await apiService.getTransactionHistory(selectedCard.uid);
@@ -85,7 +85,7 @@ const HistoryScreen = ({ navigation, route }) => {
           useNativeDriver: true,
         });
       });
-      
+
       Animated.stagger(50, animations).start();
 
     } catch (error) {
@@ -127,7 +127,7 @@ const HistoryScreen = ({ navigation, route }) => {
   };
 
   const getTransactionTypeColor = (monto) => {
-    return monto > 0 ? colors.success[500] : colors.error[500];
+    return monto > 0 ? colors.successScale[500] : colors.errorScale[500];
   };
 
   const getTransactionIcon = (monto) => {
@@ -145,10 +145,10 @@ const HistoryScreen = ({ navigation, route }) => {
     } else if (date.toDateString() === yesterday.toDateString()) {
       return `Ayer ${date.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}`;
     } else {
-      return date.toLocaleDateString('es-BO', { 
-        day: '2-digit', 
-        month: 'short', 
-        hour: '2-digit', 
+      return date.toLocaleDateString('es-BO', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
         minute: '2-digit'
       });
     }
@@ -176,9 +176,9 @@ const HistoryScreen = ({ navigation, route }) => {
                 <Text style={styles.statValue}>{totalRecharges.toFixed(2)} Bs</Text>
                 <Text style={styles.statLabel}>Total Recargas</Text>
               </View>
-              
+
               <View style={styles.statDivider} />
-              
+
               <View style={styles.statItem}>
                 <View style={styles.statIcon}>
                   <Text style={styles.statEmoji}>🚌</Text>
@@ -186,9 +186,9 @@ const HistoryScreen = ({ navigation, route }) => {
                 <Text style={styles.statValue}>{totalTrips}</Text>
                 <Text style={styles.statLabel}>Viajes Realizados</Text>
               </View>
-              
+
               <View style={styles.statDivider} />
-              
+
               <View style={styles.statItem}>
                 <View style={styles.statIcon}>
                   <Text style={styles.statEmoji}>💸</Text>
@@ -221,9 +221,9 @@ const HistoryScreen = ({ navigation, route }) => {
       <Animated.View style={[styles.transactionItemContainer, animatedStyle]}>
         <Card style={[styles.transactionCard, isRecharge && styles.rechargeCard]}>
           <LinearGradient
-            colors={isRecharge 
-              ? [colors.success[500] + '10', colors.success[500] + '05'] 
-              : [colors.error[500] + '10', colors.error[500] + '05']
+            colors={isRecharge
+              ? [colors.successScale[500] + '10', colors.successScale[500] + '05']
+              : [colors.errorScale[500] + '10', colors.errorScale[500] + '05']
             }
             style={styles.transactionGradient}
           >
@@ -231,10 +231,10 @@ const HistoryScreen = ({ navigation, route }) => {
               <View style={styles.transactionHeader}>
                 <View style={styles.transactionIconContainer}>
                   <View style={[
-                    styles.transactionIcon, 
+                    styles.transactionIcon,
                     { backgroundColor: getTransactionTypeColor(item.monto) + '20' }
                   ]}>
-                    <IconButton 
+                    <IconButton
                       icon={getTransactionIcon(item.monto)}
                       iconColor={getTransactionTypeColor(item.monto)}
                       size={20}
@@ -242,7 +242,7 @@ const HistoryScreen = ({ navigation, route }) => {
                     />
                   </View>
                 </View>
-                
+
                 <View style={styles.transactionInfo}>
                   <Text style={styles.transactionTitle}>
                     {item.ubicacion || 'Ubicación no disponible'}
@@ -251,8 +251,8 @@ const HistoryScreen = ({ navigation, route }) => {
                     {formatDate(item.fecha_hora)}
                   </Text>
                   {item.resultado && (
-                    <Chip 
-                      mode="flat" 
+                    <Chip
+                      mode="flat"
                       style={styles.statusChip}
                       textStyle={styles.statusChipText}
                       compact
@@ -261,7 +261,7 @@ const HistoryScreen = ({ navigation, route }) => {
                     </Chip>
                   )}
                 </View>
-                
+
                 <View style={styles.transactionAmount}>
                   <Text style={[
                     styles.amount,
@@ -275,7 +275,7 @@ const HistoryScreen = ({ navigation, route }) => {
                       styles.typeChip,
                       { backgroundColor: getTransactionTypeColor(item.monto) + '15' }
                     ]}
-                    textStyle={{ 
+                    textStyle={{
                       color: getTransactionTypeColor(item.monto),
                       fontSize: 10,
                       fontWeight: '600'
@@ -301,7 +301,7 @@ const HistoryScreen = ({ navigation, route }) => {
     return (
       <View style={styles.errorContainer}>
         <LinearGradient
-          colors={[colors.error[500] + '20', colors.error[500] + '10']}
+                      colors={[colors.errorScale[500] + '20', colors.errorScale[500] + '10']}
           style={styles.errorGradient}
         >
           <View style={styles.errorContent}>
@@ -350,13 +350,13 @@ const HistoryScreen = ({ navigation, route }) => {
         end={{ x: 1, y: 1 }}
       >
         <Text style={styles.headerTitle}>Historial de Transacciones</Text>
-        
+
         {/* Información de la Tarjeta */}
         <View style={styles.cardInfoContainer}>
           <View style={styles.cardInfo}>
             <Text style={styles.cardLabel}>Tarjeta:</Text>
-            <Chip 
-              mode="flat" 
+            <Chip
+              mode="flat"
               style={styles.cardChip}
               textStyle={styles.cardChipText}
             >
@@ -450,8 +450,8 @@ const HistoryScreen = ({ navigation, route }) => {
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={onRefresh}
             colors={[colors.primary]}
             tintColor={colors.primary}
@@ -465,7 +465,7 @@ const HistoryScreen = ({ navigation, route }) => {
             </View>
             <Text style={styles.emptyStateTitle}>Sin Transacciones</Text>
             <Text style={styles.emptyStateText}>
-              {searchQuery || filterType !== 'all' 
+              {searchQuery || filterType !== 'all'
                 ? 'No se encontraron transacciones con los filtros aplicados'
                 : 'No hay transacciones registradas para esta tarjeta'
               }
@@ -494,8 +494,20 @@ const HistoryScreen = ({ navigation, route }) => {
         onPress={() => navigation.navigate('Recharge', { selectedCard })}
         label="Recargar"
         mode="elevated"
-        color={colors.white}
-        labelStyle={{ color: colors.white, fontWeight: '600' }}
+        customSize={56}
+        contentStyle={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 56,
+          paddingHorizontal: 16,
+        }}
+        labelStyle={{ 
+          color: colors.white, 
+          fontWeight: '600',
+          fontSize: 14,
+          marginLeft: 8,
+        }}
         accessibilityLabel="Recargar tarjeta"
       />
     </View>
@@ -536,7 +548,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cardLabel: {
-    ...typography.bodyMedium,
+    ...chicaloStyles.info,
     color: colors.white,
     marginRight: 8,
   },
@@ -559,7 +571,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   selectorLabel: {
-    ...typography.bodyMedium,
+    ...chicaloStyles.info,
     color: colors.white,
     marginBottom: 8,
   },
@@ -598,11 +610,11 @@ const styles = StyleSheet.create({
 
   // Banner
   banner: {
-    backgroundColor: colors.warning[500] + '20',
+    backgroundColor: colors.warningScale[500] + '20',
     borderRadius: 0,
   },
   bannerText: {
-    ...typography.bodyMedium,
+    ...chicaloStyles.info,
     color: colors.primary,
     fontWeight: '500',
   },
@@ -659,7 +671,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statLabel: {
-    ...typography.bodySmall,
+    ...chicaloStyles.description,
     color: colors.white,
     opacity: 0.8,
     textAlign: 'center',
@@ -720,17 +732,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   transactionDate: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
+    ...chicaloStyles.info,
     marginBottom: 8,
   },
   statusChip: {
-    backgroundColor: colors.info[500] + '20',
+    backgroundColor: colors.infoScale[500] + '20',
     alignSelf: 'flex-start',
   },
   statusChipText: {
+    ...chicaloStyles.secondary,
     color: colors.info,
-    fontSize: 10,
   },
   transactionAmount: {
     alignItems: 'flex-end',
@@ -769,8 +780,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   emptyStateText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -802,7 +812,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.error[500] + '20',
+    backgroundColor: colors.errorScale[500] + '20',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
@@ -817,8 +827,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   errorText: {
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -842,7 +851,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    ...typography.bodyMedium,
+    ...chicaloStyles.info,
     color: colors.primary,
     marginTop: 16,
     fontWeight: '500',
@@ -855,10 +864,12 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: colors.primary,
-    color: colors.white,
-    minWidth: 140, // Asegura espacio para el label
-    // borderRadius: 20, // Eliminado para que Paper maneje el borderRadius
+    minWidth: 120,
+    height: 56,
+    borderRadius: 28,
     ...shadows.large,
+    zIndex: 1000,
+    elevation: 8,
   },
 });
 

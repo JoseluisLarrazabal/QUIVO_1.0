@@ -28,7 +28,7 @@ import { BlurView } from 'expo-blur';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
-import { colors, typography, spacing, shadows } from '../theme';
+import { colors, typography, spacing, shadows, chicaloStyles } from '../theme';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -587,9 +587,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   headerSubtitle: {
-    fontFamily: 'Chicalo-Regular',
-    ...typography.bodyMedium,
-    color: colors.accent,
+    ...chicaloStyles.subtitle,
     textAlign: 'center',
     opacity: 0.9,
   },
@@ -807,8 +805,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   balanceSubtitle: {
-    fontFamily: 'Chicalo-Regular',
-    ...typography.bodySmall,
+    ...chicaloStyles.info,
     color: colors.white,
     opacity: 0.8,
     marginTop: 4,
@@ -870,9 +867,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   emptyStateSubtitle: {
-    fontFamily: 'Chicalo-Regular',
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -917,9 +912,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalSubtitle: {
-    fontFamily: 'Chicalo-Regular',
-    ...typography.bodyMedium,
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
     textAlign: 'center',
     marginBottom: 24,
   },

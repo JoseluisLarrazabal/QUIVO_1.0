@@ -26,7 +26,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
-import { colors, typography, spacing, shadows, borderRadius } from '../theme';
+import { colors, typography, spacing, shadows, borderRadius, chicaloStyles } from '../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -67,22 +67,22 @@ const DashboardScreen = ({ navigation }) => {
   const getCardTypeConfig = (tipo) => {
     const configs = {
       adulto: {
-        color: colors.info[500],
-        backgroundColor: colors.info[50],
+        color: colors.infoScale[500],
+        backgroundColor: colors.infoScale[50],
         label: 'Adulto',
         tarifa: '2.50',
         icon: 'account',
       },
       estudiante: {
-        color: colors.success[500],
-        backgroundColor: colors.success[50],
+        color: colors.successScale[500],
+        backgroundColor: colors.successScale[50],
         label: 'Estudiante',
         tarifa: '1.00',
         icon: 'school',
       },
       adulto_mayor: {
-        color: colors.warning[500],
-        backgroundColor: colors.warning[50],
+        color: colors.warningScale[500],
+        backgroundColor: colors.warningScale[50],
         label: 'Adulto Mayor',
         tarifa: '1.50',
         icon: 'account-supervisor',
@@ -141,7 +141,7 @@ const DashboardScreen = ({ navigation }) => {
   };
 
   const getTransactionColor = (monto) => {
-    return monto > 0 ? colors.success[500] : colors.error[500];
+    return monto > 0 ? colors.successScale[500] : colors.errorScale[500];
   };
 
   if (loading || !user) {
@@ -723,10 +723,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   quickActionSubtitle: {
-    fontFamily: 'Chicalo-Regular',
-    color: colors.textSecondary,
+    ...chicaloStyles.secondary,
     textAlign: 'center',
-    fontSize: 11,
   },
   transactionsCard: {
     backgroundColor: colors.backgroundAlt,
@@ -811,7 +809,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   cardsDescription: {
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
     lineHeight: 20,
     marginBottom: spacing.md,
   },

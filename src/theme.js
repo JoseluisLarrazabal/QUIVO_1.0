@@ -155,10 +155,10 @@ export const colors = {
 
   // Exponer escalas completas para acceso seguro y buenas prácticas
   gray: baseColors.gray,        // Escala de grises (para backgrounds, borders, etc)
-  success: baseColors.success,  // Escala de éxito
-  warning: baseColors.warning,  // Escala de advertencia
-  error: baseColors.error,      // Escala de error
-  info: baseColors.info,        // Escala de información
+  successScale: baseColors.success,  // Escala de éxito
+  warningScale: baseColors.warning,  // Escala de advertencia
+  errorScale: baseColors.error,      // Escala de error
+  infoScale: baseColors.info,        // Escala de información
 };
 
 // ============================================================================
@@ -194,7 +194,7 @@ const fontFamilies = {
 
 // Escala tipográfica basada en Material Design 3
 export const typography = {
-  // Display styles
+  // Display styles (Montserrat - Títulos principales)
   displayLarge: {
     fontFamily: fontFamilies.regular,
     fontSize: 57,
@@ -217,7 +217,7 @@ export const typography = {
     fontWeight: '400',
   },
 
-  // Headline styles
+  // Headline styles (Montserrat - Headers)
   headlineLarge: {
     fontFamily: fontFamilies.regular,
     fontSize: 32,
@@ -240,7 +240,7 @@ export const typography = {
     fontWeight: '400',
   },
 
-  // Title styles
+  // Title styles (Montserrat - Títulos de sección)
   titleLarge: {
     fontFamily: fontFamilies.regular,
     fontSize: 22,
@@ -486,6 +486,51 @@ export const paperTheme = {
 };
 
 // ============================================================================
+// ESTILOS CHICALO (Fuente Secundaria)
+// ============================================================================
+export const chicaloStyles = {
+  // Subtítulos descriptivos
+  subtitle: {
+    fontFamily: fontFamilies.secondary,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.textSecondary,
+  },
+  
+  // Textos informativos
+  info: {
+    fontFamily: fontFamilies.secondary,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+  },
+  
+  // Descripciones de secciones
+  description: {
+    fontFamily: fontFamilies.secondary,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textSecondary,
+  },
+  
+  // Textos secundarios
+  secondary: {
+    fontFamily: fontFamilies.secondary,
+    fontSize: 11,
+    lineHeight: 14,
+    color: colors.textSecondary,
+  },
+  
+  // Textos de botones secundarios
+  buttonSecondary: {
+    fontFamily: fontFamilies.secondary,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textSecondary,
+  },
+};
+
+// ============================================================================
 // TEMA PRINCIPAL DE LA APLICACIÓN
 // ============================================================================
 export const appTheme = {
@@ -496,6 +541,7 @@ export const appTheme = {
   borderRadius,
   shadows,
   paperTheme,
+  chicaloStyles,
   
   // Utilidades
   utils: {

@@ -11,7 +11,7 @@ import { TextInput, Button, Card, Divider, RadioButton, Text, Surface, IconButto
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
-import { colors, typography, spacing, borderRadius, shadows, appTheme } from '../theme';
+import { colors, typography, spacing, borderRadius, shadows, appTheme, chicaloStyles } from '../theme';
 
 const RechargeScreen = ({ navigation, route }) => {
   const { user, refreshUserCards, loading } = useAuth();
@@ -440,9 +440,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerSubtitle: {
-    color: colors.accent,
+    ...chicaloStyles.subtitle,
     marginTop: spacing.xs,
-    fontFamily: 'Chicalo-Regular',
   },
 
   // Scroll view
@@ -486,9 +485,8 @@ const styles = StyleSheet.create({
     fontFamily: typography.titleMedium.fontFamily,
   },
   cardSubtitle: {
-    color: colors.textSecondary,
+    ...chicaloStyles.info,
     marginTop: spacing.xs,
-    fontFamily: 'Chicalo-Regular',
   },
   balanceContainer: {
     alignItems: 'center',
@@ -520,9 +518,8 @@ const styles = StyleSheet.create({
     fontFamily: typography.titleMedium.fontFamily,
   },
   sectionSubtitle: {
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
     marginTop: spacing.xs,
-    fontFamily: 'Chicalo-Regular',
   },
 
   // Grid de montos
@@ -643,7 +640,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   paymentMethodDescription: {
-    color: colors.textSecondary,
+    ...chicaloStyles.info,
     marginTop: spacing.xs,
   },
 
@@ -720,9 +717,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footerText: {
+    ...chicaloStyles.secondary,
     textAlign: 'center',
-    color: colors.textSecondary,
-    fontSize: 12,
     fontStyle: 'italic',
   },
 

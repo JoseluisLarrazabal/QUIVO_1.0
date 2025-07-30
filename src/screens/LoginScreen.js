@@ -22,7 +22,7 @@ import {
     IconButton,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
-import { colors, typography } from '../theme';
+import { colors, typography, chicaloStyles } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -327,9 +327,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   appSubtitle: {
-    fontFamily: 'Chicalo-Regular',
-    ...typography.titleLarge,
-    color: colors.accent,
+    ...chicaloStyles.subtitle,
     textAlign: 'center',
     fontWeight: '300',
   },
@@ -432,8 +430,7 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   infoText: {
-    ...typography.bodySmall,
-    color: colors.primary,
+    ...chicaloStyles.info,
     flex: 1,
     lineHeight: 18,
   },
@@ -460,8 +457,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   nfcDescription: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -493,7 +489,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   helpText: {
-    ...typography.bodySmall,
+    ...chicaloStyles.secondary,
     color: colors.backgroundAlt,
     textAlign: 'center',
     lineHeight: 20,

@@ -19,7 +19,7 @@ import {
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
-import { colors, typography, spacing, borderRadius, shadows, appTheme } from '../theme';
+import { colors, typography, spacing, borderRadius, shadows, appTheme, chicaloStyles } from '../theme';
 
 const RegisterCardScreen = ({ navigation }) => {
   const { user, refreshUserCards } = useAuth();
@@ -516,9 +516,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerSubtitle: {
-    color: colors.accent,
+    ...chicaloStyles.subtitle,
     marginTop: spacing.xs,
-    fontFamily: 'Chicalo-Regular',
   },
 
   // ScrollView
@@ -590,9 +589,8 @@ const styles = StyleSheet.create({
     fontFamily: typography.titleMedium.fontFamily,
   },
   sectionSubtitle: {
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
     marginTop: spacing.xs,
-    fontFamily: 'Chicalo-Regular',
   },
 
   // Inputs
@@ -676,7 +674,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   cardTypeDescription: {
-    color: colors.textSecondary,
+    ...chicaloStyles.description,
   },
   selectedIndicator: {
     position: 'absolute',
@@ -788,9 +786,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   footerText: {
+    ...chicaloStyles.secondary,
     textAlign: 'center',
-    color: colors.textSecondary,
-    fontSize: 12,
     fontStyle: 'italic',
     paddingHorizontal: spacing.lg,
   },
