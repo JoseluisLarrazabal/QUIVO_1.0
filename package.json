@@ -1,5 +1,5 @@
 {
-  "name": "nfc-transport-backend",
+  "name": "quivo-backend",
   "version": "1.0.0",
   "description": "Backend para sistema de tarjetas NFC de transporte público en Bolivia",
   "main": "server.js",
