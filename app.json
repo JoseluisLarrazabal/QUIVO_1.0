@@ -16,17 +16,19 @@
     "extra": {
       "API_BASE_URL": "http://172.20.10.2:3000/api",
       "eas": {
-        "projectId": "be92a9b5-d0b1-43f8-89f3-f30b5952106c"
+        "projectId": "fe04aaec-d6f4-43f4-b6b2-7ee093eb0293"
       }
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": "./assets/images/icon.png"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "icon": "./assets/images/icon.png",
       "edgeToEdgeEnabled": true,
       "package": "com.shadow00.quivo"
     },
