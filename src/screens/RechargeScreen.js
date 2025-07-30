@@ -174,9 +174,6 @@ const RechargeScreen = ({ navigation, route }) => {
             <Text variant="headlineSmall" style={styles.headerTitle}>
               Recargar Tarjeta
             </Text>
-            <Text variant="bodySmall" style={styles.headerSubtitle}>
-              {selectedCard.uid}
-            </Text>
           </View>
         </View>
       </Surface>
@@ -439,6 +436,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: colors.textInverse,
     fontFamily: typography.headlineSmall.fontFamily,
+    fontSize: 24,
+    fontWeight: '600',
   },
   headerSubtitle: {
     color: colors.accent,
@@ -452,7 +451,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
   },
 
   // Card de información
@@ -531,10 +530,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   amountButton: {
-    width: '48%',
+    width: '49%',
     borderRadius: borderRadius.md,
     borderWidth: 2,
     borderColor: colors.border,

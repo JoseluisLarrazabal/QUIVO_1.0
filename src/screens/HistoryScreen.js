@@ -675,6 +675,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 20,
     paddingBottom: 100,
+    paddingTop: 20,
   },
   transactionItemContainer: {
     marginBottom: 12,

@@ -397,9 +397,6 @@ const CardsScreen = ({ navigation }) => {
         end={{ x: 1, y: 1 }}
       >
         <Text style={styles.headerTitle}>Mis Tarjetas</Text>
-        <Text style={styles.headerSubtitle}>
-          Gestiona todas tus tarjetas de transporte
-        </Text>
       </LinearGradient>
 
       <ScrollView
@@ -586,8 +583,8 @@ const styles = StyleSheet.create({
     ...typography.headlineMedium,
     color: colors.white,
     textAlign: 'center',
-    marginBottom: 8,
     fontWeight: '600',
+    marginTop: 20,
   },
   headerSubtitle: {
     fontFamily: 'Chicalo-Regular',
@@ -603,12 +600,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
+    paddingTop: 20,
   },
 
   // Tarjeta activa mejorada
   activeCardContainer: {
     margin: 20,
-    marginTop: -20,
+    marginTop: 6,
     borderRadius: 20,
     overflow: 'hidden',
     ...shadows.large,

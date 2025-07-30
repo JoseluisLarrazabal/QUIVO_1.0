@@ -173,9 +173,6 @@ const RegisterCardScreen = ({ navigation }) => {
             <Text variant="headlineSmall" style={styles.headerTitle}>
               Nueva Tarjeta
             </Text>
-            <Text variant="bodySmall" style={styles.headerSubtitle}>
-              Registra tu tarjeta NFC
-            </Text>
           </View>
         </View>
       </Surface>
@@ -515,6 +512,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: colors.textInverse,
     fontFamily: typography.headlineSmall.fontFamily,
+    fontSize: 24,
+    fontWeight: '600',
   },
   headerSubtitle: {
     color: colors.accent,
@@ -528,7 +527,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
   },
 
   // Card de información del usuario
