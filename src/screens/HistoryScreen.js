@@ -507,11 +507,9 @@ const styles = StyleSheet.create({
     ...shadows.large,
   },
   headerTitle: {
-    ...typography.headlineMedium,
+    ...chicaloStyles.subtitle,
     color: colors.textInverse,
     textAlign: 'center',
-    marginBottom: 20,
-    fontWeight: '600',
   },
 
   // Card info
@@ -527,7 +525,6 @@ const styles = StyleSheet.create({
   cardLabel: {
     ...chicaloStyles.info,
     color: colors.textInverse,
-    marginRight: 8,
   },
   cardChip: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -537,9 +534,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   balanceInfo: {
-    ...typography.titleMedium,
+    ...chicaloStyles.info,
     color: colors.textInverse,
-    fontWeight: '600',
   },
 
   // Card selector
@@ -550,7 +546,6 @@ const styles = StyleSheet.create({
   selectorLabel: {
     ...chicaloStyles.info,
     color: colors.textInverse,
-    marginBottom: 8,
   },
   cardButtons: {
     flexDirection: 'row',
@@ -650,8 +645,6 @@ const styles = StyleSheet.create({
   statLabel: {
     ...chicaloStyles.description,
     color: colors.textInverse,
-    opacity: 0.8,
-    textAlign: 'center',
   },
   statDivider: {
     width: 1,
@@ -703,14 +696,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   transactionTitle: {
-    ...typography.titleMedium,
-    color: colors.primary,
-    fontWeight: '600',
-    marginBottom: 4,
+    ...chicaloStyles.info,
+    color: colors.text,
   },
   transactionDate: {
-    ...chicaloStyles.info,
-    marginBottom: 8,
+    ...chicaloStyles.description,
+    color: colors.textSecondary,
   },
   statusChip: {
     backgroundColor: colors.infoScale[500] + '20',
@@ -751,13 +742,13 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   emptyStateTitle: {
-    ...typography.titleLarge,
-    color: colors.primary,
-    fontWeight: '600',
-    marginBottom: 8,
+    ...chicaloStyles.subtitle,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   emptyStateText: {
     ...chicaloStyles.description,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -798,13 +789,13 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   errorTitle: {
-    ...typography.titleLarge,
+    ...chicaloStyles.subtitle,
     color: colors.error,
-    fontWeight: '600',
-    marginBottom: 8,
+    textAlign: 'center',
   },
   errorText: {
     ...chicaloStyles.description,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -828,8 +819,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    ...chicaloStyles.info,
-    color: colors.primary,
+    ...chicaloStyles.description,
+    color: colors.textSecondary,
+    textAlign: 'center',
     marginTop: 16,
     fontWeight: '500',
   },
