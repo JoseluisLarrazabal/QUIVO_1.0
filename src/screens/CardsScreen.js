@@ -199,6 +199,13 @@ const CardsScreen = ({ navigation }) => {
     return tarifas[tipo] || '0.00';
   };
 
+  // Componente CustomChip para mejor control de estilos
+  const CustomChip = ({ children, style }) => (
+    <View style={[styles.customChip, style]}>
+      <Text style={styles.chipText}>{children}</Text>
+    </View>
+  );
+
   const renderActiveCard = () => {
     if (!user.selectedCard || !user.cards) return null;
 
@@ -217,13 +224,9 @@ const CardsScreen = ({ navigation }) => {
             <View style={styles.activeCardHeader}>
               <View style={styles.activeCardHeaderLeft}>
                 <Text style={styles.activeCardTitle}>Mi Tarjeta Activa</Text>
-                <Chip 
-                  mode="flat" 
-                  style={styles.activeChip}
-                  textStyle={styles.activeChipText}
-                >
+                <CustomChip style={styles.activeChip}>
                   ✨ Activa
-                </Chip>
+                </CustomChip>
               </View>
               <View style={styles.cardTypeContainer}>
                 <Text style={styles.cardTypeText}>
@@ -295,30 +298,22 @@ const CardsScreen = ({ navigation }) => {
                   {card.alias && (
                     <Text style={styles.cardAlias}>{card.alias}</Text>
                   )}
-                  <Chip 
-                    mode="flat" 
-                    style={styles.typeChip}
-                    textStyle={styles.typeChipText}
-                  >
+                  <CustomChip style={styles.typeChip}>
                     {getCardTypeLabel(user.tipo_tarjeta)}
-                  </Chip>
+                  </CustomChip>
                 </View>
                 
                 <View style={styles.cardActions}>
                   {isSelected ? (
-                    <Chip 
-                      mode="flat" 
-                      style={styles.selectedChip}
-                      textStyle={styles.selectedChipText}
-                    >
+                    <CustomChip style={styles.selectedChip}>
                       ✓ Seleccionada
-                    </Chip>
+                    </CustomChip>
                   ) : (
                     <Button
                       mode="contained"
                       onPress={() => handleCardSelect(card.uid)}
                       style={styles.selectButton}
-                      labelStyle={styles.selectButtonText}
+                      labelStyle={{ color: colors.white, fontSize: 12 }}
                       compact
                     >
                       Seleccionar
@@ -342,7 +337,7 @@ const CardsScreen = ({ navigation }) => {
                   icon="credit-card-plus"
                   onPress={() => handleCardAction('recharge', card)}
                   style={styles.primaryAction}
-                  labelStyle={styles.primaryActionText}
+                  labelStyle={{ color: colors.primary, fontSize: 12 }}
                   compact
                 >
                   Recargar
@@ -352,7 +347,7 @@ const CardsScreen = ({ navigation }) => {
                   icon="history"
                   onPress={() => handleCardAction('history', card)}
                   style={styles.secondaryAction}
-                  labelStyle={styles.secondaryActionText}
+                  labelStyle={{ color: colors.white, fontSize: 12 }}
                   compact
                 >
                   Historial
@@ -583,7 +578,7 @@ const styles = StyleSheet.create({
     ...shadows.large,
   },
   headerTitle: {
-    ...typography.headlineMedium,
+    ...chicaloStyles.subtitle,
     color: colors.textInverse,
     textAlign: 'center',
     fontWeight: '600',
@@ -725,8 +720,8 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   sectionTitle: {
-    ...typography.titleLarge,
-    color: colors.primary,
+    ...chicaloStyles.subtitle,
+    color: colors.white,
     fontWeight: '600',
     marginBottom: 16,
   },
@@ -981,6 +976,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     marginBottom: 20,
+  },
+
+  // CustomChip styles
+  customChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+  },
+  chipText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 
