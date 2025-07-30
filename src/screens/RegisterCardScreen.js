@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   registerButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
     ...shadows.medium,
   },

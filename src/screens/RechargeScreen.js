@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   rechargeButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
     ...shadows.medium,
   },
