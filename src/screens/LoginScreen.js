@@ -9,6 +9,7 @@ import {
     ActivityIndicator,
     ScrollView,
     Dimensions,
+    Text,
 } from 'react-native';
 import {
     Button,
@@ -18,7 +19,6 @@ import {
     Title,
     SegmentedButtons,
     Divider,
-    Text,
     IconButton,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';

@@ -8,6 +8,7 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  Text,
 } from 'react-native';
 import {
   Card,
@@ -18,7 +19,6 @@ import {
   Divider,
   IconButton,
   Banner,
-  Text,
   FAB,
   Surface,
   Avatar,

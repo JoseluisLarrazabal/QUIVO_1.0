@@ -7,6 +7,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  Text,
 } from 'react-native';
 import {
   Card,
@@ -21,7 +22,6 @@ import {
   Portal,
   TextInput,
   ActivityIndicator,
-  Text,
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -445,7 +445,8 @@ const CardsScreen = ({ navigation }) => {
         onPress={() => navigation.navigate('RegisterCard')}
         label="Nueva"
         mode="elevated"
-        variant="primary"
+        color={colors.backgroundAlt}
+        customSize={56}
       />
 
       {/* Modal de Edición - Mejorado */}
@@ -583,7 +584,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.headlineMedium,
-    color: colors.white,
+    color: colors.textInverse,
     textAlign: 'center',
     fontWeight: '600',
     marginTop: 20,
@@ -628,7 +629,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activeCardTitle: {
-    ...typography.titleLarge,
+    ...chicaloStyles.subtitle,
     color: colors.white,
     fontWeight: '600',
     marginBottom: 8,
@@ -638,8 +639,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   activeChipText: {
+    ...chicaloStyles.info,
     color: colors.white,
-    fontSize: 12,
     fontWeight: '500',
   },
   cardTypeContainer: {
@@ -649,8 +650,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   cardTypeText: {
+    ...chicaloStyles.info,
     color: colors.white,
-    fontSize: 12,
     fontWeight: '500',
   },
   activeCardContent: {
@@ -667,7 +668,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   cardNickname: {
-    ...typography.bodyMedium,
+    ...chicaloStyles.description,
     color: colors.white,
     opacity: 0.8,
     marginTop: 4,
@@ -683,7 +684,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   balanceLabel: {
-    ...typography.bodySmall,
+    ...chicaloStyles.description,
     color: colors.white,
     opacity: 0.8,
     marginTop: 4,
@@ -706,7 +707,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   statLabel: {
-    ...typography.bodySmall,
+    ...chicaloStyles.description,
     color: colors.white,
     opacity: 0.8,
     marginTop: 2,
@@ -764,7 +765,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardAlias: {
-    ...typography.bodySmall,
+    ...chicaloStyles.description,
     color: colors.white,
     opacity: 0.8,
     fontStyle: 'italic',
@@ -775,8 +776,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   typeChipText: {
+    ...chicaloStyles.info,
     color: colors.white,
-    fontSize: 11,
   },
   cardActions: {
     alignItems: 'flex-end',
@@ -785,8 +786,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   selectedChipText: {
+    ...chicaloStyles.info,
     color: colors.white,
-    fontSize: 11,
     fontWeight: '500',
   },
   selectButton: {
@@ -794,8 +795,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   selectButtonText: {
+    ...chicaloStyles.info,
     color: colors.white,
-    fontSize: 12,
   },
   cardBalance: {
     alignItems: 'center',
@@ -823,8 +824,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   primaryActionText: {
+    ...chicaloStyles.info,
     color: colors.primary,
-    fontSize: 12,
     fontWeight: '500',
   },
   secondaryAction: {
@@ -833,8 +834,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   secondaryActionText: {
+    ...chicaloStyles.info,
     color: colors.white,
-    fontSize: 12,
   },
   iconAction: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -870,6 +871,7 @@ const styles = StyleSheet.create({
   },
   emptyStateSubtitle: {
     ...chicaloStyles.description,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -915,6 +917,7 @@ const styles = StyleSheet.create({
   },
   modalSubtitle: {
     ...chicaloStyles.description,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },

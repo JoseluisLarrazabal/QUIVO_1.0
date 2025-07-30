@@ -6,13 +6,13 @@ import {
   Alert,
   Animated,
   Pressable,
+  Text,
 } from 'react-native';
 import {
   Card,
   Button,
   TextInput,
   Divider,
-  Text,
   Surface,
   IconButton,
   Chip,

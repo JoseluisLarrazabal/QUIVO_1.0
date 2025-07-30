@@ -6,8 +6,9 @@ import {
   Alert,
   Animated,
   Pressable,
+  Text,
 } from 'react-native';
-import { TextInput, Button, Card, Divider, RadioButton, Text, Surface, IconButton } from 'react-native-paper';
+import { TextInput, Button, Card, Divider, RadioButton, Surface, IconButton } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';

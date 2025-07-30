@@ -6,6 +6,7 @@ import {
   RefreshControl,
   Animated,
   Dimensions,
+  Text,
 } from 'react-native';
 import {
   TextInput,
@@ -17,7 +18,6 @@ import {
   Chip,
   Banner,
   Searchbar,
-  Text,
   IconButton
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.headlineMedium,
-    color: colors.white,
+    color: colors.textInverse,
     textAlign: 'center',
     marginBottom: 20,
     fontWeight: '600',
@@ -526,19 +526,19 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     ...chicaloStyles.info,
-    color: colors.white,
+    color: colors.textInverse,
     marginRight: 8,
   },
   cardChip: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   cardChipText: {
-    color: colors.white,
+    color: colors.textInverse,
     fontWeight: '600',
   },
   balanceInfo: {
     ...typography.titleMedium,
-    color: colors.accent,
+    color: colors.textInverse,
     fontWeight: '600',
   },
 
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   },
   selectorLabel: {
     ...chicaloStyles.info,
-    color: colors.white,
+    color: colors.textInverse,
     marginBottom: 8,
   },
   cardButtons: {
@@ -566,11 +566,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   cardButtonText: {
-    color: colors.white,
+    color: colors.textInverse,
     fontSize: 12,
   },
   selectedCardButtonText: {
-    color: colors.white,
+    color: colors.textInverse,
     fontWeight: '600',
   },
 
@@ -643,13 +643,13 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...typography.titleMedium,
-    color: colors.white,
+    color: colors.textInverse,
     fontWeight: '700',
     marginBottom: 4,
   },
   statLabel: {
     ...chicaloStyles.description,
-    color: colors.white,
+    color: colors.textInverse,
     opacity: 0.8,
     textAlign: 'center',
   },
