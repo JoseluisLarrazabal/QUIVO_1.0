@@ -510,8 +510,8 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   headerTitle: {
+    ...chicaloStyles.subtitle,
     color: colors.textInverse,
-    fontFamily: typography.headlineSmall.fontFamily,
     fontSize: 24,
     fontWeight: '600',
   },
@@ -558,9 +558,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    color: colors.text,
-    fontFamily: typography.titleMedium.fontFamily,
-    marginBottom: spacing.sm,
+    ...chicaloStyles.subtitle,
+    color: colors.primary,
   },
   userTypeContainer: {
     flexDirection: 'row',
@@ -585,12 +584,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
+    ...chicaloStyles.subtitle,
     color: colors.primary,
-    fontFamily: typography.titleMedium.fontFamily,
   },
   sectionSubtitle: {
-    ...chicaloStyles.description,
-    marginTop: spacing.xs,
+    ...chicaloStyles.info,
+    color: colors.textSecondary,
   },
 
   // Inputs
@@ -613,13 +612,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   uidPreviewLabel: {
+    ...chicaloStyles.description,
     color: colors.textSecondary,
-    marginBottom: spacing.xs,
   },
   uidPreviewText: {
+    ...chicaloStyles.info,
     color: colors.primary,
-    fontFamily: 'monospace',
-    letterSpacing: 2,
   },
   
   // Advertencia
@@ -675,6 +673,7 @@ const styles = StyleSheet.create({
   },
   cardTypeDescription: {
     ...chicaloStyles.description,
+    color: colors.textSecondary,
   },
   selectedIndicator: {
     position: 'absolute',
@@ -707,8 +706,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.lg,
   },
   summaryTitle: {
+    ...chicaloStyles.subtitle,
     color: colors.primary,
-    fontWeight: '600',
   },
   summaryContent: {
     padding: spacing.lg,
@@ -720,16 +719,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   summaryLabel: {
+    ...chicaloStyles.description,
     color: colors.textSecondary,
   },
   summaryValue: {
+    ...chicaloStyles.info,
     color: colors.primary,
-    fontWeight: '600',
-    fontFamily: 'monospace',
   },
   summaryValueSecondary: {
-    color: colors.text,
-    fontWeight: '500',
+    ...chicaloStyles.info,
+    color: colors.textSecondary,
   },
   summaryTypeContainer: {
     flexDirection: 'row',
@@ -744,11 +743,12 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   summaryTotalLabel: {
-    color: colors.text,
-    fontWeight: '600',
+    ...chicaloStyles.info,
+    color: colors.primary,
   },
   summaryTotal: {
-    color: colors.success,
+    ...chicaloStyles.subtitle,
+    color: colors.primary,
     fontWeight: '700',
   },
 
@@ -786,10 +786,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   footerText: {
-    ...chicaloStyles.secondary,
+    ...chicaloStyles.description,
+    color: colors.textInverse,
     textAlign: 'center',
-    fontStyle: 'italic',
-    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xl,
   },
 });
 
