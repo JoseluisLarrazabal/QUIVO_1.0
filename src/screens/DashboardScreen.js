@@ -212,11 +212,6 @@ const DashboardScreen = ({ navigation }) => {
                   ¡Hola, {user?.nombre || 'Usuario'}!
                 </Text>
                 <View style={styles.userDetails}>
-                  {user?.email && (
-                    <Text style={styles.emailText}>
-                      {user.email}
-                    </Text>
-                  )}
                   <Chip 
                     mode="flat"
                     icon={cardConfig.icon}
@@ -552,9 +547,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   welcomeText: {
-    ...chicaloStyles.subtitle,
+    fontFamily: 'Chicalo-Regular',
+    fontSize: 18,
+    lineHeight: 24,
     color: colors.backgroundAlt,
-    fontWeight: 'bold',
     marginBottom: 4,
   },
   userDetails: {
@@ -564,9 +560,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   emailText: {
-    ...chicaloStyles.description,
-    color: colors.backgroundAlt + 'CC',
+    fontFamily: 'Montserrat_400Regular',
     fontSize: 14,
+    lineHeight: 18,
+    color: colors.backgroundAlt + 'CC',
   },
   userTypeChip: {
     height: 28,
@@ -635,6 +632,9 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.sm,
   },
   metricLabel: {
+    fontFamily: 'Chicalo-Regular',
+    fontSize: 12,
+    lineHeight: 16,
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 4,
