@@ -607,10 +607,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   balanceAmount: {
-    ...typography.displaySmall,
-    color: colors.primary,
-    fontWeight: 'bold',
-    marginBottom: spacing.md,
+    ...chicaloStyles.subtitle,
+    color: colors.backgroundAlt,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   cardMetrics: {
     flexDirection: 'row',

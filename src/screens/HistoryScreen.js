@@ -645,6 +645,7 @@ const styles = StyleSheet.create({
   statLabel: {
     ...chicaloStyles.description,
     color: colors.textInverse,
+    textAlign: 'center',
   },
   statDivider: {
     width: 1,
