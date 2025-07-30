@@ -208,12 +208,12 @@ const DashboardScreen = ({ navigation }) => {
                 color={cardConfig.color}
               />
               <View style={styles.userInfo}>
-                <Text variant="headlineSmall" style={styles.welcomeText}>
+                <Text style={styles.welcomeText}>
                   ¡Hola, {user?.nombre || 'Usuario'}!
                 </Text>
                 <View style={styles.userDetails}>
-                  {user.email && (
-                    <Text variant="bodyMedium" style={styles.emailText}>
+                  {user?.email && (
+                    <Text style={styles.emailText}>
                       {user.email}
                     </Text>
                   )}
@@ -222,6 +222,7 @@ const DashboardScreen = ({ navigation }) => {
                     icon={cardConfig.icon}
                     style={[styles.userTypeChip, { backgroundColor: cardConfig.backgroundColor }]}
                     textStyle={[styles.chipText, { color: cardConfig.color }]}
+                    compact={false}
                   >
                     {cardConfig.label}
                   </Chip>
@@ -563,19 +564,21 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   emailText: {
+    ...chicaloStyles.description,
     color: colors.backgroundAlt + 'CC',
     fontSize: 14,
   },
   userTypeChip: {
-    height: 26,
-    borderRadius: 13,
-    paddingHorizontal: 6,
-    maxWidth: 80,
+    height: 28,
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    maxWidth: 100,
   },
   chipText: {
-    fontSize: 10,
+    ...chicaloStyles.info,
     fontWeight: '600',
-    lineHeight: 14,
+    lineHeight: 16,
+    fontSize: 12,
   },
   logoutButton: {
     backgroundColor: colors.backgroundAlt + '15',
@@ -603,8 +606,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   balanceLabel: {
+    ...chicaloStyles.info,
     color: colors.textSecondary,
-    marginBottom: 4,
   },
   balanceAmount: {
     ...chicaloStyles.subtitle,
@@ -694,9 +697,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    color: colors.text,
-    fontWeight: '600',
-    marginBottom: spacing.md,
+    ...chicaloStyles.subtitle,
+    color: colors.primary,
   },
   quickActionsGrid: {
     flexDirection: 'row',
@@ -717,14 +719,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   quickActionTitle: {
-    color: colors.text,
-    fontWeight: '600',
-    marginBottom: 2,
-    textAlign: 'center',
+    ...chicaloStyles.info,
+    color: colors.primary,
   },
   quickActionSubtitle: {
-    ...chicaloStyles.secondary,
-    textAlign: 'center',
+    ...chicaloStyles.description,
+    color: colors.textSecondary,
   },
   transactionsCard: {
     backgroundColor: colors.backgroundAlt,
@@ -760,13 +760,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   transactionDate: {
+    ...chicaloStyles.info,
     color: colors.text,
-    fontWeight: '600',
-    marginBottom: 2,
   },
   transactionLocation: {
+    ...chicaloStyles.description,
     color: colors.textSecondary,
-    marginBottom: 2,
   },
   transactionTime: {
     color: colors.textSecondary,
@@ -785,11 +784,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
   emptyStateText: {
+    ...chicaloStyles.subtitle,
     color: colors.textSecondary,
-    fontWeight: '500',
-    marginBottom: 4,
   },
   emptyStateSubtext: {
+    ...chicaloStyles.description,
     color: colors.textSecondary,
   },
   cardsManagementCard: {
@@ -810,8 +809,7 @@ const styles = StyleSheet.create({
   },
   cardsDescription: {
     ...chicaloStyles.description,
-    lineHeight: 20,
-    marginBottom: spacing.md,
+    color: colors.textSecondary,
   },
   manageCardsButton: {
     backgroundColor: colors.primary,
