@@ -492,6 +492,7 @@ const CardsScreen = ({ navigation }) => {
                     loading={actionLoading}
                     disabled={actionLoading || !editingAlias.trim()}
                     style={styles.modalSaveButton}
+                    labelStyle={styles.modalSaveButtonText}
                   >
                     Guardar
                   </Button>
@@ -551,6 +552,7 @@ const CardsScreen = ({ navigation }) => {
                     loading={actionLoading}
                     disabled={actionLoading}
                     style={styles.modalDeleteButton}
+                    labelStyle={styles.modalDeleteButtonText}
                   >
                     Eliminar
                   </Button>
@@ -934,10 +936,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 12,
   },
+  modalSaveButtonText: {
+    color: colors.textInverse,
+    fontWeight: '600',
+  },
   modalDeleteButton: {
     flex: 1,
     backgroundColor: colors.error,
     borderRadius: 12,
+  },
+  modalDeleteButtonText: {
+    color: colors.textInverse,
+    fontWeight: '600',
   },
   deleteCardInfo: {
     backgroundColor: colors.errorLight,
