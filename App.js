@@ -93,25 +93,20 @@ function CustomDrawerContent(props) {
   const { user } = useAuth();
   return (
     <DrawerContentScrollView {...props} style={{ backgroundColor: appTheme.paperTheme.colors.background }}>
-      {/* Header minimalista como apps profesionales */}
-      <View style={{ padding: 20, paddingTop: 40, borderBottomWidth: 1, borderBottomColor: appTheme.paperTheme.colors.surfaceVariant }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-          <Avatar.Icon size={40} icon="account-circle" color={appTheme.paperTheme.colors.primary} style={{ backgroundColor: appTheme.paperTheme.colors.accent, marginRight: 12 }} />
+      {/* Header ultra minimalista como Facebook/Gmail */}
+      <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: appTheme.paperTheme.colors.outline }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Avatar.Icon size={32} icon="account-circle" color={appTheme.paperTheme.colors.primary} style={{ backgroundColor: appTheme.paperTheme.colors.accent, marginRight: 12 }} />
           <View style={{ flex: 1 }}>
-            <PaperText style={{ color: appTheme.paperTheme.colors.onSurface, fontFamily: 'Montserrat_400Regular', fontSize: 16, fontWeight: '600' }}>
+            <PaperText style={{ color: appTheme.paperTheme.colors.onSurface, fontFamily: 'Montserrat_400Regular', fontSize: 14, fontWeight: '500' }}>
               {user?.nombre || 'Usuario'}
             </PaperText>
-            {user?.email && (
-              <PaperText style={{ color: appTheme.paperTheme.colors.onSurfaceVariant, fontFamily: 'Montserrat_400Regular', fontSize: 13 }}>
-                {user.email}
-              </PaperText>
-            )}
           </View>
         </View>
       </View>
       
       {/* Lista de elementos del menú */}
-      <View style={{ paddingTop: 8 }}>
+      <View style={{ paddingTop: 4 }}>
         <DrawerItemList {...props} />
       </View>
     </DrawerContentScrollView>
@@ -129,8 +124,8 @@ const DrawerNavigator = () => {
         drawerInactiveTintColor: appTheme.paperTheme.colors.onSurfaceVariant,
         drawerLabelStyle: {
           fontFamily: 'Montserrat_400Regular',
-          fontSize: 15,
-          fontWeight: '500',
+          fontSize: 14,
+          fontWeight: '400',
         },
         drawerStyle: {
           backgroundColor: appTheme.paperTheme.colors.background,
