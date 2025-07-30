@@ -93,13 +93,27 @@ function CustomDrawerContent(props) {
   const { user } = useAuth();
   return (
     <DrawerContentScrollView {...props} style={{ backgroundColor: appTheme.paperTheme.colors.background }}>
-      <View style={{ backgroundColor: appTheme.paperTheme.colors.primary, padding: 24, alignItems: 'center', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
-        <Avatar.Icon size={64} icon="account-circle" color={appTheme.paperTheme.colors.primary} style={{ backgroundColor: appTheme.paperTheme.colors.accent, marginBottom: 8 }} />
-        <PaperText style={{ color: appTheme.paperTheme.colors.accent, fontFamily: 'Montserrat_400Regular', fontSize: 18 }}>{user?.nombre || 'Usuario'}</PaperText>
-        {user?.email && <PaperText style={{ color: appTheme.paperTheme.colors.background, fontFamily: 'Montserrat_400Regular', fontSize: 13 }}>{user.email}</PaperText>}
+      {/* Header minimalista como apps profesionales */}
+      <View style={{ padding: 20, paddingTop: 40, borderBottomWidth: 1, borderBottomColor: appTheme.paperTheme.colors.surfaceVariant }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+          <Avatar.Icon size={40} icon="account-circle" color={appTheme.paperTheme.colors.primary} style={{ backgroundColor: appTheme.paperTheme.colors.accent, marginRight: 12 }} />
+          <View style={{ flex: 1 }}>
+            <PaperText style={{ color: appTheme.paperTheme.colors.onSurface, fontFamily: 'Montserrat_400Regular', fontSize: 16, fontWeight: '600' }}>
+              {user?.nombre || 'Usuario'}
+            </PaperText>
+            {user?.email && (
+              <PaperText style={{ color: appTheme.paperTheme.colors.onSurfaceVariant, fontFamily: 'Montserrat_400Regular', fontSize: 13 }}>
+                {user.email}
+              </PaperText>
+            )}
+          </View>
+        </View>
       </View>
-      <Divider style={{ marginVertical: 8, backgroundColor: appTheme.paperTheme.colors.primary, opacity: 0.1 }} />
-      <DrawerItemList {...props} />
+      
+      {/* Lista de elementos del menú */}
+      <View style={{ paddingTop: 8 }}>
+        <DrawerItemList {...props} />
+      </View>
     </DrawerContentScrollView>
   );
 }
@@ -110,22 +124,21 @@ const DrawerNavigator = () => {
       initialRouteName="MainTabs"
       drawerContent={props => <CustomDrawerContent {...props} />}
       screenOptions={{
-        drawerActiveBackgroundColor: appTheme.paperTheme.colors.primary,
-        drawerActiveTintColor: appTheme.paperTheme.colors.accent,
-        drawerInactiveTintColor: appTheme.paperTheme.colors.primary,
+        drawerActiveBackgroundColor: appTheme.paperTheme.colors.primary + '15',
+        drawerActiveTintColor: appTheme.paperTheme.colors.primary,
+        drawerInactiveTintColor: appTheme.paperTheme.colors.onSurfaceVariant,
         drawerLabelStyle: {
           fontFamily: 'Montserrat_400Regular',
-          fontSize: 16,
+          fontSize: 15,
+          fontWeight: '500',
         },
         drawerStyle: {
           backgroundColor: appTheme.paperTheme.colors.background,
-          borderTopRightRadius: 24,
-          borderBottomRightRadius: 24,
-          width: 260,
+          width: 280,
         },
-        headerShown: false, // Oculta el header y el botón hamburguesa
+        headerShown: false,
         gestureEnabled: true,
-        edgeWidth: 80, // Mantiene el área de gesto ampliada
+        edgeWidth: 80,
         drawerType: 'slide',
       }}
     >

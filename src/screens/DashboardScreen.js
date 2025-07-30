@@ -560,18 +560,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    flexWrap: 'wrap',
   },
   emailText: {
     color: colors.backgroundAlt + 'CC',
     fontSize: 14,
   },
   userTypeChip: {
-    height: 24,
-    borderRadius: 12,
+    height: 26,
+    borderRadius: 13,
+    paddingHorizontal: 6,
+    maxWidth: 80,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
+    lineHeight: 14,
   },
   logoutButton: {
     backgroundColor: colors.backgroundAlt + '15',
@@ -614,10 +618,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceVariant,
     borderRadius: borderRadius.md,
     padding: spacing.md,
+    width: '100%',
   },
   metric: {
     flex: 1,
     alignItems: 'center',
+    width: '50%',
   },
   metricDivider: {
     width: 1,
