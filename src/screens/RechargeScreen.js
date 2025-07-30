@@ -435,8 +435,8 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   headerTitle: {
+    ...chicaloStyles.subtitle,
     color: colors.textInverse,
-    fontFamily: typography.headlineSmall.fontFamily,
     fontSize: 24,
     fontWeight: '600',
   },
@@ -482,8 +482,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
+    ...chicaloStyles.subtitle,
     color: colors.primary,
-    fontFamily: typography.titleMedium.fontFamily,
   },
   cardSubtitle: {
     ...chicaloStyles.info,
@@ -515,8 +515,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
+    ...chicaloStyles.subtitle,
     color: colors.primary,
-    fontFamily: typography.titleMedium.fontFamily,
   },
   sectionSubtitle: {
     ...chicaloStyles.description,
@@ -638,8 +638,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   paymentMethodTitle: {
-    color: colors.text,
-    fontWeight: '500',
+    ...chicaloStyles.info,
+    color: colors.primary,
   },
   paymentMethodDescription: {
     ...chicaloStyles.info,
@@ -661,8 +661,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.lg,
   },
   summaryTitle: {
+    ...chicaloStyles.subtitle,
     color: colors.primary,
-    fontWeight: '600',
   },
   summaryContent: {
     padding: spacing.lg,
@@ -674,6 +674,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   summaryLabel: {
+    ...chicaloStyles.description,
     color: colors.textSecondary,
   },
   summaryValue: {
@@ -688,10 +689,11 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   summaryTotalLabel: {
-    color: colors.text,
-    fontWeight: '600',
+    ...chicaloStyles.info,
+    color: colors.primary,
   },
   summaryTotal: {
+    ...chicaloStyles.subtitle,
     color: colors.primary,
     fontWeight: '700',
   },
@@ -719,9 +721,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footerText: {
-    ...chicaloStyles.secondary,
+    ...chicaloStyles.description,
+    color: colors.textInverse,
     textAlign: 'center',
-    fontStyle: 'italic',
+    marginTop: spacing.xl,
   },
 
   // Error states

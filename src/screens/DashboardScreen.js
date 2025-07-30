@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   welcomeText: {
-    ...typography.headlineSmall,
+    ...chicaloStyles.subtitle,
     color: colors.backgroundAlt,
     fontWeight: 'bold',
     marginBottom: 4,
