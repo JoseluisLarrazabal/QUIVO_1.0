@@ -1,4 +1,4 @@
-# 📱 Frontend - NFC Transport App
+# 📱 Frontend - QUIVO
 
 [![React Native](https://img.shields.io/badge/React%20Native-0.72+-blue.svg)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-49+-purple.svg)](https://expo.dev/)
@@ -22,7 +22,7 @@
 
 ## 🎯 Descripción
 
-El frontend de NFC Transport App es una aplicación móvil construida con React Native y Expo que proporciona una interfaz intuitiva y moderna para la gestión de tarjetas NFC, recargas, historial de transacciones y autenticación del sistema de transporte público.
+El frontend de QUIVO es una aplicación móvil construida con React Native y Expo que proporciona una interfaz intuitiva y moderna para la gestión de tarjetas NFC, recargas, historial de transacciones y autenticación del sistema de transporte público.
 
 ### 🎯 Objetivos
 - **Interfaz moderna** con diseño Material Design 3
