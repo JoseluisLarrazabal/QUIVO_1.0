@@ -30,7 +30,9 @@ app.use(
       "http://localhost:19006",
       "http://192.168.0.5:3000",
       "http://192.168.0.5:19006",
-      "exp://192.168.0.5:19000"
+      "exp://192.168.0.5:19000",
+      "https://quivo-backend-3vhv.onrender.com",
+      "*" // Permitir todas las conexiones para APK standalone
     ],
     credentials: true,
   }),
