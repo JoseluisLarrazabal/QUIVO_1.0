@@ -25,52 +25,59 @@ const monitoringRoutes = require("./routes/monitoring")
 const app = express()
 const PORT = process.env.PORT || 3000
 
-// Configuración obligatoria para Render.com y proxies
-app.set('trust proxy', true); // 👈 Esto es obligatorio en Render
+// ✅ Configuración segura y recomendada para Render
+app.set('trust proxy', 1); // Render usa 1 proxy y esto evita el error de rate-limit
 
-// Middleware de seguridad
+// ✅ Seguridad con Helmet
 app.use(helmet())
-app.use(
-  cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") || [
-      "http://localhost:3000", 
-      "http://localhost:19006",
-      "http://192.168.0.5:3000",
-      "http://192.168.0.5:19006",
-      "exp://192.168.0.5:19000",
-      "https://quivo-backend-3vhv.onrender.com",
-      "*" // Permitir todas las conexiones para APK standalone
-    ],
-    credentials: true,
-  }),
-)
 
-// Rate limiting simplificado y seguro
+// ✅ Configuración inteligente de CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
+  "http://localhost:3000",
+  "http://localhost:19006",
+  "http://192.168.0.5:3000",
+  "http://192.168.0.5:19006",
+  "exp://192.168.0.5:19000",
+  "https://quivo-backend-3vhv.onrender.com",
+];
+
+// En producción, permitir todo (solo si confías en que el frontend es seguro)
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? true : allowedOrigins,
+  credentials: true
+}));
+
+// ✅ Rate limiting robusto y seguro
 const rateLimitConfig = {
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // 100 requests por ventana
+  max: 100, // Máximo 100 solicitudes por IP
   message: "Demasiadas solicitudes, intenta de nuevo más tarde.",
   standardHeaders: true,
   legacyHeaders: false,
-  // Saltar rate limiting para rutas públicas importantes
   skip: (req) => {
+    // ⛔️ No aplicar rate limit a rutas públicas
     const publicRoutes = [
-      '/health', '/metrics', 
-      '/api/health', '/api/metrics', '/api/dashboard', '/api'
+      '/health', '/metrics',
+      '/api', '/api/health', '/api/metrics', '/api/dashboard'
     ];
-    return publicRoutes.includes(req.path);
+    return publicRoutes.some(path => req.path.startsWith(path));
   },
   handler: (req, res) => {
+    logger.warn('Rate limit excedido', {
+      ip: req.ip,
+      route: req.originalUrl,
+      userAgent: req.headers['user-agent']
+    });
     res.status(429).json({
       success: false,
       error: "Demasiadas solicitudes, intenta de nuevo más tarde.",
       code: "RATE_LIMIT_EXCEEDED"
     });
   }
-}
+};
 
-const limiter = rateLimit(rateLimitConfig)
-app.use("/api/", limiter)
+const limiter = rateLimit(rateLimitConfig);
+app.use("/api/", limiter); // Solo en las rutas privadas (excluye /metrics)
 
 // Middleware de métricas (debe ir antes de las rutas)
 app.use(metricsMiddleware);
