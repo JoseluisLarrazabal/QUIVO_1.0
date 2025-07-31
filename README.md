@@ -475,9 +475,7 @@ app.get('/metrics', async (req, res) => {
 
 - [API Documentation](API_DOCUMENTATION.md)
 - [JWT Implementation](API_DOCUMENTATION_JWT.md)
-- [Database Schema](DATABASE_SCHEMA.md)
-- [Testing Guide](TESTING_GUIDE.md)
-- [Deployment Guide](DEPLOYMENT_GUIDE.md)
+- [Environment Setup](ENV_SETUP.md)
 
 ## 🤝 Contribución
 

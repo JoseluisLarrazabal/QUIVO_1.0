@@ -21,6 +21,9 @@ const monitoringRoutes = require("./routes/monitoring")
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Configuración obligatoria para Render.com y proxies
+app.set('trust proxy', true); // 👈 Esto es obligatorio en Render
+
 // Middleware de seguridad
 app.use(helmet())
 app.use(
