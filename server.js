@@ -31,7 +31,8 @@ app.set('trust proxy', 1); // Render usa 1 proxy y esto evita el error de rate-l
 // ✅ Seguridad con Helmet
 app.use(helmet())
 
-// ✅ Configuración inteligente de CORS
+
+// ✅ Configuración robusta de CORS para producción y desarrollo
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
   "http://localhost:3000",
   "http://localhost:19006",
@@ -39,11 +40,29 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
   "http://192.168.0.5:19006",
   "exp://192.168.0.5:19000",
   "https://quivo-backend-3vhv.onrender.com",
+  "file://",
+  null
 ];
 
-// En producción, permitir todo (solo si confías en que el frontend es seguro)
+app.use((req, res, next) => {
+  // Loguear el origen para auditoría
+  logger.info('CORS request', { origin: req.headers.origin });
+  next();
+});
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? true : allowedOrigins,
+  origin: function (origin, callback) {
+    // Permitir orígenes explícitos, file:// y null (APK standalone)
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      (process.env.NODE_ENV === 'production' && (origin === null || origin === 'file://'))
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
