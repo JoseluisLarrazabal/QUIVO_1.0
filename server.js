@@ -11,6 +11,10 @@ const { logger, requestLogger } = require('./config/logger');
 const { metricsMiddleware, metricsEndpoint, recordRateLimitMetric } = require('./config/metrics');
 
 const { connectDB } = require("./config/database")
+const { getMetricsAsJson } = require('./config/metrics');
+const User = require('./models/User');
+const Card = require('./models/Card');
+const Transaction = require('./models/Transaction');
 const authRoutes = require("./routes/auth")
 const cardRoutes = require("./routes/cards")
 const transactionRoutes = require("./routes/transactions")
@@ -41,24 +45,25 @@ app.use(
   }),
 )
 
-// Rate limiting configurado por entorno
+// Rate limiting simplificado y seguro
 const rateLimitConfig = {
-  windowMs: process.env.NODE_ENV === 'test' 
-    ? 1 * 60 * 1000  // 1 minuto en test para que se resetee más rápido
-    : 15 * 60 * 1000, // 15 minutos en producción
-  max: process.env.NODE_ENV === 'test' 
-    ? parseInt(process.env.TEST_RATE_LIMIT_MAX) || 100  // 100 requests en test por defecto
-    : parseInt(process.env.RATE_LIMIT_MAX) || 100,      // 100 requests en producción por defecto
-  message: "Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.",
-  standardHeaders: true, // Incluir headers X-RateLimit-*
-  legacyHeaders: false,  // No incluir headers legacy
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // 100 requests por ventana
+  message: "Demasiadas solicitudes, intenta de nuevo más tarde.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Saltar rate limiting para rutas públicas importantes
+  skip: (req) => {
+    const publicRoutes = [
+      '/health', '/metrics', 
+      '/api/health', '/api/metrics', '/api/dashboard', '/api'
+    ];
+    return publicRoutes.includes(req.path);
+  },
   handler: (req, res) => {
-    // Registrar métrica de rate limiting
-    recordRateLimitMetric(req.ip, req.path);
-    
     res.status(429).json({
       success: false,
-      error: "Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.",
+      error: "Demasiadas solicitudes, intenta de nuevo más tarde.",
       code: "RATE_LIMIT_EXCEEDED"
     });
   }
@@ -87,6 +92,76 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   })
+})
+
+// Ruta raíz de la API
+app.get("/api", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "QUIVO NFC Transport API",
+    version: "1.0.0",
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      auth: "/api/auth",
+      cards: "/api/saldo/:uid",
+      transactions: "/api/transacciones",
+      health: "/api/health",
+      metrics: "/api/metrics",
+      dashboard: "/api/dashboard"
+    }
+  })
+})
+
+// Health check de la API
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    service: "QUIVO API",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  })
+})
+
+// Métricas de la API
+app.get("/api/metrics", async (req, res) => {
+  try {
+    const metrics = await getMetricsAsJson();
+    res.status(200).json({
+      success: true,
+      data: metrics
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Error obteniendo métricas"
+    });
+  }
+})
+
+// Dashboard público
+app.get("/api/dashboard", async (req, res) => {
+  try {
+    const [totalUsers, totalCards, totalTransactions] = await Promise.all([
+      User.countDocuments(),
+      Card.countDocuments({ activa: true }),
+      Transaction.countDocuments()
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        timestamp: new Date().toISOString(),
+        stats: { totalUsers, totalCards, totalTransactions },
+        uptime: process.uptime(),
+        service: "QUIVO Dashboard"
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Error obteniendo dashboard"
+    });
+  }
 })
 
 // Rutas de la API
