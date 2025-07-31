@@ -133,8 +133,10 @@ const DrawerNavigator = () => {
         },
         headerShown: false,
         gestureEnabled: true,
-        edgeWidth: 80,
+        edgeWidth: 120,
         drawerType: 'slide',
+        swipeEnabled: true,
+        swipeEdgeWidth: 120,
       }}
     >
       <Drawer.Screen name="Inicio" component={TabNavigator} options={{ title: 'Inicio' }} />
