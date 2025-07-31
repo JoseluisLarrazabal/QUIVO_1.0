@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -41,18 +41,18 @@ const DashboardScreen = ({ navigation }) => {
     }
   }, [user]);
 
-  const loadRecentTransactions = async () => {
+  const loadRecentTransactions = useCallback(async () => {
     try {
-      if (user.selectedCard) {
+      if (user?.selectedCard) {
         const response = await apiService.getTransactionHistory(user.selectedCard);
         setRecentTransactions(response.data.slice(0, 3)); // Últimas 3 transacciones
       }
     } catch (error) {
       console.error('Error loading transactions:', error);
     }
-  };
+  }, [user?.selectedCard]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refreshUserCards();
@@ -62,9 +62,9 @@ const DashboardScreen = ({ navigation }) => {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refreshUserCards, loadRecentTransactions]);
 
-  const getCardTypeConfig = (tipo) => {
+  const getCardTypeConfig = useCallback((tipo) => {
     const configs = {
       adulto: {
         color: colors.infoScale[500],
@@ -95,14 +95,14 @@ const DashboardScreen = ({ navigation }) => {
       tarifa: '0.00',
       icon: 'help-circle',
     };
-  };
+  }, []);
 
-  const getCurrentCard = () => {
+  const getCurrentCard = useCallback(() => {
     if (!user || !user.cards || !user.selectedCard) return null;
     return user.cards.find(card => card.uid === user.selectedCard);
-  };
+  }, [user?.cards, user?.selectedCard]);
 
-  const handleQuickAction = (action) => {
+  const handleQuickAction = useCallback((action) => {
     const currentCard = getCurrentCard();
     // eslint-disable-next-line no-console
     console.log('[handleQuickAction]', { action, currentCard, navigation });
@@ -134,23 +134,26 @@ const DashboardScreen = ({ navigation }) => {
       default:
         break;
     }
-  };
+  }, [getCurrentCard, navigation, user?.authMode, user?.isMultiCard]);
 
-  const getTransactionIcon = (monto) => {
+  const getTransactionIcon = useCallback((monto) => {
     return monto > 0 ? 'plus-circle' : 'minus-circle';
-  };
+  }, []);
 
-  const getTransactionColor = (monto) => {
+  const getTransactionColor = useCallback((monto) => {
     return monto > 0 ? colors.successScale[500] : colors.errorScale[500];
-  };
+  }, []);
+
+  // Mover useMemo ANTES del return temprano para cumplir las reglas de hooks
+  const currentCard = getCurrentCard();
+  const cardConfig = getCardTypeConfig(user?.tipo_tarjeta);
+  const availableTrips = useMemo(() => {
+    return currentCard ? Math.floor(currentCard.saldo_actual / parseFloat(cardConfig.tarifa)) : 0;
+  }, [currentCard?.saldo_actual, cardConfig.tarifa]);
 
   if (loading || !user) {
     return <CenteredLoader />;
   }
-
-  const currentCard = getCurrentCard();
-  const cardConfig = getCardTypeConfig(user.tipo_tarjeta);
-  const availableTrips = currentCard ? Math.floor(currentCard.saldo_actual / parseFloat(cardConfig.tarifa)) : 0;
 
   return (
     <View style={styles.container}>

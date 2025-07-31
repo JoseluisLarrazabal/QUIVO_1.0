@@ -19,6 +19,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import RechargeScreen from './src/screens/RechargeScreen';
 import CardsScreen from './src/screens/CardsScreen';
 import RegisterCardScreen from './src/screens/RegisterCardScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -196,10 +197,12 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PaperProvider theme={appTheme.paperTheme}>
-        <AuthProvider>
-          <AppNavigator />
-          <StatusBar style="auto" />
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <AppNavigator />
+            <StatusBar style="auto" />
+          </AuthProvider>
+        </ErrorBoundary>
       </PaperProvider>
     </GestureHandlerRootView>
   );

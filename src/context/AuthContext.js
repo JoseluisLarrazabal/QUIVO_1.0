@@ -17,13 +17,19 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      console.log('🔐 Iniciando login con:', { username, password: '***' });
+      
       if (!username || !password) {
+        console.log('❌ Usuario o contraseña faltantes');
         return { success: false, error: 'Usuario y contraseña son requeridos' };
       }
 
+      console.log('📡 Llamando apiService.login...');
       const response = await apiService.login(username, password);
+      console.log('📡 Respuesta del login:', response ? 'OK' : 'NULL');
       
       if (!response || !response.data) {
+        console.log('❌ Respuesta inválida del login');
         return { success: false, error: 'No se pudo autenticar al usuario' };
       }
 
@@ -35,10 +41,17 @@ export const AuthProvider = ({ children }) => {
         selectedCard: response.data.cards && response.data.cards.length > 0 ? response.data.cards[0].uid : null
       };
 
+      console.log('👤 Configurando usuario:', { 
+        id: userData.id, 
+        nombre: userData.nombre,
+        cardsCount: userData.cards?.length || 0 
+      });
+
       await setUser(userData);
+      console.log('✅ Login exitoso');
       return { success: true };
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       return { 
         success: false, 
         error: error.message || 'Error al iniciar sesión. Verifica tus credenciales.' 

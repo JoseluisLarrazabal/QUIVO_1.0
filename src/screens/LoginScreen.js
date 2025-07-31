@@ -36,31 +36,52 @@ const LoginScreen = () => {
   const { login, loginWithCard } = useAuth();
 
   const handleLogin = async () => {
+    console.log('🚀 Iniciando proceso de login...');
+    
     if (authMode === 'credentials') {
       if (!username.trim() || !password.trim()) {
+        console.log('❌ Campos vacíos en modo credenciales');
         Alert.alert('Error', 'Por favor ingresa tu usuario y contraseña');
         return;
       }
+      console.log('✅ Campos de credenciales válidos');
     } else {
       if (!cardUid.trim()) {
+        console.log('❌ UID de tarjeta vacío');
         Alert.alert('Error', 'Por favor ingresa el UID de tu tarjeta');
         return;
       }
+      console.log('✅ UID de tarjeta válido');
     }
 
     setLoading(true);
     let result;
     
-    if (authMode === 'credentials') {
-      result = await login(username.trim(), password);
-    } else {
-      result = await loginWithCard(cardUid.trim());
+    try {
+      if (authMode === 'credentials') {
+        console.log('🔐 Llamando login con credenciales...');
+        result = await login(username.trim(), password);
+      } else {
+        console.log('💳 Llamando login con tarjeta...');
+        result = await loginWithCard(cardUid.trim());
+      }
+      
+      console.log('📋 Resultado del login:', { 
+        success: result?.success, 
+        error: result?.error 
+      });
+    } catch (error) {
+      console.error('❌ Error en handleLogin:', error);
+      result = { success: false, error: error.message };
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
 
     if (!result.success) {
+      console.log('❌ Login falló:', result.error);
       Alert.alert('Error', result.error || 'No se pudo autenticar');
+    } else {
+      console.log('✅ Login exitoso, navegando...');
     }
   };
 

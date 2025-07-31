@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -65,7 +65,7 @@ const CardsScreen = ({ navigation }) => {
     }
   }, [user?.cards, cardAnimations]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refreshUserCards();
@@ -74,9 +74,9 @@ const CardsScreen = ({ navigation }) => {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refreshUserCards]);
 
-  const handleCardSelect = async (cardUid) => {
+  const handleCardSelect = useCallback(async (cardUid) => {
     try {
       await selectCard(cardUid);
       Alert.alert(
@@ -87,14 +87,14 @@ const CardsScreen = ({ navigation }) => {
     } catch (error) {
       Alert.alert('Error', 'No se pudo seleccionar la tarjeta');
     }
-  };
+  }, [selectCard]);
 
-  const handleEditAlias = (card) => {
+  const handleEditAlias = useCallback((card) => {
     setEditingCard(card);
     setEditingAlias(card.alias || '');
-  };
+  }, []);
 
-  const handleSaveAlias = async () => {
+  const handleSaveAlias = useCallback(async () => {
     if (!editingCard || !editingAlias.trim()) {
       Alert.alert('Error', 'El alias no puede estar vacío');
       return;
@@ -123,7 +123,7 @@ const CardsScreen = ({ navigation }) => {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [editingCard, editingAlias, refreshUserCards]);
 
   const handleDeleteCard = (card) => {
     setCardToDelete(card);
@@ -561,6 +561,7 @@ const CardsScreen = ({ navigation }) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
