@@ -19,6 +19,21 @@
         "buildType": "apk"
       },
       "distribution": "internal"
+    },
+    "apk-standalone": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://quivo-backend-3vhv.onrender.com/api"
+      }
+    },
+    "production-standalone": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://quivo-backend-3vhv.onrender.com/api"
+      }
     }
   },
   "submit": {

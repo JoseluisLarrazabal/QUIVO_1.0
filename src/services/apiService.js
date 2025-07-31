@@ -17,12 +17,21 @@ const getExpoHost = () => {
   return null;
 };
 
+// Detectar si estamos en modo standalone (APK sin Expo Go)
+const isStandalone = () => {
+  return Constants.appOwnership === 'standalone' || 
+         Constants.appOwnership === 'expo' && !Constants.manifest?.debuggerHost;
+};
+
 const host = getExpoHost();
-const API_BASE_URL =
-  (host ? `http://${host}:3000/api` : null) ||
-  Constants.expoConfig?.extra?.API_BASE_URL ||
-  process.env.API_BASE_URL ||
-  'http://localhost:3000/api';
+const API_BASE_URL = isStandalone() 
+  ? (Constants.expoConfig?.extra?.API_BASE_URL_PRODUCTION || 
+     process.env.EXPO_PUBLIC_API_BASE_URL ||
+     'https://quivo-backend-3vhv.onrender.com/api')
+  : (host ? `http://${host}:3000/api` : null) ||
+    Constants.expoConfig?.extra?.API_BASE_URL ||
+    process.env.API_BASE_URL ||
+    'http://localhost:3000/api';
 
 class ApiService {
   constructor() {
