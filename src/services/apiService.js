@@ -25,9 +25,8 @@ const isStandalone = () => {
 
 const host = getExpoHost();
 const API_BASE_URL = isStandalone() 
-  ? (Constants.expoConfig?.extra?.API_BASE_URL_PRODUCTION || 
-     process.env.EXPO_PUBLIC_API_BASE_URL ||
-     'https://quivo-backend-3vhv.onrender.com/api')
+  ? Constants.expoConfig?.extra?.API_BASE_URL_PRODUCTION ||
+    'https://quivo-backend-3vhv.onrender.com/api'
   : (host ? `http://${host}:3000/api` : null) ||
     Constants.expoConfig?.extra?.API_BASE_URL ||
     process.env.API_BASE_URL ||
@@ -57,7 +56,14 @@ class ApiService {
   async makeRequest(endpoint, options = {}) {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
-      console.log('Making API request to:', url);
+      console.log('🔍 API Debug Info:');
+      console.log('  - URL:', url);
+      console.log('  - isStandalone():', isStandalone());
+      console.log('  - API_BASE_URL:', API_BASE_URL);
+      console.log('  - Constants.appOwnership:', Constants.appOwnership);
+      console.log('  - Constants.manifest?.debuggerHost:', Constants.manifest?.debuggerHost);
+      console.log('  - Constants.expoConfig?.extra?.API_BASE_URL_PRODUCTION:', Constants.expoConfig?.extra?.API_BASE_URL_PRODUCTION);
+      console.log('  - process.env.EXPO_PUBLIC_API_BASE_URL:', process.env.EXPO_PUBLIC_API_BASE_URL);
 
       // Incluir token si está presente
       const token = await this.getAccessToken();
@@ -69,11 +75,17 @@ class ApiService {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      console.log('  - Headers:', headers);
+      console.log('  - Method:', options.method || 'GET');
+
       const response = await fetch(url, {
         method: 'GET', // Método por defecto
         headers,
         ...options,
       });
+
+      console.log('  - Response status:', response.status);
+      console.log('  - Response ok:', response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -82,10 +94,15 @@ class ApiService {
       }
 
       const data = await response.json();
-      console.log('API Response:', data);
+      console.log('✅ API Response:', data);
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('❌ API request failed:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       
       // Manejar errores de red específicamente
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -239,6 +256,74 @@ class ApiService {
         validador_id: validatorId
       }),
     });
+  }
+
+  // Método de prueba de conectividad
+  async testConnection() {
+    try {
+      console.log('🧪 Testing API connection...');
+      console.log('🔍 Current API_BASE_URL:', API_BASE_URL);
+      console.log('🔍 isStandalone():', isStandalone());
+      
+      const testUrl = `${API_BASE_URL}/health`;
+      console.log('🔍 Testing URL:', testUrl);
+      
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('✅ Test response status:', response.status);
+      console.log('✅ Test response ok:', response.ok);
+      
+      if (response.ok) {
+        const data = await response.text();
+        console.log('✅ Test response data:', data);
+        return { success: true, data };
+      } else {
+        console.log('❌ Test failed with status:', response.status);
+        return { success: false, status: response.status };
+      }
+    } catch (error) {
+      console.error('❌ Test connection failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Método para probar múltiples URLs
+  async testMultipleUrls() {
+    const testUrls = [
+      'https://quivo-backend-3vhv.onrender.com/api',
+      Constants.expoConfig?.extra?.API_BASE_URL_PRODUCTION,
+      Constants.expoConfig?.extra?.API_BASE_URL
+    ].filter(Boolean); // Filtrar URLs undefined
+    
+    console.log('🧪 Testing multiple URLs...');
+    
+    for (const url of testUrls) {
+      try {
+        console.log(`🔍 Testing: ${url}`);
+        const response = await fetch(`${url}/health`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          console.log(`✅ SUCCESS: ${url}`);
+          return { success: true, workingUrl: url };
+        } else {
+          console.log(`❌ FAILED: ${url} - Status: ${response.status}`);
+        }
+      } catch (error) {
+        console.log(`❌ ERROR: ${url} - ${error.message}`);
+      }
+    }
+    
+    return { success: false, error: 'No URLs working' };
   }
 }
 

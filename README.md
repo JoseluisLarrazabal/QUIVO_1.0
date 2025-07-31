@@ -354,10 +354,12 @@ eas submit --platform all
 
 ## 📚 Documentación Adicional
 
-- [Guía de Desarrollo](DEVELOPMENT.md)
-- [Guía de Testing](TESTING.md)
-- [Guía de UI/UX](UI_UX_GUIDE.md)
-- [Guía de Deployment](DEPLOYMENT.md)
+- [Standalone APK Guide](docs/STANDALONE_APK.md)
+- [Icon Setup Guide](docs/ICON_SETUP_COMPLETED.md)
+- [Environment Setup](docs/ENV_STANDALONE.md)
+- [Icon Optimization](docs/ICON_OPTIMIZATION.md)
+- [Profile Analysis](docs/PROFILE_ANALYSIS.md)
+- [Standalone Setup Summary](docs/STANDALONE_SETUP_SUMMARY.md)
 
 ## 🤝 Contribución
 
