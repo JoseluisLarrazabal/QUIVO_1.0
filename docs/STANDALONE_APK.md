@@ -22,29 +22,29 @@ El `apiService.js` detecta automáticamente si la app está en modo standalone y
 
 ## Comandos para Generar APK
 
-### APK Standalone (Recomendado para distribución)
+### Development (Desarrollo con Expo Go)
+```bash
+cd Frontend
+npm run build:development
+```
+
+### APK Standalone (Distribución)
 ```bash
 cd Frontend
 npm run build:apk-standalone
 ```
 
-### APK de Producción Standalone
+### Production Standalone (Versión final)
 ```bash
 cd Frontend
 npm run build:production-standalone
-```
-
-### APK con Expo Go (Desarrollo)
-```bash
-cd Frontend
-npm run build:apk
 ```
 
 ## Diferencias entre Configuraciones
 
 | Configuración | Expo Go | Backend | Uso |
 |---------------|---------|---------|-----|
-| `apk` | ✅ Requerido | Local | Desarrollo |
+| `development` | ✅ Requerido | Local | Desarrollo |
 | `apk-standalone` | ❌ No requerido | Render.com | Distribución |
 | `production-standalone` | ❌ No requerido | Render.com | Producción |
 

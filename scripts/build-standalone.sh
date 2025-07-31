@@ -30,25 +30,25 @@ echo "✅ Verificaciones completadas"
 # Preguntar qué tipo de build quiere el usuario
 echo ""
 echo "Selecciona el tipo de build:"
-echo "1) APK Standalone (Recomendado para distribución)"
-echo "2) APK de Producción Standalone"
-echo "3) APK con Expo Go (Desarrollo)"
+echo "1) Development (Desarrollo con Expo Go)"
+echo "2) APK Standalone (Distribución)"
+echo "3) Production Standalone (Versión final)"
 echo ""
 
 read -p "Ingresa el número de opción (1-3): " choice
 
 case $choice in
     1)
+        echo "🔨 Generando Development Build..."
+        eas build --platform android --profile development
+        ;;
+    2)
         echo "🔨 Generando APK Standalone..."
         eas build --platform android --profile apk-standalone
         ;;
-    2)
-        echo "🔨 Generando APK de Producción Standalone..."
-        eas build --platform android --profile production-standalone
-        ;;
     3)
-        echo "🔨 Generando APK con Expo Go..."
-        eas build --platform android --profile apk
+        echo "🔨 Generando Production Standalone..."
+        eas build --platform android --profile production-standalone
         ;;
     *)
         echo "❌ Opción inválida"

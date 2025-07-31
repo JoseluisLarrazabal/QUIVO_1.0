@@ -12,10 +12,9 @@
     "test:coverage": "jest --coverage",
     "check-icons": "node scripts/optimize-icons.js",
     "setup-icons": "node scripts/setup-icons.js",
+    "build:development": "eas build --platform android --profile development",
     "build:apk-standalone": "eas build --platform android --profile apk-standalone",
     "build:production-standalone": "eas build --platform android --profile production-standalone",
-    "build:apk": "eas build --platform android --profile apk",
-    "build:production": "eas build --platform android --profile production",
     "build:standalone": "./scripts/build-standalone.sh"
   },
   "dependencies": {
