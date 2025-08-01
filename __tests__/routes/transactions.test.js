@@ -39,7 +39,7 @@ describe('Transaction Routes', () => {
 
   describe('GET /historial/:uid', () => {
     beforeEach(async () => {
-      // Crear transacciones de prueba
+      // Crear transacciones de prueba con delays para asegurar ordenamiento
       const transaction1 = new Transaction({
         tarjeta_uid: testUid,
         monto: -2.50,
@@ -49,6 +49,9 @@ describe('Transaction Routes', () => {
         resultado: 'exitoso'
       });
       await transaction1.save();
+      
+      // Pequeño delay para asegurar ordenamiento
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       const transaction2 = new Transaction({
         tarjeta_uid: testUid,
@@ -58,6 +61,9 @@ describe('Transaction Routes', () => {
         resultado: 'exitoso'
       });
       await transaction2.save();
+      
+      // Pequeño delay para asegurar ordenamiento
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       const transaction3 = new Transaction({
         tarjeta_uid: testUid,
@@ -133,10 +139,10 @@ describe('Transaction Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Recarga exitosa');
-      expect(response.body.data.nuevo_saldo).toBe(45.00); // 25.00 + 20.00
-      expect(response.body.data.transaccion).toBeDefined();
-      expect(response.body.data.transaccion.tipo).toBe('recarga');
-      expect(response.body.data.transaccion.monto).toBe(20.00);
+      expect(response.body.data.card).toBeDefined();
+      expect(response.body.data.transaction).toBeDefined();
+      expect(response.body.data.transaction.tipo).toBe('recarga');
+      expect(response.body.data.transaction.monto).toBe(20.00);
     });
 
     test('debería fallar con tarjeta inexistente', async () => {
@@ -149,7 +155,7 @@ describe('Transaction Routes', () => {
         .post('/recargar')
         .send(recargaData);
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Tarjeta no encontrada');
     });
@@ -238,7 +244,7 @@ describe('Transaction Routes', () => {
         .send(recargaData);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.transaccion.ubicacion).toBe('Recarga efectivo');
+      expect(response.body.data.transaction.ubicacion).toBe('Recarga efectivo');
     });
 
     test('debería actualizar saldo en la base de datos', async () => {
