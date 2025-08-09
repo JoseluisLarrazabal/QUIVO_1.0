@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   RefreshControl,
   Alert,
+  Animated,
+  Dimensions,
+  Text,
 } from 'react-native';
 import {
   Card,
@@ -20,9 +23,14 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/apiService';
 import CenteredLoader from '../components/CenteredLoader';
+import { colors, typography, spacing, shadows, chicaloStyles } from '../theme';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const CardsScreen = ({ navigation }) => {
   const { user, refreshUserCards, selectCard, loading } = useAuth();
@@ -32,15 +40,32 @@ const CardsScreen = ({ navigation }) => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [cardToDelete, setCardToDelete] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [cardAnimations] = useState(() => 
+    user?.cards?.map(() => new Animated.Value(0)) || []
+  );
 
   useEffect(() => {
     if (user && user.authMode === 'card_uid') {
-      // Si está en modo tarjeta, redirigir al dashboard
       navigation.replace('Dashboard');
     }
   }, [user, navigation]);
 
-  const onRefresh = async () => {
+  useEffect(() => {
+    // Animar entrada de tarjetas
+    if (user?.cards?.length > 0) {
+      const animations = cardAnimations.slice(0, user.cards.length).map((anim, index) =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 300,
+          delay: index * 100,
+          useNativeDriver: true,
+        })
+      );
+      Animated.stagger(100, animations).start();
+    }
+  }, [user?.cards, cardAnimations]);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refreshUserCards();
@@ -49,9 +74,9 @@ const CardsScreen = ({ navigation }) => {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refreshUserCards]);
 
-  const handleCardSelect = async (cardUid) => {
+  const handleCardSelect = useCallback(async (cardUid) => {
     try {
       await selectCard(cardUid);
       Alert.alert(
@@ -62,14 +87,14 @@ const CardsScreen = ({ navigation }) => {
     } catch (error) {
       Alert.alert('Error', 'No se pudo seleccionar la tarjeta');
     }
-  };
+  }, [selectCard]);
 
-  const handleEditAlias = (card) => {
+  const handleEditAlias = useCallback((card) => {
     setEditingCard(card);
     setEditingAlias(card.alias || '');
-  };
+  }, []);
 
-  const handleSaveAlias = async () => {
+  const handleSaveAlias = useCallback(async () => {
     if (!editingCard || !editingAlias.trim()) {
       Alert.alert('Error', 'El alias no puede estar vacío');
       return;
@@ -98,7 +123,7 @@ const CardsScreen = ({ navigation }) => {
     } finally {
       setActionLoading(false);
     }
-  };
+  }, [editingCard, editingAlias, refreshUserCards]);
 
   const handleDeleteCard = (card) => {
     setCardToDelete(card);
@@ -147,31 +172,206 @@ const CardsScreen = ({ navigation }) => {
     }
   };
 
-  const getCardColor = (tipo) => {
-    switch (tipo) {
-      case 'adulto': return '#2196F3';
-      case 'estudiante': return '#4CAF50';
-      case 'adulto_mayor': return '#FF9800';
-      default: return '#757575';
-    }
+  const getCardGradient = (tipo, isActive = false) => {
+    const gradients = {
+      adulto: isActive ? ['#667eea', '#764ba2'] : ['#2196F3', '#21CBF3'],
+      estudiante: isActive ? ['#11998e', '#38ef7d'] : ['#4CAF50', '#8BC34A'],
+      adulto_mayor: isActive ? ['#ff9a9e', '#fecfef'] : ['#FF9800', '#FFC107'],
+    };
+    return gradients[tipo] || ['#757575', '#9E9E9E'];
   };
 
   const getCardTypeLabel = (tipo) => {
-    switch (tipo) {
-      case 'adulto': return 'Adulto';
-      case 'estudiante': return 'Estudiante';
-      case 'adulto_mayor': return 'Adulto Mayor';
-      default: return 'Desconocido';
-    }
+    const labels = {
+      adulto: 'Adulto',
+      estudiante: 'Estudiante',
+      adulto_mayor: 'Adulto Mayor',
+    };
+    return labels[tipo] || 'Desconocido';
   };
 
   const getTarifa = (tipo) => {
-    switch (tipo) {
-      case 'adulto': return '2.50';
-      case 'estudiante': return '1.00';
-      case 'adulto_mayor': return '1.50';
-      default: return '0.00';
-    }
+    const tarifas = {
+      adulto: '2.50',
+      estudiante: '1.00',
+      adulto_mayor: '1.50',
+    };
+    return tarifas[tipo] || '0.00';
+  };
+
+  // Componente CustomChip para mejor control de estilos
+  const CustomChip = ({ children, style }) => (
+    <View style={[styles.customChip, style]}>
+      <Text style={styles.chipText}>{children}</Text>
+    </View>
+  );
+
+  const renderActiveCard = () => {
+    if (!user.selectedCard || !user.cards) return null;
+
+    const activeCard = user.cards.find(card => card.uid === user.selectedCard);
+    if (!activeCard) return null;
+
+    return (
+      <View style={styles.activeCardContainer}>
+        <LinearGradient
+          colors={getCardGradient(user.tipo_tarjeta, true)}
+          style={styles.activeCardGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <BlurView intensity={20} style={styles.activeCardBlur}>
+            <View style={styles.activeCardHeader}>
+              <View style={styles.activeCardHeaderLeft}>
+                <Text style={styles.activeCardTitle}>Mi Tarjeta Activa</Text>
+                <CustomChip style={styles.activeChip}>
+                  ✨ Activa
+                </CustomChip>
+              </View>
+              <View style={styles.cardTypeContainer}>
+                <Text style={styles.cardTypeText}>
+                  {getCardTypeLabel(user.tipo_tarjeta)}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.activeCardContent}>
+              <View style={styles.cardNumberContainer}>
+                <Text style={styles.cardNumber}>{activeCard.uid}</Text>
+                {activeCard.alias && (
+                  <Text style={styles.cardNickname}>{activeCard.alias}</Text>
+                )}
+              </View>
+              
+              <View style={styles.balanceContainer}>
+                <Text style={styles.balanceAmount}>
+                  {activeCard.saldo_actual.toFixed(2)} Bs
+                </Text>
+                <Text style={styles.balanceLabel}>Saldo Disponible</Text>
+              </View>
+              
+              <View style={styles.cardStats}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>
+                    {Math.floor(activeCard.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
+                  </Text>
+                  <Text style={styles.statLabel}>Viajes</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{getTarifa(user.tipo_tarjeta)} Bs</Text>
+                  <Text style={styles.statLabel}>Tarifa</Text>
+                </View>
+              </View>
+            </View>
+          </BlurView>
+        </LinearGradient>
+      </View>
+    );
+  };
+
+  const renderCardItem = (card, index) => {
+    const isSelected = card.uid === user.selectedCard;
+    const animatedStyle = {
+      opacity: cardAnimations[index] || 1,
+      transform: [{
+        translateY: cardAnimations[index]?.interpolate({
+          inputRange: [0, 1],
+          outputRange: [50, 0],
+        }) || 0
+      }]
+    };
+
+    return (
+      <Animated.View key={card.uid} style={[styles.cardItemContainer, animatedStyle]}>
+        <Card style={[styles.cardItem, isSelected && styles.selectedCardItem]}>
+          <LinearGradient
+            colors={getCardGradient(user.tipo_tarjeta, isSelected)}
+            style={styles.cardGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0.8 }}
+          >
+            <Card.Content style={styles.cardContent}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardInfo}>
+                  <Text style={styles.cardUid}>{card.uid}</Text>
+                  {card.alias && (
+                    <Text style={styles.cardAlias}>{card.alias}</Text>
+                  )}
+                  <CustomChip style={styles.typeChip}>
+                    {getCardTypeLabel(user.tipo_tarjeta)}
+                  </CustomChip>
+                </View>
+                
+                <View style={styles.cardActions}>
+                  {isSelected ? (
+                    <CustomChip style={styles.selectedChip}>
+                      ✓ Seleccionada
+                    </CustomChip>
+                  ) : (
+                    <Button
+                      mode="contained"
+                      onPress={() => handleCardSelect(card.uid)}
+                      style={styles.selectButton}
+                      labelStyle={{ color: colors.white, fontSize: 12 }}
+                      compact
+                    >
+                      Seleccionar
+                    </Button>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.cardBalance}>
+                <Text style={styles.balance}>
+                  {card.saldo_actual.toFixed(2)} Bs
+                </Text>
+                <Text style={styles.balanceSubtitle}>
+                  {Math.floor(card.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))} viajes disponibles
+                </Text>
+              </View>
+
+              <View style={styles.actionButtons}>
+                <Button
+                  mode="contained"
+                  icon="credit-card-plus"
+                  onPress={() => handleCardAction('recharge', card)}
+                  style={styles.primaryAction}
+                  labelStyle={{ color: colors.primary, fontSize: 12 }}
+                  compact
+                >
+                  Recargar
+                </Button>
+                <Button
+                  mode="outlined"
+                  icon="history"
+                  onPress={() => handleCardAction('history', card)}
+                  style={styles.secondaryAction}
+                  labelStyle={{ color: colors.white, fontSize: 12 }}
+                  compact
+                >
+                  Historial
+                </Button>
+                <IconButton
+                  icon="pencil"
+                  mode="contained-tonal"
+                  onPress={() => handleCardAction('edit', card)}
+                  style={styles.iconAction}
+                  iconColor={colors.white}
+                />
+                <IconButton
+                  icon="delete"
+                  mode="contained-tonal"
+                  onPress={() => handleCardAction('delete', card)}
+                  style={[styles.iconAction, styles.deleteAction]}
+                  iconColor={colors.white}
+                />
+              </View>
+            </Card.Content>
+          </LinearGradient>
+        </Card>
+      </Animated.View>
+    );
   };
 
   if (loading || !user) {
@@ -184,195 +384,67 @@ const CardsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Header con gradiente */}
+      <LinearGradient
+        colors={[colors.primary, colors.primaryDark]}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Text style={styles.headerTitle}>Mis Tarjetas</Text>
+      </LinearGradient>
+
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Title style={styles.title}>Mis Tarjetas</Title>
-          <Paragraph style={styles.subtitle}>
-            Gestiona todas tus tarjetas de transporte
-          </Paragraph>
-        </View>
-
         {/* Tarjeta Activa */}
-        {user.selectedCard && (
-          <Card style={styles.activeCard}>
-            <Card.Content>
-              <View style={styles.activeCardHeader}>
-                <Title style={styles.activeCardTitle}>Tarjeta Activa</Title>
-                <Chip mode="flat" style={styles.activeChip}>
-                  Activa
-                </Chip>
-              </View>
-              {user.cards && user.cards.map((card) => {
-                if (card.uid === user.selectedCard) {
-                  return (
-                    <View key={card.uid} style={styles.activeCardContent}>
-                      <View style={styles.cardInfo}>
-                        <Title style={styles.cardUid}>{card.uid}</Title>
-                        {card.alias && (
-                          <Paragraph style={styles.cardAlias}>{card.alias}</Paragraph>
-                        )}
-                        <Chip 
-                          mode="outlined" 
-                          style={[styles.typeChip, { borderColor: getCardColor(user.tipo_tarjeta) }]}
-                        >
-                          {getCardTypeLabel(user.tipo_tarjeta)}
-                        </Chip>
-                      </View>
-                      <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
-                        {card.saldo_actual.toFixed(2)} Bs
-                      </Title>
-                      <Paragraph style={styles.balanceLabel}>Saldo Actual</Paragraph>
-                    </View>
-                  );
-                }
-                return null;
-              })}
-            </Card.Content>
-          </Card>
-        )}
+        {renderActiveCard()}
 
         {/* Lista de Tarjetas */}
-        <Card style={styles.cardsListCard}>
-          <Card.Content>
-            <Title style={styles.sectionTitle}>Todas las Tarjetas</Title>
-            {user.cards && user.cards.length > 0 ? (
-              user.cards.map((card, index) => (
-                <Card 
-                  key={index} 
-                  style={[
-                    styles.cardItem, 
-                    { 
-                      borderLeftColor: getCardColor(user.tipo_tarjeta),
-                      backgroundColor: card.uid === user.selectedCard ? '#f0f8ff' : 'white'
-                    }
-                  ]}
-                >
-                  <Card.Content>
-                    <View style={styles.cardHeader}>
-                      <View style={styles.cardInfo}>
-                        <Title style={styles.cardUid}>{card.uid}</Title>
-                        {card.alias && (
-                          <Paragraph style={styles.cardAlias}>{card.alias}</Paragraph>
-                        )}
-                        <Chip 
-                          mode="outlined" 
-                          style={[styles.typeChip, { borderColor: getCardColor(user.tipo_tarjeta) }]}
-                        >
-                          {getCardTypeLabel(user.tipo_tarjeta)}
-                        </Chip>
-                      </View>
-                      <View style={styles.cardActions}>
-                        {card.uid === user.selectedCard ? (
-                          <Chip mode="flat" style={styles.selectedChip}>
-                            Seleccionada
-                          </Chip>
-                        ) : (
-                          <Button
-                            mode="outlined"
-                            onPress={() => handleCardSelect(card.uid)}
-                            style={styles.selectButton}
-                          >
-                            Seleccionar
-                          </Button>
-                        )}
-                      </View>
-                    </View>
-                    
-                    <Divider style={styles.divider} />
-                    
-                    <View style={styles.cardDetails}>
-                      <View style={styles.balanceInfo}>
-                        <Title style={[styles.balance, { color: getCardColor(user.tipo_tarjeta) }]}>
-                          {card.saldo_actual.toFixed(2)} Bs
-                        </Title>
-                        <Paragraph style={styles.balanceLabel}>Saldo</Paragraph>
-                      </View>
-                      
-                      <View style={styles.cardStats}>
-                        <Paragraph style={styles.statText}>
-                          Tarifa: {getTarifa(user.tipo_tarjeta)} Bs
-                        </Paragraph>
-                        <Paragraph style={styles.statText}>
-                          Viajes: {Math.floor(card.saldo_actual / parseFloat(getTarifa(user.tipo_tarjeta)))}
-                        </Paragraph>
-                      </View>
-                    </View>
-
-                    <Divider style={styles.divider} />
-
-                    <View style={styles.actionButtons}>
-                      <Button
-                        mode="contained"
-                        icon="credit-card-plus"
-                        onPress={() => handleCardAction('recharge', card)}
-                        style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
-                        compact
-                      >
-                        Recargar
-                      </Button>
-                      <Button
-                        mode="outlined"
-                        icon="history"
-                        onPress={() => handleCardAction('history', card)}
-                        style={styles.actionButton}
-                        compact
-                      >
-                        Historial
-                      </Button>
-                      <Button
-                        mode="outlined"
-                        icon="pencil"
-                        onPress={() => handleCardAction('edit', card)}
-                        style={styles.actionButton}
-                        compact
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        mode="outlined"
-                        icon="delete"
-                        onPress={() => handleCardAction('delete', card)}
-                        style={[styles.actionButton, { borderColor: '#F44336' }]}
-                        textColor="#F44336"
-                        compact
-                      >
-                        Eliminar
-                      </Button>
-                    </View>
-                  </Card.Content>
-                </Card>
-              ))
-            ) : (
-              <View style={styles.noCardsContainer}>
-                <Paragraph style={styles.noCards}>
-                  No tienes tarjetas registradas
-                </Paragraph>
-                <Button
-                  mode="contained"
-                  onPress={() => navigation.navigate('RegisterCard')}
-                  style={styles.addCardButton}
-                >
-                  Registrar Nueva Tarjeta
-                </Button>
+        <View style={styles.cardsSection}>
+          <Text style={styles.sectionTitle}>Todas las Tarjetas</Text>
+          
+          {user.cards && user.cards.length > 0 ? (
+            user.cards.map((card, index) => renderCardItem(card, index))
+          ) : (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyStateIcon}>
+                <Text style={styles.emptyStateEmoji}>💳</Text>
               </View>
-            )}
-          </Card.Content>
-        </Card>
+              <Text style={styles.emptyStateTitle}>No tienes tarjetas</Text>
+              <Text style={styles.emptyStateSubtitle}>
+                Registra tu primera tarjeta para comenzar
+              </Text>
+              <Button
+                mode="contained"
+                onPress={() => navigation.navigate('RegisterCard')}
+                style={styles.emptyStateButton}
+                labelStyle={styles.emptyStateButtonText}
+              >
+                Registrar Nueva Tarjeta
+              </Button>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
+      {/* FAB mejorado */}
       <FAB
         icon="plus"
         style={styles.fab}
         onPress={() => navigation.navigate('RegisterCard')}
-        label="Nueva Tarjeta"
+        label="Nueva"
+        mode="elevated"
+        color={colors.backgroundAlt}
+        customSize={56}
       />
 
-      {/* Modal de Edición de Alias */}
+      {/* Modal de Edición - Mejorado */}
       <Portal>
         <Modal
           visible={editingCard !== null}
@@ -382,51 +454,52 @@ const CardsScreen = ({ navigation }) => {
           }}
           contentContainerStyle={styles.modalContainer}
         >
-          <Card>
-            <Card.Content>
-              <Title style={styles.modalTitle}>Editar Alias</Title>
-              <Paragraph style={styles.modalSubtitle}>
-                Tarjeta: {editingCard?.uid}
-              </Paragraph>
-              
-              <TextInput
-                label="Alias de la Tarjeta"
-                value={editingAlias}
-                onChangeText={setEditingAlias}
-                mode="outlined"
-                placeholder="Ej: Mi Tarjeta Principal"
-                style={styles.modalInput}
-                maxLength={50}
-              />
-              
-              <View style={styles.modalButtons}>
-                <Button
+          <BlurView intensity={100} style={styles.modalBlur}>
+            <Card style={styles.modalCard}>
+              <Card.Content>
+                <Text style={styles.modalTitle}>Editar Alias</Text>
+                <Text style={styles.modalSubtitle}>
+                  Tarjeta: {editingCard?.uid}
+                </Text>
+                <TextInput
+                  label="Alias de la Tarjeta"
+                  value={editingAlias}
+                  onChangeText={setEditingAlias}
                   mode="outlined"
-                  onPress={() => {
-                    setEditingCard(null);
-                    setEditingAlias('');
-                  }}
-                  style={styles.modalButton}
-                  disabled={actionLoading}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={handleSaveAlias}
-                  loading={actionLoading}
-                  disabled={actionLoading || !editingAlias.trim()}
-                  style={styles.modalButton}
-                >
-                  Guardar
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
+                  placeholder="Ej: Mi Tarjeta Principal"
+                  style={styles.modalInput}
+                  maxLength={50}
+                />
+                <View style={styles.modalButtons}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      setEditingCard(null);
+                      setEditingAlias('');
+                    }}
+                    style={styles.modalCancelButton}
+                    disabled={actionLoading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={handleSaveAlias}
+                    loading={actionLoading}
+                    disabled={actionLoading || !editingAlias.trim()}
+                    style={styles.modalSaveButton}
+                    labelStyle={styles.modalSaveButtonText}
+                  >
+                    Guardar
+                  </Button>
+                </View>
+              </Card.Content>
+            </Card>
+          </BlurView>
         </Modal>
       </Portal>
 
-      {/* Modal de Confirmación de Eliminación */}
+      {/* Modal de Eliminación - Mejorado */}
       <Portal>
         <Modal
           visible={deleteModalVisible}
@@ -436,251 +509,489 @@ const CardsScreen = ({ navigation }) => {
           }}
           contentContainerStyle={styles.modalContainer}
         >
-          <Card>
-            <Card.Content>
-              <Title style={styles.modalTitle}>Confirmar Eliminación</Title>
-              <Paragraph style={styles.modalSubtitle}>
-                ¿Estás seguro de que quieres eliminar la tarjeta?
-              </Paragraph>
-              
-              {cardToDelete && (
-                <View style={styles.deleteCardInfo}>
-                  <Paragraph style={styles.deleteCardUid}>UID: {cardToDelete.uid}</Paragraph>
-                  {cardToDelete.alias && (
-                    <Paragraph style={styles.deleteCardAlias}>Alias: {cardToDelete.alias}</Paragraph>
-                  )}
-                  <Paragraph style={styles.deleteCardBalance}>
-                    Saldo: {cardToDelete.saldo_actual.toFixed(2)} Bs
-                  </Paragraph>
+          <BlurView intensity={100} style={styles.modalBlur}>
+            <Card style={styles.modalCard}>
+              <Card.Content>
+                <Text style={styles.modalTitle}>⚠️ Confirmar Eliminación</Text>
+                <Text style={styles.modalSubtitle}>
+                  ¿Estás seguro de que quieres eliminar esta tarjeta?
+                </Text>
+                {cardToDelete && (
+                  <View style={styles.deleteCardInfo}>
+                    <Text style={styles.deleteCardUid}>UID: {cardToDelete.uid}</Text>
+                    {cardToDelete.alias && (
+                      <Text style={styles.deleteCardAlias}>Alias: {cardToDelete.alias}</Text>
+                    )}
+                    <Text style={styles.deleteCardBalance}>
+                      Saldo: {cardToDelete.saldo_actual.toFixed(2)} Bs
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.deleteWarning}>
+                  Esta acción desactivará la tarjeta. No se eliminará físicamente.
+                </Text>
+                <View style={styles.modalButtons}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      setDeleteModalVisible(false);
+                      setCardToDelete(null);
+                    }}
+                    style={styles.modalCancelButton}
+                    disabled={actionLoading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={confirmDeleteCard}
+                    loading={actionLoading}
+                    disabled={actionLoading}
+                    style={styles.modalDeleteButton}
+                    labelStyle={styles.modalDeleteButtonText}
+                  >
+                    Eliminar
+                  </Button>
                 </View>
-              )}
-              
-              <Paragraph style={styles.deleteWarning}>
-                ⚠️ Esta acción desactivará la tarjeta. No se eliminará físicamente.
-              </Paragraph>
-              
-              <View style={styles.modalButtons}>
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    setDeleteModalVisible(false);
-                    setCardToDelete(null);
-                  }}
-                  style={styles.modalButton}
-                  disabled={actionLoading}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={confirmDeleteCard}
-                  loading={actionLoading}
-                  disabled={actionLoading}
-                  style={[styles.modalButton, { backgroundColor: '#F44336' }]}
-                >
-                  Eliminar
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
+              </Card.Content>
+            </Card>
+          </BlurView>
         </Modal>
       </Portal>
     </View>
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.gray[50],
   },
+  
+  // Header mejorado
+  header: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    ...shadows.large,
+  },
+  headerTitle: {
+    ...chicaloStyles.subtitle,
+    color: colors.textInverse,
+    textAlign: 'center',
+    fontWeight: '600',
+    marginTop: 20,
+  },
+  headerSubtitle: {
+    ...chicaloStyles.subtitle,
+    textAlign: 'center',
+    opacity: 0.9,
+  },
+
+  // Scroll view
   scrollView: {
     flex: 1,
   },
-  header: {
-    padding: 20,
-    backgroundColor: 'white',
-    elevation: 2,
+  scrollContent: {
+    paddingBottom: 100,
+    paddingTop: 20,
   },
-  title: {
-    color: '#333',
-    marginBottom: 5,
-  },
-  subtitle: {
-    color: '#666',
-  },
-  activeCard: {
+
+  // Tarjeta activa mejorada
+  activeCardContainer: {
     margin: 20,
-    marginTop: 10,
-    elevation: 4,
-    backgroundColor: '#e3f2fd',
+    marginTop: 6,
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...shadows.large,
+  },
+  activeCardGradient: {
+    borderRadius: 20,
+  },
+  activeCardBlur: {
+    padding: 24,
+    borderRadius: 20,
   },
   activeCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  activeCardHeaderLeft: {
+    flex: 1,
   },
   activeCardTitle: {
-    fontSize: 18,
-    color: '#1976d2',
+    ...chicaloStyles.subtitle,
+    color: colors.white,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   activeChip: {
-    backgroundColor: '#4caf50',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignSelf: 'flex-start',
+  },
+  activeChipText: {
+    ...chicaloStyles.info,
+    color: colors.white,
+    fontWeight: '500',
+  },
+  cardTypeContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  cardTypeText: {
+    ...chicaloStyles.info,
+    color: colors.white,
+    fontWeight: '500',
   },
   activeCardContent: {
     alignItems: 'center',
   },
-  cardsListCard: {
-    margin: 20,
-    marginTop: 0,
-    elevation: 4,
+  cardNumberContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  cardNumber: {
+    ...typography.headlineSmall,
+    color: colors.white,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  cardNickname: {
+    ...chicaloStyles.description,
+    color: colors.white,
+    opacity: 0.8,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  balanceContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  balanceAmount: {
+    ...typography.displaySmall,
+    color: colors.white,
+    fontWeight: '700',
+  },
+  balanceLabel: {
+    ...chicaloStyles.description,
+    color: colors.white,
+    opacity: 0.8,
+    marginTop: 4,
+  },
+  cardStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statValue: {
+    ...typography.titleMedium,
+    color: colors.white,
+    fontWeight: '600',
+  },
+  statLabel: {
+    ...chicaloStyles.description,
+    color: colors.white,
+    opacity: 0.8,
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: 16,
+  },
+
+  // Sección de tarjetas
+  cardsSection: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
   sectionTitle: {
-    fontSize: 18,
-    marginBottom: 15,
+    ...chicaloStyles.subtitle,
+    color: colors.white,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+
+  // Items de tarjeta mejorados
+  cardItemContainer: {
+    marginBottom: 16,
   },
   cardItem: {
-    marginBottom: 15,
-    borderLeftWidth: 6,
-    elevation: 2,
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...shadows.medium,
+  },
+  selectedCardItem: {
+    ...shadows.large,
+  },
+  cardGradient: {
+    borderRadius: 16,
+  },
+  cardContent: {
+    padding: 20,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 16,
   },
   cardInfo: {
     flex: 1,
   },
   cardUid: {
-    fontSize: 18,
-    marginBottom: 5,
+    ...typography.titleMedium,
+    color: colors.white,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   cardAlias: {
-    color: '#666',
-    fontSize: 14,
+    ...chicaloStyles.description,
+    color: colors.white,
+    opacity: 0.8,
     fontStyle: 'italic',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   typeChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignSelf: 'flex-start',
+  },
+  typeChipText: {
+    ...chicaloStyles.info,
+    color: colors.white,
   },
   cardActions: {
     alignItems: 'flex-end',
   },
   selectedChip: {
-    backgroundColor: '#4caf50',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  selectedChipText: {
+    ...chicaloStyles.info,
+    color: colors.white,
+    fontWeight: '500',
   },
   selectButton: {
-    marginTop: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
   },
-  divider: {
-    marginVertical: 15,
+  selectButtonText: {
+    ...chicaloStyles.info,
+    color: colors.white,
   },
-  cardDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  cardBalance: {
     alignItems: 'center',
-  },
-  balanceInfo: {
-    alignItems: 'center',
+    marginBottom: 16,
   },
   balance: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...typography.headlineMedium,
+    color: colors.white,
+    fontWeight: '700',
   },
-  balanceLabel: {
-    color: '#666',
-    fontSize: 12,
-  },
-  cardStats: {
-    alignItems: 'flex-end',
-  },
-  statText: {
-    color: '#666',
-    fontSize: 12,
-    marginBottom: 2,
+  balanceSubtitle: {
+    ...chicaloStyles.info,
+    color: colors.white,
+    opacity: 0.8,
+    marginTop: 4,
   },
   actionButtons: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 8,
   },
-  actionButton: {
+  primaryAction: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
     flex: 1,
-    minWidth: '45%',
   },
-  noCardsContainer: {
+  primaryActionText: {
+    ...chicaloStyles.info,
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  secondaryAction: {
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 12,
+    flex: 1,
+  },
+  secondaryActionText: {
+    ...chicaloStyles.info,
+    color: colors.white,
+  },
+  iconAction: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    margin: 0,
+  },
+  deleteAction: {
+    backgroundColor: 'rgba(244, 67, 54, 0.3)',
+  },
+
+  // Estado vacío mejorado
+  emptyState: {
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 60,
+    paddingHorizontal: 40,
   },
-  noCards: {
+  emptyStateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.gray[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyStateEmoji: {
+    fontSize: 40,
+  },
+  emptyStateTitle: {
+    ...typography.titleLarge,
+    color: colors.primary,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptyStateSubtitle: {
+    ...chicaloStyles.description,
+    color: colors.textSecondary,
     textAlign: 'center',
-    color: '#666',
-    fontStyle: 'italic',
-    marginBottom: 15,
+    marginBottom: 24,
   },
-  addCardButton: {
-    backgroundColor: '#2196F3',
+  emptyStateButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    paddingHorizontal: 32,
   },
+  emptyStateButtonText: {
+    color: colors.white,
+    fontWeight: '500',
+  },
+
+  // FAB mejorado
   fab: {
     position: 'absolute',
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#2196F3',
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    ...shadows.large,
   },
+
+  // Modales mejorados
   modalContainer: {
-    backgroundColor: 'white',
     padding: 20,
-    margin: 20,
-    borderRadius: 8,
+  },
+  modalBlur: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  modalCard: {
+    borderRadius: 20,
+    ...shadows.extraLarge,
   },
   modalTitle: {
-    fontSize: 20,
-    marginBottom: 5,
+    ...typography.titleLarge,
+    color: colors.primary,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   modalSubtitle: {
-    color: '#666',
-    marginBottom: 20,
+    ...chicaloStyles.description,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
   },
   modalInput: {
-    marginBottom: 20,
+    marginBottom: 24,
+    backgroundColor: colors.surface,
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
+    gap: 12,
   },
-  modalButton: {
+  modalCancelButton: {
     flex: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+  },
+  modalSaveButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  modalSaveButtonText: {
+    color: colors.textInverse,
+    fontWeight: '600',
+  },
+  modalDeleteButton: {
+    flex: 1,
+    backgroundColor: colors.error,
+    borderRadius: 12,
+  },
+  modalDeleteButtonText: {
+    color: colors.textInverse,
+    fontWeight: '600',
   },
   deleteCardInfo: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 15,
+    backgroundColor: colors.errorLight,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   deleteCardUid: {
-    fontWeight: 'bold',
-    marginBottom: 5,
+    ...typography.bodyMedium,
+    color: colors.primary,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   deleteCardAlias: {
-    color: '#666',
-    marginBottom: 5,
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginBottom: 4,
+    fontStyle: 'italic',
   },
   deleteCardBalance: {
-    color: '#4CAF50',
-    fontWeight: 'bold',
+    ...typography.bodyMedium,
+    color: colors.primary,
+    fontWeight: '600',
   },
   deleteWarning: {
-    color: '#F44336',
-    fontSize: 12,
+    ...typography.bodySmall,
+    color: colors.error,
+    textAlign: 'center',
     fontStyle: 'italic',
     marginBottom: 20,
-    textAlign: 'center',
+  },
+
+  // CustomChip styles
+  customChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+  },
+  chipText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 
-export default CardsScreen; 
+export default CardsScreen;

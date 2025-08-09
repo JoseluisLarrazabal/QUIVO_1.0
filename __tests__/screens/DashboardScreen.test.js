@@ -1,49 +1,88 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import * as AuthContext from '../../src/context/AuthContext';
 import DashboardScreen from '../../src/screens/DashboardScreen';
-import { AuthProvider } from '../../src/context/AuthContext';
+import { Provider as PaperProvider } from 'react-native-paper';
 
-// Mock del contexto de autenticación
-jest.mock('../../src/context/AuthContext', () => ({
-  useAuth: () => ({
-    user: {
-      nombre: 'Test User',
-      tipo_tarjeta: 'adulto',
-      email: 'test@example.com',
-      cards: [
-        { uid: 'A1B2C3D4', saldo_actual: 25.00 }
-      ]
-    },
-    logout: jest.fn(),
-    refreshUserCards: jest.fn(),
-    loading: false
-  }),
-  AuthProvider: ({ children }) => children
-}));
+const TestWrapper = ({ children }) => (
+  <PaperProvider>
+    {children}
+  </PaperProvider>
+);
 
-// Mock del servicio de API
 jest.mock('../../src/services/apiService', () => ({
   apiService: {
-    getTransactionHistory: jest.fn().mockResolvedValue({
-      data: [
-        {
-          id: 1,
-          tarjeta_uid: 'A1B2C3D4',
-          monto: -2.50,
-          tipo: 'viaje',
-          ubicacion: 'Línea A - Centro',
-          resultado: 'exitoso',
-          fecha_hora: '2024-01-15T10:30:00Z'
-        }
-      ]
-    })
+    getUserCards: jest.fn(() => Promise.resolve({ ok: true, data: [
+      { uid: 'CARD1', saldo_actual: 20, alias: 'Mi Tarjeta' },
+    ] })),
+    getTransactionHistory: jest.fn(() => Promise.resolve({ ok: true, success: true, data: [] })),
   }
 }));
 
-describe('DashboardScreen', () => {
-  test('debería renderizar correctamente con usuario', () => {
-    const { getByText } = render(<DashboardScreen />);
-    expect(getByText('¡Hola, Test User!')).toBeTruthy();
-    expect(getByText('Acciones Rápidas')).toBeTruthy();
+const mockNavigation = { navigate: jest.fn() };
+
+const baseUser = {
+  id: '123',
+  nombre: 'Test User',
+  email: 'test@example.com',
+  tipo_tarjeta: 'adulto',
+  authMode: 'credentials',
+  selectedCard: 'CARD1',
+  isMultiCard: true,
+  cards: [
+    { uid: 'CARD1', saldo_actual: 20, alias: 'Mi Tarjeta' },
+  ],
+};
+
+describe('DashboardScreen (integración)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+      user: baseUser,
+      loading: false,
+      logout: jest.fn(),
+      refreshUserCards: jest.fn(),
+    }));
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('renderiza correctamente con tarjeta activa', async () => {
+    const { getByText } = render(<DashboardScreen navigation={mockNavigation} />, { wrapper: TestWrapper });
+    expect(getByText('Saldo Actual')).toBeTruthy();
+    expect(getByText('Recargar')).toBeTruthy();
+    expect(getByText('Historial')).toBeTruthy();
+    expect(getByText('Tarjetas')).toBeTruthy();
+  });
+
+  it('ejecuta acción rápida de recarga', async () => {
+    const { getByTestId } = render(<DashboardScreen navigation={mockNavigation} />, { wrapper: TestWrapper });
+    fireEvent.press(getByTestId('quick-action-recharge'));
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('Recharge', expect.anything());
+  });
+
+  it('ejecuta acción rápida de historial', async () => {
+    const { getByTestId } = render(<DashboardScreen navigation={mockNavigation} />, { wrapper: TestWrapper });
+    fireEvent.press(getByTestId('quick-action-history'));
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('History', expect.anything());
+  });
+
+  it('ejecuta acción rápida de tarjetas', async () => {
+    const { getByTestId } = render(<DashboardScreen navigation={mockNavigation} />, { wrapper: TestWrapper });
+    fireEvent.press(getByTestId('quick-action-cards'));
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('Cards');
+  });
+
+  it('muestra loader si loading', () => {
+    jest.spyOn(AuthContext, 'useAuth').mockImplementation(() => ({
+      user: null,
+      loading: true,
+      logout: jest.fn(),
+      refreshUserCards: jest.fn(),
+    }));
+    const { getByTestId } = render(<DashboardScreen navigation={mockNavigation} />, { wrapper: TestWrapper });
+    expect(getByTestId('centered-loader')).toBeTruthy();
   });
 }); 
