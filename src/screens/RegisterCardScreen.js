@@ -30,7 +30,7 @@ const RegisterCardScreen = ({ navigation }) => {
     tipo_tarjeta: 'adulto',
     saldo_inicial: '',
   });
-  const [focusedField, setFocusedField] = useState(null);
+  // Evitar manejar foco con estado para no provocar re-renders que cierren el teclado
   const [scaleAnimation] = useState(new Animated.Value(1));
 
   const cardTypes = [
@@ -231,15 +231,10 @@ const RegisterCardScreen = ({ navigation }) => {
               label="UID de la Tarjeta"
               value={formData.uid}
               onChangeText={(value) => handleInputChange('uid', value)}
-              onFocus={() => setFocusedField('uid')}
-              onBlur={() => setFocusedField(null)}
               mode="outlined"
               placeholder="Ej: A1B2C3D4"
               autoCapitalize="characters"
-              style={[
-                styles.input,
-                focusedField === 'uid' && styles.inputFocused
-              ]}
+              style={styles.input}
               maxLength={50}
               left={<TextInput.Icon icon="card-account-details" />}
               theme={{
@@ -286,14 +281,9 @@ const RegisterCardScreen = ({ navigation }) => {
             label="Alias (Opcional)"
             value={formData.alias}
             onChangeText={(value) => handleInputChange('alias', value)}
-            onFocus={() => setFocusedField('alias')}
-            onBlur={() => setFocusedField(null)}
             mode="outlined"
             placeholder="Ej: Mi Tarjeta Principal"
-            style={[
-              styles.input,
-              focusedField === 'alias' && styles.inputFocused
-            ]}
+            style={styles.input}
             maxLength={50}
             left={<TextInput.Icon icon="tag" />}
             theme={{
@@ -370,15 +360,10 @@ const RegisterCardScreen = ({ navigation }) => {
             label="Saldo Inicial"
             value={formData.saldo_inicial}
             onChangeText={(value) => handleInputChange('saldo_inicial', value)}
-            onFocus={() => setFocusedField('saldo_inicial')}
-            onBlur={() => setFocusedField(null)}
             mode="outlined"
             placeholder="0.00"
             keyboardType="numeric"
-            style={[
-              styles.input,
-              focusedField === 'saldo_inicial' && styles.inputFocused
-            ]}
+            style={styles.input}
             left={<TextInput.Icon icon="currency-usd" />}
             right={<TextInput.Affix text="Bs" />}
             theme={{
@@ -599,9 +584,6 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.surface,
     marginBottom: spacing.sm,
-  },
-  inputFocused: {
-    transform: [{ scale: 1.01 }],
   },
   
   // Vista previa UID
