@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "El nombre de usuario es requerido"],
     trim: true,
-    maxlength: [50, "El nombre de usuario no puede tener más de 50 caracteres"]
+    maxlength: [50, "El nombre de usuario no puede tener más de 50 caracteres"],
+    unique: true
   },
   password: {
     type: String,
@@ -20,21 +21,64 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, "El nombre no puede tener más de 100 caracteres"]
   },
-  tipo_tarjeta: {
+  apellido: {
     type: String,
-    enum: ["estudiante", "adulto", "adulto_mayor", "discapacitado"],
-    required: [true, "El tipo de tarjeta es requerido"]
-  },
-  telefono: {
-    type: String,
+    required: [true, "El apellido es requerido"],
     trim: true,
-    maxlength: [20, "El teléfono no puede tener más de 20 caracteres"]
+    maxlength: [100, "El apellido no puede tener más de 100 caracteres"]
   },
   email: {
     type: String,
+    required: [true, "El email es requerido"],
     trim: true,
     lowercase: true,
-    maxlength: [100, "El email no puede tener más de 100 caracteres"]
+    maxlength: [100, "El email no puede tener más de 100 caracteres"],
+    unique: true,
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Por favor ingresa un email válido']
+  },
+  telefono: {
+    type: String,
+    required: [true, "El teléfono es requerido"],
+    trim: true,
+    maxlength: [20, "El teléfono no puede tener más de 20 caracteres"]
+  },
+  // Campo opcional para compatibilidad con código existente
+  tipo_tarjeta: {
+    type: String,
+    enum: ["estudiante", "adulto", "adulto_mayor", "discapacitado"],
+    default: "adulto" // Valor por defecto para usuarios existentes
+  },
+  // Campos para recuperación de contraseña
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
+  },
+  // Campos para verificación de email
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String,
+    default: null
+  },
+  emailVerificationExpires: {
+    type: Date,
+    default: null
+  },
+  // Campos para OAuth (futuro)
+  oauthProvider: {
+    type: String,
+    enum: ["google", "facebook", "apple", null],
+    default: null
+  },
+  oauthId: {
+    type: String,
+    default: null
   },
   activo: {
     type: Boolean,
@@ -48,18 +92,36 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ tipo_tarjeta: 1 })
 userSchema.index({ activo: 1 })
 userSchema.index({ username: 1 }, { unique: true })
+userSchema.index({ email: 1 }, { unique: true })
+userSchema.index({ resetPasswordToken: 1 })
+userSchema.index({ emailVerificationToken: 1 })
+userSchema.index({ oauthProvider: 1, oauthId: 1 })
 
 // Middleware para manejar errores de duplicado en save y insertMany
 userSchema.post('save', function(error, doc, next) {
   if (error.name === 'MongoServerError' && error.code === 11000) {
-    next(new Error('Duplicado: el nombre de usuario ya existe.'));
+    // Determinar qué campo está duplicado
+    const field = Object.keys(error.keyPattern)[0];
+    const message = field === 'username' 
+      ? 'El nombre de usuario ya está en uso'
+      : field === 'email'
+      ? 'El email ya está registrado'
+      : 'El registro ya existe';
+    next(new Error(message));
   } else {
     next(error);
   }
 });
+
 userSchema.post('insertMany', function(error, docs, next) {
   if (error.name === 'MongoServerError' && error.code === 11000) {
-    next(new Error('Duplicado: el nombre de usuario ya existe.'));
+    const field = Object.keys(error.keyPattern)[0];
+    const message = field === 'username' 
+      ? 'El nombre de usuario ya está en uso'
+      : field === 'email'
+      ? 'El email ya está registrado'
+      : 'El registro ya existe';
+    next(new Error(message));
   } else {
     next(error);
   }
@@ -72,6 +134,11 @@ userSchema.virtual("tarjetas", {
   foreignField: "usuario_id",
   justOne: false
 })
+
+// Virtual para nombre completo
+userSchema.virtual("nombreCompleto").get(function() {
+  return `${this.nombre} ${this.apellido}`.trim();
+});
 
 // Configurar virtuals para que se incluyan en JSON
 userSchema.set('toJSON', { virtuals: true })
@@ -95,6 +162,48 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password)
 }
 
+// Método para generar token de reset de contraseña
+userSchema.methods.generatePasswordResetToken = function() {
+  const crypto = require('crypto');
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  
+  this.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutos
+  
+  return resetToken;
+};
+
+// Método para generar token de verificación de email
+userSchema.methods.generateEmailVerificationToken = function() {
+  const crypto = require('crypto');
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(verificationToken)
+    .digest('hex');
+  
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 horas
+  
+  return verificationToken;
+};
+
+// Método para limpiar tokens de reset
+userSchema.methods.clearPasswordResetToken = function() {
+  this.resetPasswordToken = null;
+  this.resetPasswordExpires = null;
+};
+
+// Método para limpiar tokens de verificación
+userSchema.methods.clearEmailVerificationToken = function() {
+  this.emailVerificationToken = null;
+  this.emailVerificationExpires = null;
+};
+
 // Métodos estáticos
 userSchema.statics.findByUsername = async function(username, onlyActive = true) {
   try {
@@ -103,6 +212,54 @@ userSchema.statics.findByUsername = async function(username, onlyActive = true) 
     return await this.findOne(filter).exec();
   } catch (error) {
     console.error("Error en findByUsername:", error);
+    return null;
+  }
+};
+
+userSchema.statics.findByEmail = async function(email, onlyActive = true) {
+  try {
+    const filter = onlyActive ? { email: email.toLowerCase(), activo: true } : { email: email.toLowerCase() };
+    return await this.findOne(filter).exec();
+  } catch (error) {
+    console.error("Error en findByEmail:", error);
+    return null;
+  }
+};
+
+userSchema.statics.findByResetToken = async function(token) {
+  try {
+    const crypto = require('crypto');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+    
+    return await this.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+      activo: true
+    }).exec();
+  } catch (error) {
+    console.error("Error en findByResetToken:", error);
+    return null;
+  }
+};
+
+userSchema.statics.findByVerificationToken = async function(token) {
+  try {
+    const crypto = require('crypto');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+    
+    return await this.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() },
+      activo: true
+    }).exec();
+  } catch (error) {
+    console.error("Error en findByVerificationToken:", error);
     return null;
   }
 };

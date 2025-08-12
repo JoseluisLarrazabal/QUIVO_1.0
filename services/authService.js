@@ -2,11 +2,12 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Card = require('../models/Card');
+const emailService = require('./emailService');
 
 /**
  * Servicio de Autenticación
  * Patrón: Service Layer
- * Responsabilidades: Generación de tokens, validación, refresh tokens
+ * Responsabilidades: Generación de tokens, validación, refresh tokens, registro, recuperación de contraseña
  */
 class AuthService {
   /**
@@ -99,9 +100,11 @@ class AuthService {
           id: user._id,
           username: user.username,
           nombre: user.nombre,
+          apellido: user.apellido,
           tipo_tarjeta: user.tipo_tarjeta,
           email: user.email,
-          telefono: user.telefono
+          telefono: user.telefono,
+          emailVerified: user.emailVerified
         },
         cards: cards.map(card => ({
           uid: card.uid,
@@ -145,6 +148,7 @@ class AuthService {
           fecha_creacion: card.createdAt,
           usuario: {
             nombre: user.nombre,
+            apellido: user.apellido,
             tipo_tarjeta: user.tipo_tarjeta
           }
         },
@@ -163,12 +167,20 @@ class AuthService {
    */
   async registerUser(userData) {
     try {
-      const { username, password, nombre, tipo_tarjeta, telefono, email } = userData;
+      const { username, password, nombre, apellido, email, telefono } = userData;
 
       // Verificar si el usuario ya existe
-      const existingUser = await User.findOne({ username });
+      const existingUser = await User.findOne({ 
+        $or: [{ username }, { email: email.toLowerCase() }] 
+      });
+      
       if (existingUser) {
-        throw new Error('El nombre de usuario ya está en uso');
+        if (existingUser.username === username) {
+          throw new Error('El nombre de usuario ya está en uso');
+        }
+        if (existingUser.email === email.toLowerCase()) {
+          throw new Error('El email ya está registrado');
+        }
       }
 
       // Crear nuevo usuario
@@ -176,14 +188,38 @@ class AuthService {
         username,
         password,
         nombre,
-        tipo_tarjeta,
+        apellido,
+        email,
         telefono,
-        email
+        tipo_tarjeta: 'adulto' // Valor por defecto
       });
 
       await user.save();
 
-      // Generar tokens
+      // Generar token de verificación de email
+      const verificationToken = user.generateEmailVerificationToken();
+      await user.save();
+
+      // Enviar email de verificación
+      try {
+        await emailService.sendVerificationEmail(
+          user.email, 
+          verificationToken, 
+          user.nombre
+        );
+      } catch (emailError) {
+        console.warn('⚠️ No se pudo enviar email de verificación:', emailError.message);
+        // No fallar el registro si el email no se puede enviar
+      }
+
+      // Enviar email de bienvenida
+      try {
+        await emailService.sendWelcomeEmail(user.email, user.nombre);
+      } catch (emailError) {
+        console.warn('⚠️ No se pudo enviar email de bienvenida:', emailError.message);
+      }
+
+      // Generar tokens (sin verificación de email requerida para login)
       const tokens = this.generateTokenPair(user);
 
       return {
@@ -191,14 +227,153 @@ class AuthService {
           id: user._id,
           username: user.username,
           nombre: user.nombre,
+          apellido: user.apellido,
           tipo_tarjeta: user.tipo_tarjeta,
           email: user.email,
-          telefono: user.telefono
+          telefono: user.telefono,
+          emailVerified: user.emailVerified
         },
-        tokens
+        tokens,
+        message: 'Usuario registrado exitosamente. Revisa tu email para verificar tu cuenta.'
       };
     } catch (error) {
       throw new Error(`Error en registro: ${error.message}`);
+    }
+  }
+
+  /**
+   * Solicitar recuperación de contraseña
+   * @param {String} email - Email del usuario
+   * @returns {Object} Resultado de la solicitud
+   */
+  async requestPasswordReset(email) {
+    try {
+      const user = await User.findByEmail(email);
+      if (!user) {
+        // Por seguridad, no revelar si el email existe o no
+        return { 
+          success: true, 
+          message: 'Si el email está registrado, recibirás un enlace de recuperación.' 
+        };
+      }
+
+      // Generar token de reset
+      const resetToken = user.generatePasswordResetToken();
+      await user.save();
+
+      // Enviar email de recuperación
+      await emailService.sendPasswordResetEmail(
+        user.email, 
+        resetToken, 
+        user.nombre
+      );
+
+      return { 
+        success: true, 
+        message: 'Se ha enviado un enlace de recuperación a tu email.' 
+      };
+    } catch (error) {
+      throw new Error(`Error en solicitud de recuperación: ${error.message}`);
+    }
+  }
+
+  /**
+   * Resetear contraseña con token
+   * @param {String} token - Token de reset
+   * @param {String} newPassword - Nueva contraseña
+   * @returns {Object} Resultado del reset
+   */
+  async resetPassword(token, newPassword) {
+    try {
+      const user = await User.findByResetToken(token);
+      if (!user) {
+        throw new Error('Token de recuperación inválido o expirado');
+      }
+
+      // Validar nueva contraseña
+      if (!newPassword || newPassword.length < 6) {
+        throw new Error('La nueva contraseña debe tener al menos 6 caracteres');
+      }
+
+      // Actualizar contraseña
+      user.password = newPassword;
+      user.clearPasswordResetToken();
+      await user.save();
+
+      return { 
+        success: true, 
+        message: 'Contraseña actualizada exitosamente.' 
+      };
+    } catch (error) {
+      throw new Error(`Error en reset de contraseña: ${error.message}`);
+    }
+  }
+
+  /**
+   * Verificar email con token
+   * @param {String} token - Token de verificación
+   * @returns {Object} Resultado de la verificación
+   */
+  async verifyEmail(token) {
+    try {
+      const user = await User.findByVerificationToken(token);
+      if (!user) {
+        throw new Error('Token de verificación inválido o expirado');
+      }
+
+      // Marcar email como verificado
+      user.emailVerified = true;
+      user.clearEmailVerificationToken();
+      await user.save();
+
+      return { 
+        success: true, 
+        message: 'Email verificado exitosamente.' 
+      };
+    } catch (error) {
+      throw new Error(`Error en verificación de email: ${error.message}`);
+    }
+  }
+
+  /**
+   * Reenviar email de verificación
+   * @param {String} email - Email del usuario
+   * @returns {Object} Resultado del reenvío
+   */
+  async resendVerificationEmail(email) {
+    try {
+      const user = await User.findByEmail(email);
+      if (!user) {
+        return { 
+          success: true, 
+          message: 'Si el email está registrado, recibirás un enlace de verificación.' 
+        };
+      }
+
+      if (user.emailVerified) {
+        return { 
+          success: true, 
+          message: 'Tu email ya está verificado.' 
+        };
+      }
+
+      // Generar nuevo token de verificación
+      const verificationToken = user.generateEmailVerificationToken();
+      await user.save();
+
+      // Enviar email de verificación
+      await emailService.sendVerificationEmail(
+        user.email, 
+        verificationToken, 
+        user.nombre
+      );
+
+      return { 
+        success: true, 
+        message: 'Se ha enviado un nuevo enlace de verificación a tu email.' 
+      };
+    } catch (error) {
+      throw new Error(`Error en reenvío de verificación: ${error.message}`);
     }
   }
 
@@ -271,9 +446,11 @@ class AuthService {
         id: user._id,
         username: user.username,
         nombre: user.nombre,
+        apellido: user.apellido,
         tipo_tarjeta: user.tipo_tarjeta,
         email: user.email,
-        telefono: user.telefono
+        telefono: user.telefono,
+        emailVerified: user.emailVerified
       };
     } catch (error) {
       throw new Error(`Error al validar token: ${error.message}`);

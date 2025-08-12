@@ -133,30 +133,55 @@ router.post('/usuario/:userId/tarjetas', authenticateToken, async (req, res) => 
     const { userId } = req.params;
     const { uid, alias = '', tipo_tarjeta, saldo_inicial = 0 } = req.body;
 
-    // Validar que la tarjeta no exista
-    const existingCard = await Card.findByUid(uid);
-    if (existingCard) {
-      return res.status(400).json({
-        success: false,
-        error: 'La tarjeta ya está registrada',
-      });
+    // Normalizar UID (evita duplicados por mayúsculas/minúsculas/espacios)
+    const normalizedUid = (uid || '').trim().toUpperCase();
+    if (!normalizedUid) {
+      return res.status(400).json({ success: false, error: 'UID inválido', code: 'INVALID_UID' });
     }
 
     // Buscar usuario existente
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado', code: 'USER_NOT_FOUND' });
+    }
+
+    // Verificar existencia de tarjeta (incluye activas e inactivas)
+    const existingAny = await Card.findOne({ uid: normalizedUid }).lean();
+    if (existingAny) {
+      // Si ya existe y está activa
+      if (existingAny.activa) {
+        const belongsToSameUser = String(existingAny.usuario_id) === String(user._id);
+        if (belongsToSameUser) {
+          // Idempotente: devolver 200 con la tarjeta existente
+          return res.status(200).json({
+            success: true,
+            data: existingAny,
+            message: 'La tarjeta ya está asociada a tu cuenta',
+            code: 'CARD_ALREADY_LINKED'
+          });
+        }
+        // Está activa y asociada a otro usuario
+        return res.status(409).json({
+          success: false,
+          error: 'La tarjeta ya está asociada a otra cuenta',
+          code: 'CARD_ALREADY_ASSIGNED'
+        });
+      }
+
+      // Existe pero inactiva: restringimos re-asignación automática por seguridad
+      return res.status(409).json({
         success: false,
-        error: 'Usuario no encontrado',
+        error: 'La tarjeta existe pero está inactiva. Contacta soporte para reactivación',
+        code: 'CARD_INACTIVE'
       });
     }
 
-    // Crear tarjeta
+    // Crear tarjeta nueva
     const card = await Card.create({
-      uid,
+      uid: normalizedUid,
       usuario_id: user._id,
-      alias,
-      saldo_actual: saldo_inicial,
+      alias: (alias || '').trim(),
+      saldo_actual: Number.isFinite(Number(saldo_inicial)) ? Number(saldo_inicial) : 0,
     });
 
     // (Opcional) Actualizar tipo_tarjeta del usuario si se provee
@@ -165,16 +190,18 @@ router.post('/usuario/:userId/tarjetas', authenticateToken, async (req, res) => 
       await user.save();
     }
 
-    res.status(201).json({
-      success: true,
-      data: card,
-    });
+    res.status(201).json({ success: true, data: card });
   } catch (error) {
+    // Manejo elegante de duplicados por índice único
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        error: 'La tarjeta ya está registrada',
+        code: 'CARD_DUPLICATE'
+      });
+    }
     console.error('Error al agregar tarjeta a usuario:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error al agregar la tarjeta',
-    });
+    res.status(500).json({ success: false, error: 'Error al agregar la tarjeta', code: 'CARD_ADD_FAILED' });
   }
 });
 
