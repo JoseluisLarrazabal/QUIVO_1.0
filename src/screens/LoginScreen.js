@@ -6,7 +6,6 @@ import {
     Platform,
     StyleSheet,
     View,
-    ActivityIndicator,
     ScrollView,
     Dimensions,
     Text,
@@ -14,19 +13,17 @@ import {
 import {
     Button,
     Card,
-    Paragraph,
     TextInput,
-    Title,
     SegmentedButtons,
-    Divider,
     IconButton,
+    Surface,
 } from 'react-native-paper';
 import { useAuth } from '../context/AuthContext';
-import { colors, typography, chicaloStyles } from '../theme';
+import { colors, spacing, shadows, borderRadius, chicaloStyles } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }) => {
   const [authMode, setAuthMode] = useState('credentials');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -98,21 +95,21 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header con gradiente visual */}
+      {/* Header optimizado - inspirado en Google/Apple */}
       <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <View style={styles.logoWrapper}>
+        <View style={styles.brandSection}>
+          <View style={styles.logoContainer}>
             <Image
               source={require('../../assets/images/icon.png')}
               style={styles.logo}
               resizeMode="contain"
             />
           </View>
-          <Text variant="titleLarge" style={styles.appTitle}>
-            Transporte Público
+          <Text style={styles.brandTitle}>
+            QUIVO
           </Text>
-          <Text variant="titleMedium" style={styles.appSubtitle}>
-            Bolivia
+          <Text style={styles.brandSubtitle}>
+            Transporte Público Bolivia
           </Text>
         </View>
       </View>
@@ -126,155 +123,119 @@ const LoginScreen = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Selector de Modo Mejorado */}
+          {/* Selector de modo optimizado - inspirado en Uber */}
           <View style={styles.modeSection}>
-            <Text variant="titleSmall" style={styles.sectionTitle}>
-              Método de acceso
-            </Text>
-            <Card style={styles.modeCard}>
-              <Card.Content style={styles.modeCardContent}>
-                <SegmentedButtons
-                  value={authMode}
-                  onValueChange={handleModeChange}
-                  buttons={[
-                    {
-                      value: 'credentials',
-                      label: 'Usuario',
-                      icon: 'account-circle',
-                      style: authMode === 'credentials' ? styles.activeSegment : styles.inactiveSegment,
-                    },
-                    {
-                      value: 'card',
-                      label: 'Tarjeta NFC',
-                      icon: 'contactless-payment',
-                      style: authMode === 'card' ? styles.activeSegment : styles.inactiveSegment,
-                    },
-                  ]}
-                  style={styles.segmentedButtons}
-                />
-              </Card.Content>
-            </Card>
+            <Surface style={styles.modeSurface} elevation={1}>
+              <SegmentedButtons
+                value={authMode}
+                onValueChange={handleModeChange}
+                buttons={[
+                  {
+                    value: 'credentials',
+                    label: 'Cuenta',
+                    icon: 'account-circle',
+                    style: authMode === 'credentials' ? styles.activeSegment : styles.inactiveSegment,
+                  },
+                  {
+                    value: 'card',
+                    label: 'Tarjeta NFC',
+                    icon: 'contactless-payment',
+                    style: authMode === 'card' ? styles.activeSegment : styles.inactiveSegment,
+                  },
+                ]}
+                style={styles.segmentedButtons}
+              />
+            </Surface>
           </View>
 
-          {/* Formulario Principal */}
+          {/* Formulario principal optimizado - inspirado en Google */}
           <Card style={styles.mainCard}>
             <Card.Content style={styles.cardContent}>
               {authMode === 'credentials' ? (
                 <View style={styles.credentialsForm}>
+                  {/* Campo de usuario */}
                   <View style={styles.inputGroup}>
-                    <Text variant="bodyMedium" style={styles.inputLabel}>
-                      Usuario
-                    </Text>
                     <TextInput
                       value={username}
                       onChangeText={setUsername}
                       mode="outlined"
-                      placeholder="Ej: juan.perez"
+                      placeholder="Usuario"
                       autoCapitalize="none"
                       left={<TextInput.Icon icon="account" color={colors.primary} />}
                       style={styles.input}
                       outlineStyle={styles.inputOutline}
-                      contentStyle={styles.inputContent}
-                      theme={{
-                        colors: {
-                          primary: colors.primary,
-                          outline: '#E0E0E0',
-                          outlineVariant: '#F5F5F5',
-                        }
-                      }}
                     />
                   </View>
 
+                  {/* Campo de contraseña */}
                   <View style={styles.inputGroup}>
-                    <Text variant="bodyMedium" style={styles.inputLabel}>
-                      Contraseña
-                    </Text>
                     <TextInput
                       value={password}
                       onChangeText={setPassword}
                       mode="outlined"
-                      placeholder="Ingresa tu contraseña"
+                      placeholder="Contraseña"
                       secureTextEntry={!showPassword}
                       left={<TextInput.Icon icon="lock" color={colors.primary} />}
                       right={
                         <TextInput.Icon
                           icon={showPassword ? "eye-off" : "eye"}
-                          color={colors.secondaryText}
+                          color={colors.textSecondary}
                           onPress={() => setShowPassword(!showPassword)}
                         />
                       }
                       style={styles.input}
                       outlineStyle={styles.inputOutline}
-                      contentStyle={styles.inputContent}
-                      theme={{
-                        colors: {
-                          primary: colors.primary,
-                          outline: '#E0E0E0',
-                          outlineVariant: '#F5F5F5',
-                        }
-                      }}
                     />
                   </View>
 
+                  {/* Información contextual - inspirado en Spotify */}
                   <View style={styles.infoBox}>
-                    <View style={styles.infoIcon}>
-                      <IconButton
-                        icon="information"
-                        size={16}
-                        iconColor={colors.primary}
-                      />
-                    </View>
-                    <Text variant="bodySmall" style={styles.infoText}>
-                      Accede con tu cuenta para gestionar todas tus tarjetas y ver el historial completo
+                    <IconButton
+                      icon="information"
+                      size={18}
+                      iconColor={colors.primary}
+                      style={styles.infoIcon}
+                    />
+                    <Text style={styles.infoText}>
+                      Accede con tu cuenta para gestionar todas tus tarjetas
                     </Text>
                   </View>
                 </View>
               ) : (
                 <View style={styles.cardForm}>
+                  {/* Campo de UID */}
                   <View style={styles.inputGroup}>
-                    <Text variant="bodyMedium" style={styles.inputLabel}>
-                      UID de Tarjeta NFC
-                    </Text>
                     <TextInput
                       value={cardUid}
                       onChangeText={setCardUid}
                       mode="outlined"
-                      placeholder="Ej: A1B2C3D4E5F6G7H8"
+                      placeholder="UID de Tarjeta NFC"
                       autoCapitalize="characters"
                       left={<TextInput.Icon icon="contactless-payment" color={colors.primary} />}
                       style={styles.input}
                       outlineStyle={styles.inputOutline}
-                      contentStyle={styles.inputContent}
-                      theme={{
-                        colors: {
-                          primary: colors.primary,
-                          outline: '#E0E0E0',
-                          outlineVariant: '#F5F5F5',
-                        }
-                      }}
                     />
                   </View>
 
+                  {/* Instrucciones NFC optimizadas */}
                   <View style={styles.nfcInstructions}>
-                    <View style={styles.nfcIcon}>
-                      <IconButton
-                        icon="nfc"
-                        size={40}
-                        iconColor={colors.accent}
-                        style={styles.nfcIconButton}
-                      />
-                    </View>
-                    <Text variant="bodyMedium" style={styles.nfcTitle}>
+                    <IconButton
+                      icon="nfc"
+                      size={40}
+                      iconColor={colors.primary}
+                      style={styles.nfcIcon}
+                    />
+                    <Text style={styles.nfcTitle}>
                       Acceso rápido con NFC
                     </Text>
-                    <Text variant="bodySmall" style={styles.nfcDescription}>
-                      Coloca tu tarjeta cerca del dispositivo para leer el UID automáticamente o ingrésalo manualmente
+                    <Text style={styles.nfcDescription}>
+                      Coloca tu tarjeta cerca del dispositivo o ingresa el UID manualmente
                     </Text>
                   </View>
                 </View>
               )}
 
-              {/* Botón de Login Mejorado */}
+              {/* Botón de login prominente - inspirado en Apple */}
               <Button
                 mode="contained"
                 onPress={handleLogin}
@@ -290,14 +251,29 @@ const LoginScreen = () => {
             </Card.Content>
           </Card>
 
-          {/* Texto de ayuda mejorado */}
+          {/* Enlaces de ayuda integrados - inspirado en Google */}
           <View style={styles.helpSection}>
-            <Text variant="bodySmall" style={styles.helpText}>
-              {authMode === 'credentials' 
-                ? '¿No tienes cuenta? Contacta al administrador del sistema para obtener acceso.'
-                : 'Si no puedes leer el NFC automáticamente, ingresa el UID manualmente desde la configuración de tu tarjeta.'
-              }
-            </Text>
+            {console.log('AuthMode:', authMode)}
+            <View style={styles.credentialsHelp}>
+              <Button
+                mode="text"
+                onPress={() => navigation.navigate('Register')}
+                style={styles.helpButton}
+                labelStyle={styles.helpButtonLabel}
+                icon="account-plus"
+              >
+                Crear cuenta nueva
+              </Button>
+              <Button
+                mode="text"
+                onPress={() => navigation.navigate('ForgotPassword')}
+                style={styles.helpButton}
+                labelStyle={styles.helpButtonLabel}
+                icon="lock-reset"
+              >
+                ¿Olvidaste tu contraseña?
+              </Button>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -311,46 +287,40 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
     backgroundColor: colors.background,
   },
-  logoContainer: {
+  brandSection: {
     alignItems: 'center',
   },
-  logoWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  logoContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     backgroundColor: colors.backgroundAlt,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    ...shadows.medium,
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 40,
+    height: 40,
   },
-  appTitle: {
-    ...typography.headlineMedium,
+  brandTitle: {
+    ...chicaloStyles.title,
     color: colors.backgroundAlt,
-    textAlign: 'center',
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
     marginBottom: 4,
   },
-  appSubtitle: {
+  brandSubtitle: {
     ...chicaloStyles.subtitle,
-    textAlign: 'center',
-    fontWeight: '300',
+    color: colors.backgroundAlt,
+    opacity: 0.8,
+    fontSize: 14,
   },
   keyboardContainer: {
     flex: 1,
@@ -359,35 +329,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingBottom: 40,
+    flexGrow: 1,
   },
   modeSection: {
     marginBottom: 24,
   },
-  sectionTitle: {
-    ...typography.titleSmall,
-    color: colors.backgroundAlt,
-    marginBottom: 12,
-    fontWeight: '600',
-  },
-  modeCard: {
+  modeSurface: {
     backgroundColor: colors.backgroundAlt,
-    borderRadius: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  modeCardContent: {
-    paddingVertical: 8,
+    borderRadius: borderRadius.lg,
+    padding: 4,
   },
   segmentedButtons: {
-    backgroundColor: '#F8F9FF',
+    backgroundColor: colors.surfaceVariant,
   },
   activeSegment: {
     backgroundColor: colors.primary,
@@ -397,15 +352,8 @@ const styles = StyleSheet.create({
   },
   mainCard: {
     backgroundColor: colors.backgroundAlt,
-    borderRadius: 24,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    borderRadius: borderRadius.xl,
+    ...shadows.large,
     marginBottom: 24,
   },
   cardContent: {
@@ -418,60 +366,50 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   inputGroup: {
-    gap: 8,
-  },
-  inputLabel: {
-    ...typography.bodyMedium,
-    color: colors.primary,
-    fontWeight: '500',
-    marginLeft: 4,
+    marginBottom: 16,
   },
   input: {
     backgroundColor: colors.backgroundAlt,
     fontSize: 16,
   },
   inputOutline: {
-    borderRadius: 16,
+    borderRadius: borderRadius.md,
     borderWidth: 1.5,
-  },
-  inputContent: {
-    paddingVertical: 4,
   },
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#F8F9FF',
-    borderRadius: 12,
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: borderRadius.md,
     padding: 16,
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: colors.primary,
   },
   infoIcon: {
-    marginRight: 8,
-    marginTop: -4,
+    marginRight: 12,
+    marginTop: -2,
   },
   infoText: {
     ...chicaloStyles.info,
     flex: 1,
     lineHeight: 18,
+    color: colors.textSecondary,
   },
   nfcInstructions: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFF9E6',
-    borderRadius: 16,
+    backgroundColor: colors.warningLight,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.accent,
+    borderColor: colors.warning,
     borderStyle: 'dashed',
   },
   nfcIcon: {
+    backgroundColor: colors.primary + '15',
     marginBottom: 12,
   },
-  nfcIconButton: {
-    backgroundColor: colors.accent + '20',
-  },
   nfcTitle: {
-    ...typography.bodyMedium,
+    ...chicaloStyles.subtitle,
     color: colors.primary,
     fontWeight: '600',
     marginBottom: 8,
@@ -481,40 +419,57 @@ const styles = StyleSheet.create({
     ...chicaloStyles.description,
     textAlign: 'center',
     lineHeight: 18,
+    color: colors.textSecondary,
   },
   loginButton: {
-    borderRadius: 16,
+    borderRadius: borderRadius.md,
     marginTop: 8,
-    elevation: 0,
-    shadowColor: colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    ...shadows.medium,
   },
   loginButtonContent: {
     backgroundColor: colors.primary,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingVertical: 14,
+    borderRadius: borderRadius.md,
   },
   loginButtonLabel: {
     color: colors.backgroundAlt,
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
   helpSection: {
     alignItems: 'center',
+    marginTop: 16,
     paddingHorizontal: 16,
   },
+  credentialsHelp: {
+    width: '100%',
+    gap: 12,
+  },
+  helpButton: {
+    justifyContent: 'flex-start',
+    paddingHorizontal: 0,
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: borderRadius.md,
+    marginBottom: 8,
+  },
+  helpButtonLabel: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  nfcHelp: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: borderRadius.md,
+    padding: 16,
+  },
   helpText: {
-    ...chicaloStyles.secondary,
-    color: colors.backgroundAlt,
-    textAlign: 'center',
-    lineHeight: 20,
-    opacity: 0.8,
+    ...chicaloStyles.description,
+    flex: 1,
+    lineHeight: 18,
+    color: colors.textSecondary,
   },
 });
 
