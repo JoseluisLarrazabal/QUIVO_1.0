@@ -26,27 +26,23 @@ const ForgotPasswordScreen = ({ navigation }) => {
   const [emailSent, setEmailSent] = useState(false);
 
   const handleResetPassword = async () => {
-    if (!email.trim() || !email.includes('@')) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
+    if (!email.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu email');
       return;
     }
 
     setLoading(true);
     try {
-      // Aquí se implementaría la lógica de recuperación
-      console.log('Enviando email de recuperación a:', email);
-      
-      // Simular envío exitoso
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setEmailSent(true);
-      Alert.alert(
-        'Email Enviado', 
-        'Se ha enviado un enlace de recuperación a tu correo electrónico',
-        [{ text: 'OK' }]
-      );
+      const result = await forgotPassword(email.trim());
+      if (result.success) {
+        Alert.alert('Éxito', result.data.message || 'Se ha enviado un enlace de recuperación a tu email', [
+          { text: 'OK', onPress: () => navigation.navigate('Login') }
+        ]);
+      } else {
+        Alert.alert('Error', result.error || 'No se pudo enviar el email de recuperación');
+      }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo enviar el email de recuperación');
+      Alert.alert('Error', 'Error inesperado al solicitar recuperación de contraseña');
     } finally {
       setLoading(false);
     }

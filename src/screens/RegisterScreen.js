@@ -79,7 +79,7 @@ const RegisterScreen = ({ navigation }) => {
     try {
       const result = await register(formData);
       if (result.success) {
-        Alert.alert('Éxito', 'Cuenta creada exitosamente', [
+        Alert.alert('Éxito', result.data.message || 'Cuenta creada exitosamente', [
           { text: 'OK', onPress: () => navigation.navigate('Login') }
         ]);
       } else {

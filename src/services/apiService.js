@@ -500,6 +500,49 @@ class ApiService {
     });
   }
 
+  async forgotPassword(email) {
+    if (!email || !email.trim()) {
+      throw new Error('Email es requerido');
+    }
+    return this.makeRequest('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  }
+
+  async resetPassword(token, newPassword) {
+    if (!token || !newPassword) {
+      throw new Error('Token y nueva contraseña son requeridos');
+    }
+    if (newPassword.length < 6) {
+      throw new Error('La nueva contraseña debe tener al menos 6 caracteres');
+    }
+    return this.makeRequest('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
+
+  async verifyEmail(token) {
+    if (!token) {
+      throw new Error('Token de verificación es requerido');
+    }
+    return this.makeRequest('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  async resendVerificationEmail(email) {
+    if (!email || !email.trim()) {
+      throw new Error('Email es requerido');
+    }
+    return this.makeRequest('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  }
+
   async logout() {
     this.accessToken = null;
     await AsyncStorage.removeItem('accessToken');

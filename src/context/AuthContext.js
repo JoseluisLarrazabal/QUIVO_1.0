@@ -118,6 +118,78 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      const response = await apiService.forgotPassword(email);
+      
+      if (!response || !response.data) {
+        return { success: false, error: 'No se pudo procesar la solicitud' };
+      }
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Error al solicitar recuperación de contraseña.' 
+      };
+    }
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    try {
+      const response = await apiService.resetPassword(token, newPassword);
+      
+      if (!response || !response.data) {
+        return { success: false, error: 'No se pudo restablecer la contraseña' };
+      }
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Error al restablecer la contraseña.' 
+      };
+    }
+  };
+
+  const verifyEmail = async (token) => {
+    try {
+      const response = await apiService.verifyEmail(token);
+      
+      if (!response || !response.data) {
+        return { success: false, error: 'No se pudo verificar el email' };
+      }
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Verify email error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Error al verificar el email.' 
+      };
+    }
+  };
+
+  const resendVerificationEmail = async (email) => {
+    try {
+      const response = await apiService.resendVerificationEmail(email);
+      
+      if (!response || !response.data) {
+        return { success: false, error: 'No se pudo reenviar el email de verificación' };
+      }
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Error al reenviar el email de verificación.' 
+      };
+    }
+  };
+
   const logout = async () => {
     try {
       await apiService.logout(); // Limpia el token en memoria y AsyncStorage
@@ -179,6 +251,10 @@ export const AuthProvider = ({ children }) => {
     login,
     loginWithCard,
     register,
+    forgotPassword,
+    resetPassword,
+    verifyEmail,
+    resendVerificationEmail,
     logout,
     updateUserCards,
     refreshUserCards,
