@@ -601,6 +601,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 16,
   },
   balanceInfo: {
     flex: 1,
@@ -608,12 +609,17 @@ const styles = StyleSheet.create({
   balanceLabel: {
     ...chicaloStyles.info,
     color: colors.textSecondary,
+    marginBottom: 8,
   },
   balanceAmount: {
-    ...chicaloStyles.subtitle,
-    color: colors.backgroundAlt,
+    fontFamily: 'Montserrat_400Regular',
+    fontSize: 28,
+    lineHeight: 34,
+    color: colors.primary,
     fontWeight: '700',
-    textAlign: 'center',
+    textAlign: 'left',
+    alignSelf: 'flex-start',
+    marginBottom: 16,
   },
   cardMetrics: {
     flexDirection: 'row',
